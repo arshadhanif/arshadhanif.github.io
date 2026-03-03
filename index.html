@@ -4,987 +4,391 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Arshad Hanif | Oracle Fusion Cloud Consultant</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,300&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #f5f3ef;
-    --bg2: #edeae4;
-    --bg3: #e4e0d8;
-    --border: rgba(0,0,0,0.1);
-    --gold: #b8892a;
-    --gold2: #d4a84a;
-    --gold-dim: rgba(184,137,42,0.1);
-    --text: #1a1814;
-    --text-dim: #4a4540;
-    --text-muted: #8a8580;
-    --accent: #2a3a4a;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    font-weight: 400;
-    font-size: 20px;
-    line-height: 1.7;
-    overflow-x: hidden;
-  }
-
-  /* Subtle texture */
-  body::before {
-    content: none;
-  }
-
-  /* NAV */
-  nav {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
-    padding: 20px 60px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: rgba(245,243,239,0.95);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .nav-logo {
-    font-family: 'Playfair Display', serif;
-    font-size: 26px;
-    font-weight: 500;
-    color: var(--gold);
-    letter-spacing: 2px;
-    text-decoration: none;
-  }
-
-  .nav-links {
-    display: flex;
-    gap: 36px;
-    list-style: none;
-  }
-
-  .nav-links a {
-    color: var(--text-dim);
-    text-decoration: none;
-    font-size: 17px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    transition: color 0.3s;
-  }
-
-  .nav-links a:hover { color: var(--gold); }
-
-  .nav-cta {
-    background: transparent;
-    border: 1px solid var(--gold);
-    color: var(--gold) !important;
-    padding: 8px 20px;
-    font-size: 19px !important;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.3s !important;
-  }
-
-  .nav-cta:hover {
-    background: var(--gold) !important;
-    color: var(--bg) !important;
-  }
-
-  /* HERO */
-  #home {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    padding: 120px 60px 80px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .hero-bg {
-    position: absolute;
-    inset: 0;
-    background: 
-      radial-gradient(ellipse 60% 50% at 70% 50%, rgba(184,137,42,0.08) 0%, transparent 70%),
-      radial-gradient(ellipse 40% 60% at 20% 80%, rgba(184,137,42,0.05) 0%, transparent 60%);
-  }
-
-  .hero-grid {
-    position: absolute;
-    inset: 0;
-    background-image: 
-      linear-gradient(rgba(184,137,42,0.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(184,137,42,0.08) 1px, transparent 1px);
-    background-size: 60px 60px;
-    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 80%);
-  }
-
-  .hero-content {
-    position: relative;
-    z-index: 2;
-    max-width: 700px;
-  }
-
-  .hero-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--gold-dim);
-    border: 1px solid rgba(201,168,76,0.25);
-    padding: 6px 16px;
-    font-size: 19px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 32px;
-    animation: fadeUp 0.8s ease forwards;
-    opacity: 0;
-  }
-
-  .hero-badge::before {
-    content: '';
-    width: 6px; height: 6px;
-    background: var(--gold);
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.8); }
-  }
-
-  .hero-name {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(52px, 7vw, 88px);
-    font-weight: 300;
-    line-height: 1.0;
-    letter-spacing: -1px;
-    margin-bottom: 8px;
-    animation: fadeUp 0.8s 0.1s ease forwards;
-    opacity: 0;
-  }
-
-  .hero-name span { color: var(--gold); }
-
-  .hero-title {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 19px;
-    color: var(--gold);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin-bottom: 28px;
-    animation: fadeUp 0.8s 0.2s ease forwards;
-    opacity: 0;
-  }
-
-  .hero-desc {
-    font-size: 20px;
-    line-height: 1.8;
-    color: var(--text-dim);
-    max-width: 540px;
-    margin-bottom: 48px;
-    animation: fadeUp 0.8s 0.3s ease forwards;
-    opacity: 0;
-  }
-
-  .hero-stats {
-    display: flex;
-    gap: 48px;
-    margin-bottom: 48px;
-    animation: fadeUp 0.8s 0.4s ease forwards;
-    opacity: 0;
-  }
-
-  .stat-item { text-align: left; }
-
-  .stat-num {
-    font-family: 'Playfair Display', serif;
-    font-size: 40px;
-    font-weight: 500;
-    color: var(--gold);
-    line-height: 1;
-  }
-
-  .stat-label {
-    font-size: 19px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-top: 4px;
-  }
-
-  .hero-actions {
-    display: flex;
-    gap: 16px;
-    animation: fadeUp 0.8s 0.5s ease forwards;
-    opacity: 0;
-  }
-
-  .btn-primary {
-    background: var(--gold);
-    color: var(--bg);
-    border: none;
-    padding: 14px 32px;
-    font-size: 17px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    transition: all 0.3s;
-  }
-
-  .btn-primary:hover { background: var(--gold2); transform: translateY(-2px); }
-
-  .btn-outline {
-    background: transparent;
-    color: var(--text-dim);
-    border: 1px solid var(--border);
-    padding: 14px 32px;
-    font-size: 17px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    font-family: 'Inter', sans-serif;
-    transition: all 0.3s;
-  }
-
-  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
-
-  .hero-right {
-    position: absolute;
-    right: 60px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    animation: fadeIn 1.2s 0.6s ease forwards;
-    opacity: 0;
-  }
-
-  .cert-badge {
-    background: white;
-    border: 1px solid var(--border);
-    padding: 12px 20px;
-    font-size: 19px;
-    color: var(--text-dim);
-    letter-spacing: 1px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    transition: border-color 0.3s;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  }
-
-  .cert-badge:hover { border-color: var(--gold); }
-
-  .cert-dot {
-    width: 6px; height: 6px;
-    background: var(--gold);
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  /* SECTIONS */
-  section {
-    padding: 100px 60px;
-    position: relative;
-  }
-
-  .section-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 19px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 12px;
-  }
-
-  .section-title {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(36px, 4vw, 54px);
-    font-weight: 300;
-    line-height: 1.1;
-    margin-bottom: 16px;
-  }
-
-  .section-line {
-    width: 48px;
-    height: 1px;
-    background: var(--gold);
-    margin-bottom: 48px;
-  }
-
-  .section-divider {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 0 60px;
-  }
-
-  /* ABOUT */
-  #about { background: var(--bg2); }
-
-  .about-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 80px;
-    align-items: start;
-  }
-
-  .about-text p {
-    font-size: 19px;
-    line-height: 1.9;
-    color: var(--text-dim);
-    margin-bottom: 20px;
-  }
-
-  .about-text p strong { color: var(--text); font-weight: 500; }
-
-  .about-highlights {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2px;
-    margin-top: 32px;
-  }
-
-  .highlight-item {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    padding: 20px;
-    transition: border-color 0.3s;
-  }
-
-  .highlight-item:hover { border-color: var(--gold); }
-
-  .highlight-num {
-    font-family: 'Playfair Display', serif;
-    font-size: 36px;
-    color: var(--gold);
-    font-weight: 500;
-  }
-
-  .highlight-label {
-    font-size: 19px;
-    letter-spacing: 1px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    margin-top: 4px;
-  }
-
-  .about-info { }
-
-  .info-row {
-    display: flex;
-    gap: 16px;
-    padding: 16px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 17px;
-  }
-
-  .info-key {
-    width: 120px;
-    flex-shrink: 0;
-    color: var(--text-muted);
-    font-size: 19px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    padding-top: 2px;
-  }
-
-  .info-val { color: var(--text); }
-
-  .info-val a { color: var(--gold); text-decoration: none; }
-
-  .tag-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 24px;
-  }
-
-  .tag {
-    background: var(--gold-dim);
-    border: 1px solid rgba(201,168,76,0.2);
-    color: var(--gold);
-    padding: 4px 12px;
-    font-size: 19px;
-    letter-spacing: 1px;
-  }
-
-  /* SERVICES */
-  #services { background: var(--bg); }
-
-  .services-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
-  }
-
-  .service-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    padding: 40px 32px;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .service-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: var(--gold);
-    transform: scaleX(0);
-    transition: transform 0.3s;
-  }
-
-  .service-card:hover::before { transform: scaleX(1); }
-  .service-card:hover { border-color: rgba(201,168,76,0.2); }
-
-  .service-icon {
-    font-size: 32px;
-    margin-bottom: 20px;
-  }
-
-  .service-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 26px;
-    font-weight: 500;
-    margin-bottom: 12px;
-    color: var(--text);
-  }
-
-  .service-desc {
-    font-size: 20px;
-    line-height: 1.8;
-    color: var(--text-dim);
-    margin-bottom: 20px;
-  }
-
-  .service-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .service-tag {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: var(--text-muted);
-    border: 1px solid var(--border);
-    padding: 3px 8px;
-    letter-spacing: 1px;
-  }
-
-  /* SKILLS */
-  #skills { background: var(--bg2); }
-
-  .skills-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 60px;
-  }
-
-  .skill-group-title {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 19px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 24px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .skill-item {
-    margin-bottom: 20px;
-  }
-
-  .skill-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    font-size: 20px;
-    color: var(--text-dim);
-  }
-
-  .skill-pct { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 17px; }
-
-  .skill-bar {
-    height: 2px;
-    background: var(--border);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .skill-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--gold), var(--gold2));
-    width: 0%;
-    transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .modules-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 48px;
-  }
-
-  .module-tag {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 6px 14px;
-    font-size: 19px;
-    letter-spacing: 1px;
-    font-family: 'JetBrains Mono', monospace;
-    transition: all 0.3s;
-  }
-
-  .module-tag:hover { border-color: var(--gold); color: var(--gold); }
-
-  /* EXPERIENCE */
-  #experience { background: var(--bg); }
-
-  .timeline {
-    position: relative;
-    padding-left: 32px;
-  }
-
-  .timeline::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 8px; bottom: 0;
-    width: 1px;
-    background: var(--border);
-  }
-
-  .timeline-item {
-    position: relative;
-    margin-bottom: 56px;
-    padding-left: 32px;
-  }
-
-  .timeline-dot {
-    position: absolute;
-    left: -38px;
-    top: 8px;
-    width: 12px; height: 12px;
-    border: 1px solid var(--gold);
-    background: var(--bg);
-    transform: rotate(45deg);
-  }
-
-  .timeline-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 4px;
-    gap: 20px;
-  }
-
-  .timeline-role {
-    font-family: 'Playfair Display', serif;
-    font-size: 26px;
-    font-weight: 500;
-    color: var(--text);
-  }
-
-  .timeline-period {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 19px;
-    color: var(--gold);
-    letter-spacing: 1px;
-    white-space: nowrap;
-    padding-top: 4px;
-  }
-
-  .timeline-company {
-    font-size: 19px;
-    color: var(--gold);
-    letter-spacing: 1px;
-    margin-bottom: 16px;
-  }
-
-  .timeline-points {
-    list-style: none;
-  }
-
-  .timeline-points li {
-    font-size: 20px;
-    line-height: 1.8;
-    color: var(--text-dim);
-    padding: 6px 0;
-    padding-left: 16px;
-    position: relative;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-  }
-
-  .timeline-points li::before {
-    content: '—';
-    position: absolute;
-    left: 0;
-    color: var(--gold);
-    font-size: 19px;
-  }
-
-  /* PROJECTS */
-  #projects { background: var(--bg2); }
-
-  .projects-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
-  }
-
-  .project-card {
-    background: white;
-    border: 1px solid var(--border);
-    padding: 32px;
-    transition: all 0.3s;
-    position: relative;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  }
-
-  .project-card:hover { border-color: rgba(201,168,76,0.3); transform: translateY(-4px); }
-
-  .project-industry {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 12px;
-  }
-
-  .project-name {
-    font-family: 'Playfair Display', serif;
-    font-size: 20px;
-    font-weight: 500;
-    margin-bottom: 8px;
-    color: var(--text);
-    line-height: 1.3;
-  }
-
-  .project-desc {
-    font-size: 17px;
-    color: var(--text-dim);
-    line-height: 1.7;
-  }
-
-  /* CERTIFICATIONS */
-  #certifications { background: var(--bg); }
-
-  .certs-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2px;
-  }
-
-  .cert-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    padding: 28px 32px;
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
-    transition: border-color 0.3s;
-  }
-
-  .cert-card:hover { border-color: rgba(201,168,76,0.3); }
-
-  .cert-icon {
-    width: 44px; height: 44px;
-    background: var(--gold-dim);
-    border: 1px solid rgba(201,168,76,0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    flex-shrink: 0;
-  }
-
-  .cert-info {}
-
-  .cert-name {
-    font-size: 17px;
-    font-weight: 500;
-    color: var(--text);
-    margin-bottom: 4px;
-    line-height: 1.4;
-  }
-
-  .cert-provider {
-    font-size: 19px;
-    color: var(--gold);
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-  }
-
-  .cert-date {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 19px;
-    color: var(--text-muted);
-  }
-
-  /* TESTIMONIALS */
-  #testimonials { background: var(--bg2); }
-
-  .testimonials-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
-  }
-
-  .testimonial-card {
-    background: white;
-    border: 1px solid var(--border);
-    padding: 32px;
-    position: relative;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-  }
-
-  .testimonial-card::before {
-    content: '"';
-    font-family: 'Playfair Display', serif;
-    font-size: 80px;
-    color: var(--gold);
-    opacity: 0.15;
-    position: absolute;
-    top: 16px; left: 24px;
-    line-height: 1;
-  }
-
-  .testimonial-text {
-    font-size: 20px;
-    line-height: 1.9;
-    color: var(--text-dim);
-    margin-bottom: 24px;
-    position: relative;
-    z-index: 1;
-    padding-top: 20px;
-  }
-
-  .testimonial-author {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border-top: 1px solid var(--border);
-    padding-top: 20px;
-  }
-
-  .author-avatar {
-    width: 40px; height: 40px;
-    background: var(--gold-dim);
-    border: 1px solid rgba(201,168,76,0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Playfair Display', serif;
-    font-size: 20px;
-    color: var(--gold);
-  }
-
-  .author-name {
-    font-size: 19px;
-    font-weight: 500;
-    color: var(--text);
-  }
-
-  .author-role {
-    font-size: 19px;
-    color: var(--text-muted);
-    margin-top: 2px;
-  }
-
-  .stars {
-    color: var(--gold);
-    font-size: 17px;
-    margin-bottom: 8px;
-  }
-
-  /* CONTACT */
-  #contact { background: var(--bg); }
-
-  .contact-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 80px;
-    align-items: start;
-  }
-
-  .contact-desc {
-    font-size: 19px;
-    line-height: 1.9;
-    color: var(--text-dim);
-    margin-bottom: 40px;
-  }
-
-  .contact-links {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .contact-link {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    padding: 18px 24px;
-    text-decoration: none;
-    transition: border-color 0.3s;
-  }
-
-  .contact-link:hover { border-color: var(--gold); }
-
-  .contact-link-icon {
-    width: 36px; height: 36px;
-    background: var(--gold-dim);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 19px;
-    flex-shrink: 0;
-  }
-
-  .contact-link-info {}
-
-  .contact-link-label {
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-
-  .contact-link-val {
-    font-size: 19px;
-    color: var(--text);
-    margin-top: 2px;
-  }
-
-  .contact-form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .form-label {
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-
-  .form-input {
-    background: white;
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 14px 16px;
-    font-family: 'Inter', sans-serif;
-    font-size: 17px;
-    outline: none;
-    transition: border-color 0.3s;
-  }
-
-  .form-input:focus { border-color: var(--gold); }
-
-  .form-input::placeholder { color: var(--text-muted); }
-
-  textarea.form-input { resize: vertical; min-height: 120px; }
-
-  /* FOOTER */
-  footer {
-    background: var(--bg2);
-    border-top: 1px solid var(--border);
-    padding: 32px 60px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .footer-logo {
-    font-family: 'Playfair Display', serif;
-    font-size: 20px;
-    color: var(--gold);
-    letter-spacing: 2px;
-  }
-
-  .footer-text {
-    font-size: 17px;
-    color: var(--text-muted);
-    letter-spacing: 1px;
-  }
-
-  .footer-links {
-    display: flex;
-    gap: 24px;
-  }
-
-  .footer-links a {
-    font-size: 19px;
-    color: var(--text-muted);
-    text-decoration: none;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: color 0.3s;
-  }
-
-  .footer-links a:hover { color: var(--gold); }
-
-  /* SCROLL ANIMATIONS */
-  .reveal {
-    opacity: 1;
-    transform: translateY(0);
-    transition: opacity 0.7s ease, transform 0.7s ease;
-  }
-
-  .reveal.hidden {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-
-  /* SCROLLBAR */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: var(--bg2); }
-  ::-webkit-scrollbar-thumb { background: var(--gold); }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+
+:root {
+  --cream: #faf8f4;
+  --warm: #f2ede4;
+  --sand: #e8e0d2;
+  --stone: #c8bfb0;
+  --ink: #1c1814;
+  --ink2: #3a342c;
+  --ink3: #6b6258;
+  --gold: #c4882a;
+  --gold-l: #e8b865;
+  --gold-bg: #fdf6e8;
+  --white: #ffffff;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+  background: rgba(250,248,244,0.97);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--sand);
+  padding: 0 48px;
+  height: 72px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-brand {
+  font-family: 'Fraunces', serif;
+  font-size: 22px; font-weight: 600;
+  color: var(--ink); text-decoration: none;
+}
+.nav-brand span { color: var(--gold); }
+.nav-links { display: flex; gap: 4px; list-style: none; align-items: center; }
+.nav-links a {
+  font-size: 14px; font-weight: 400;
+  color: var(--ink3); text-decoration: none;
+  padding: 7px 14px; border-radius: 8px;
+  transition: all 0.2s;
+}
+.nav-links a:hover { color: var(--ink); background: var(--warm); }
+.nav-hire { background: var(--ink) !important; color: white !important; font-weight: 500 !important; }
+.nav-hire:hover { background: var(--gold) !important; }
+
+/* HERO */
+.hero-wrap {
+  max-width: 1200px; margin: 0 auto; padding: 0 48px;
+  min-height: 100vh;
+  display: grid; grid-template-columns: 1fr 400px;
+  gap: 60px; align-items: center;
+  padding-top: 120px; padding-bottom: 80px;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--gold-bg); border: 1px solid #e8c87a;
+  color: var(--gold); font-size: 13px; font-weight: 500;
+  padding: 6px 16px; border-radius: 20px; margin-bottom: 28px;
+}
+.hero-badge::before {
+  content: ''; width: 7px; height: 7px;
+  background: var(--gold); border-radius: 50%;
+  animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+h1.hero-name {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(46px, 5.5vw, 72px);
+  font-weight: 600; line-height: 1.05;
+  letter-spacing: -2px; margin-bottom: 20px;
+}
+h1.hero-name em { font-style: italic; color: var(--gold); font-weight: 300; }
+.hero-sub {
+  font-size: 18px; color: var(--ink3);
+  margin-bottom: 36px; max-width: 500px; line-height: 1.75;
+}
+.hero-btns { display: flex; gap: 12px; margin-bottom: 52px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 13px 26px; border-radius: 10px;
+  font-size: 15px; font-weight: 500; font-family: 'Outfit', sans-serif;
+  text-decoration: none; cursor: pointer; border: none; transition: all 0.2s;
+}
+.btn-dark { background: var(--ink); color: white; }
+.btn-dark:hover { background: var(--gold); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(196,136,42,0.3); }
+.btn-outline { background: white; color: var(--ink); border: 1.5px solid var(--sand); }
+.btn-outline:hover { border-color: var(--ink); transform: translateY(-2px); }
+.hero-stats {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 1px; background: var(--sand);
+  border: 1px solid var(--sand); border-radius: 14px; overflow: hidden;
+}
+.stat { background: white; padding: 20px 12px; text-align: center; }
+.stat-n {
+  font-family: 'Fraunces', serif; font-size: 30px;
+  font-weight: 600; color: var(--gold); line-height: 1; margin-bottom: 4px;
+}
+.stat-l { font-size: 12px; color: var(--ink3); }
+.hero-card {
+  background: white; border: 1px solid var(--sand);
+  border-radius: 20px; padding: 28px;
+  box-shadow: 0 4px 32px rgba(28,24,20,0.07);
+}
+.hc-title {
+  font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600;
+  color: var(--ink); margin-bottom: 18px;
+  padding-bottom: 14px; border-bottom: 1px solid var(--sand);
+}
+.cert-list { display: flex; flex-direction: column; gap: 10px; }
+.cert-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 13px; border-radius: 10px;
+  background: var(--cream); border: 1px solid var(--sand);
+  transition: all 0.2s;
+}
+.cert-row:hover { border-color: var(--gold-l); background: var(--gold-bg); }
+.cert-ico {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: var(--gold-bg); border: 1px solid #e8c87a;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.cert-txt strong { display: block; font-size: 13px; font-weight: 500; color: var(--ink); }
+.cert-txt span { font-size: 12px; color: var(--ink3); }
+.hc-pills {
+  display: flex; flex-wrap: wrap; gap: 7px;
+  margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--sand);
+}
+.pill { background: var(--warm); border: 1px solid var(--sand); color: var(--ink2); font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 20px; }
+
+/* SECTIONS */
+.sec { padding: 88px 48px; max-width: 1200px; margin: 0 auto; }
+.bg-white { background: white; }
+.bg-warm { background: var(--warm); }
+.wrap-white { background: white; }
+.wrap-warm { background: var(--warm); }
+.divider { height: 1px; background: var(--sand); }
+.eyebrow { display: block; font-size: 12px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
+h2.sec-title {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(30px, 3.5vw, 44px);
+  font-weight: 600; line-height: 1.15;
+  letter-spacing: -1px; color: var(--ink); margin-bottom: 12px;
+}
+.sec-sub { font-size: 17px; color: var(--ink3); max-width: 540px; line-height: 1.7; margin-bottom: 48px; }
+
+/* ABOUT */
+.about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; }
+.about-body { font-size: 17px; color: var(--ink2); line-height: 1.85; }
+.about-body p { margin-bottom: 16px; }
+.about-body strong { color: var(--ink); font-weight: 600; }
+.hl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 28px; }
+.hl {
+  background: white; border: 1px solid var(--sand);
+  border-radius: 14px; padding: 20px;
+  transition: all 0.2s;
+}
+.hl:hover { border-color: var(--gold-l); transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
+.hl-n { font-family: 'Fraunces', serif; font-size: 34px; font-weight: 600; color: var(--gold); line-height: 1; }
+.hl-l { font-size: 13px; color: var(--ink3); margin-top: 4px; }
+.info-rows { }
+.ir { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--sand); font-size: 16px; }
+.ik { width: 110px; flex-shrink: 0; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--stone); padding-top: 3px; }
+.iv { color: var(--ink2); }
+.iv a { color: var(--gold); text-decoration: none; }
+.iv.avail { color: #2a7a4a; font-weight: 500; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.tag { background: var(--cream); border: 1px solid var(--sand); color: var(--ink2); font-size: 13px; padding: 5px 13px; border-radius: 20px; }
+
+/* SERVICES */
+.svc-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
+.svc {
+  background: white; border: 1px solid var(--sand);
+  border-radius: 16px; padding: 28px 24px;
+  transition: all 0.25s; position: relative; overflow: hidden;
+}
+.svc::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+  height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-l));
+  transform: scaleX(0); transform-origin: left; transition: transform 0.3s;
+}
+.svc:hover { transform: translateY(-4px); box-shadow: 0 10px 32px rgba(0,0,0,0.08); }
+.svc:hover::after { transform: scaleX(1); }
+.svc-ico { font-size: 30px; margin-bottom: 14px; }
+.svc-title { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+.svc-desc { font-size: 15px; color: var(--ink3); line-height: 1.7; margin-bottom: 18px; }
+.svc-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.svc-tag { background: var(--cream); border: 1px solid var(--sand); color: var(--ink3); font-size: 12px; padding: 4px 10px; border-radius: 6px; }
+
+/* SKILLS */
+.skill-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+.sg-lbl { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 24px; padding-bottom: 10px; border-bottom: 2px solid var(--gold-bg); }
+.sk { margin-bottom: 20px; }
+.sk-meta { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 15px; color: var(--ink2); }
+.sk-pct { font-weight: 600; color: var(--gold); font-size: 14px; }
+.sk-track { height: 6px; background: var(--sand); border-radius: 99px; overflow: hidden; }
+.sk-bar { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-l)); border-radius: 99px; width: 0; transition: width 1.4s cubic-bezier(0.4,0,0.2,1); }
+.mods-wrap { margin-top: 52px; }
+.mods-lbl { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 18px; }
+.mods { display: flex; flex-wrap: wrap; gap: 9px; }
+.mod { background: white; border: 1px solid var(--sand); color: var(--ink2); font-size: 14px; padding: 8px 16px; border-radius: 8px; transition: all 0.2s; cursor: default; }
+.mod:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-bg); }
+
+/* EXPERIENCE */
+.exp-layout { display: grid; grid-template-columns: 260px 1fr; gap: 0; }
+.exp-tabs { position: sticky; top: 88px; height: fit-content; display: flex; flex-direction: column; gap: 3px; }
+.etab {
+  padding: 13px 16px; border-radius: 10px;
+  font-size: 14px; font-weight: 400; color: var(--ink3);
+  cursor: pointer; transition: all 0.2s; border: 1px solid transparent;
+  background: transparent; text-align: left; font-family: 'Outfit', sans-serif;
+}
+.etab:hover { background: white; color: var(--ink); }
+.etab.on { background: white; color: var(--ink); font-weight: 600; border-color: var(--sand); box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+.etab-role { font-size: 14px; }
+.etab-co { font-size: 12px; color: var(--gold); font-weight: 400; margin-top: 2px; }
+.exp-body { padding-left: 44px; border-left: 1px solid var(--sand); }
+.ep { display: none; }
+.ep.on { display: block; }
+.ep-role { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.ep-co { font-size: 16px; color: var(--gold); font-weight: 500; margin-bottom: 4px; }
+.ep-period { font-size: 14px; color: var(--ink3); margin-bottom: 28px; }
+.ep-pts { list-style: none; display: flex; flex-direction: column; gap: 11px; }
+.ep-pts li { display: flex; gap: 14px; font-size: 16px; color: var(--ink2); line-height: 1.7; }
+.ep-pts li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); margin-top: 10px; flex-shrink: 0; }
+
+/* PROJECTS */
+.proj-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.proj {
+  background: white; border: 1px solid var(--sand);
+  border-radius: 14px; padding: 22px;
+  transition: all 0.2s;
+}
+.proj:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); border-color: var(--stone); }
+.proj-ind { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 7px; }
+.proj-name { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: var(--ink); margin-bottom: 7px; line-height: 1.3; }
+.proj-desc { font-size: 14px; color: var(--ink3); line-height: 1.6; }
+
+/* CERTS */
+.cert-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.crt {
+  background: white; border: 1px solid var(--sand);
+  border-radius: 14px; padding: 22px;
+  display: flex; gap: 14px; align-items: flex-start;
+  transition: all 0.2s;
+}
+.crt:hover { border-color: var(--gold-l); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.07); }
+.crt-ico {
+  width: 42px; height: 42px; border-radius: 10px;
+  background: var(--gold-bg); border: 1px solid #e8c87a;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; flex-shrink: 0;
+}
+.crt-name { font-size: 14px; font-weight: 500; color: var(--ink); margin-bottom: 4px; line-height: 1.4; }
+.crt-prov { font-size: 13px; color: var(--gold); font-weight: 500; }
+.crt-date { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+
+/* TESTIMONIALS */
+.testi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
+.testi {
+  background: white; border: 1px solid var(--sand);
+  border-radius: 16px; padding: 26px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+.testi-stars { color: var(--gold); font-size: 15px; letter-spacing: 2px; }
+.testi-txt { font-size: 16px; color: var(--ink2); line-height: 1.75; font-style: italic; }
+.testi-auth { display: flex; align-items: center; gap: 12px; padding-top: 14px; border-top: 1px solid var(--sand); }
+.testi-av {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--gold-bg); border: 2px solid var(--gold-l);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fraunces', serif; font-size: 17px; color: var(--gold); font-weight: 600;
+}
+.testi-name { font-size: 15px; font-weight: 600; color: var(--ink); }
+.testi-role { font-size: 13px; color: var(--ink3); }
+
+/* CONTACT */
+.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; }
+.contact-desc { font-size: 17px; color: var(--ink2); line-height: 1.8; margin-bottom: 28px; }
+.c-links { display: flex; flex-direction: column; gap: 10px; }
+.cl {
+  display: flex; align-items: center; gap: 14px;
+  background: white; border: 1px solid var(--sand);
+  border-radius: 12px; padding: 14px 18px;
+  text-decoration: none; transition: all 0.2s;
+}
+.cl:hover { border-color: var(--gold); transform: translateX(4px); }
+.cl-ico {
+  width: 38px; height: 38px; border-radius: 9px;
+  background: var(--gold-bg); border: 1px solid #e8c87a;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; flex-shrink: 0;
+}
+.cl-lbl { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--stone); }
+.cl-val { font-size: 15px; color: var(--ink); font-weight: 500; margin-top: 1px; }
+.cf { background: white; border: 1px solid var(--sand); border-radius: 18px; padding: 32px; }
+.cf-title { font-family: 'Fraunces', serif; font-size: 21px; font-weight: 600; color: var(--ink); margin-bottom: 22px; }
+.f2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.fg { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.fg label { font-size: 13px; font-weight: 600; color: var(--ink2); }
+.fg input, .fg textarea {
+  background: var(--cream); border: 1.5px solid var(--sand);
+  color: var(--ink); padding: 12px 15px; border-radius: 10px;
+  font-size: 15px; font-family: 'Outfit', sans-serif;
+  outline: none; transition: border-color 0.2s; width: 100%;
+}
+.fg input:focus, .fg textarea:focus { border-color: var(--gold); background: white; }
+.fg textarea { resize: vertical; min-height: 108px; }
+.fg input::placeholder, .fg textarea::placeholder { color: var(--stone); }
+
+/* ANIMATIONS */
+.fade-up {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.fade-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.fade-up:nth-child(2) { transition-delay: 0.1s; }
+.fade-up:nth-child(3) { transition-delay: 0.2s; }
+.fade-up:nth-child(4) { transition-delay: 0.3s; }
+.fade-up:nth-child(5) { transition-delay: 0.4s; }
+.fade-up:nth-child(6) { transition-delay: 0.5s; }
+
+.hero-typed {
+  font-size: 22px; font-weight: 500;
+  color: var(--gold); margin-bottom: 20px;
+  min-height: 34px;
+  font-family: 'Outfit', sans-serif;
+}
+.cursor {
+  display: inline-block;
+  color: var(--gold);
+  animation: blink-cursor 0.8s infinite;
+  font-weight: 300;
+}
+@keyframes blink-cursor { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* Hero entrance animations */
+.hero-badge { animation: fadeDown 0.6s ease both; }
+h1.hero-name { animation: fadeDown 0.6s 0.1s ease both; }
+.hero-typed { animation: fadeDown 0.6s 0.2s ease both; }
+.hero-sub { animation: fadeDown 0.6s 0.3s ease both; }
+.hero-btns { animation: fadeDown 0.6s 0.4s ease both; }
+.hero-stats { animation: fadeDown 0.6s 0.5s ease both; }
+.hero-card { animation: fadeLeft 0.7s 0.3s ease both; }
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeLeft {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+footer {
+  background: var(--ink); color: #8a827a;
+  padding: 36px 48px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.fb { font-family: 'Fraunces', serif; font-size: 19px; color: white; }
+.fb span { color: var(--gold-l); }
+.ft { font-size: 14px; }
+.fl { display: flex; gap: 22px; }
+.fl a { font-size: 13px; color: #8a827a; text-decoration: none; transition: color 0.2s; }
+.fl a:hover { color: var(--gold-l); }
 </style>
 </head>
 <body>
 
 <!-- NAV -->
 <nav>
-  <a class="nav-logo" href="#home">AH</a>
+  <a class="nav-brand" href="#home">Arshad <span>H.</span></a>
   <ul class="nav-links">
     <li><a href="#about">About</a></li>
     <li><a href="#services">Services</a></li>
@@ -992,608 +396,329 @@
     <li><a href="#experience">Experience</a></li>
     <li><a href="#projects">Projects</a></li>
     <li><a href="#certifications">Certifications</a></li>
-    <li><a href="#contact" class="nav-cta">Hire Me</a></li>
+    <li><a href="#contact" class="nav-hire">Hire Me</a></li>
   </ul>
 </nav>
 
 <!-- HERO -->
-<section id="home">
-  <div class="hero-bg"></div>
-  <div class="hero-grid"></div>
-  <div class="hero-content">
+<section id="home" style="background:var(--cream);">
+<div class="hero-wrap">
+  <div>
     <div class="hero-badge">Available for New Projects</div>
-    <h1 class="hero-name">Arshad<br><span>Hanif</span></h1>
-    <div class="hero-title">Oracle Fusion Cloud | ERP & Finance Transformation | ACCA</div>
-    <p class="hero-desc">Senior Oracle Fusion Cloud Consultant with 7+ years delivering end-to-end ERP implementations and finance transformation for enterprises across the UAE, USA, Saudi Arabia, Canada, and Australia.</p>
+    <h1 class="hero-name">Arshad <em>Hanif</em></h1>
+    <div class="hero-typed"><span id="typed"></span><span class="cursor">|</span></div>
+    <p class="hero-sub">ACCA Member with 7+ years delivering end-to-end ERP implementations and finance transformation across UAE, USA, Saudi Arabia, Canada, and Australia.</p>
+    <div class="hero-btns">
+      <a href="#contact" class="btn btn-dark">Start a Project →</a>
+      <a href="#experience" class="btn btn-outline">View Experience</a>
+    </div>
     <div class="hero-stats">
-      <div class="stat-item">
-        <div class="stat-num">7+</div>
-        <div class="stat-label">Years Experience</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num">13+</div>
-        <div class="stat-label">Global Clients</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num">5</div>
-        <div class="stat-label">Oracle Certifications</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num">4</div>
-        <div class="stat-label">End-to-End Impls</div>
-      </div>
-    </div>
-    <div class="hero-actions">
-      <a href="#contact" class="btn-primary">Start a Project</a>
-      <a href="#experience" class="btn-outline">View Experience</a>
+      <div class="stat"><div class="stat-n" data-count="7" data-suffix="+">7+</div><div class="stat-l">Years Exp.</div></div>
+      <div class="stat"><div class="stat-n" data-count="13" data-suffix="+">13+</div><div class="stat-l">Clients</div></div>
+      <div class="stat"><div class="stat-n" data-count="5" data-suffix="">5</div><div class="stat-l">Oracle Certs</div></div>
+      <div class="stat"><div class="stat-n" data-count="4" data-suffix="">4</div><div class="stat-l">Full Impls</div></div>
     </div>
   </div>
-  <div class="hero-right">
-    <div class="cert-badge"><span class="cert-dot"></span>Oracle Financials Certified</div>
-    <div class="cert-badge"><span class="cert-dot"></span>Oracle Procurement Certified</div>
-    <div class="cert-badge"><span class="cert-dot"></span>Oracle SCM Certified</div>
-    <div class="cert-badge"><span class="cert-dot"></span>Oracle HCM Certified</div>
-    <div class="cert-badge"><span class="cert-dot"></span>FAW Certified Professional</div>
+  <div class="hero-card">
+    <div class="hc-title">🏅 Oracle Certifications</div>
+    <div class="cert-list">
+      <div class="cert-row"><div class="cert-ico">💰</div><div class="cert-txt"><strong>Financials Foundations Associate</strong><span>Oracle University · Sep 2023</span></div></div>
+      <div class="cert-row"><div class="cert-ico">🛒</div><div class="cert-txt"><strong>Procurement Foundations Associate</strong><span>Oracle University · Sep 2023</span></div></div>
+      <div class="cert-row"><div class="cert-ico">👥</div><div class="cert-txt"><strong>HCM Foundations Associate</strong><span>Oracle University · Oct 2023</span></div></div>
+      <div class="cert-row"><div class="cert-ico">📦</div><div class="cert-txt"><strong>SCM Foundations Associate</strong><span>Oracle University · Oct 2023</span></div></div>
+      <div class="cert-row"><div class="cert-ico">📊</div><div class="cert-txt"><strong>FAW Implementation Professional</strong><span>Oracle University · Sep 2023</span></div></div>
+    </div>
+    <div class="hc-pills">
+      <span class="pill">ACCA Member</span>
+      <span class="pill">PwC Alumni</span>
+      <span class="pill">Riyadh, KSA</span>
+      <span class="pill">Available Globally</span>
+    </div>
   </div>
+</div>
 </section>
 
-<hr class="section-divider">
+<div class="divider"></div>
 
 <!-- ABOUT -->
-<section id="about">
-  <div class="section-label">Who I Am</div>
-  <h2 class="section-title">About Me</h2>
-  <div class="section-line"></div>
-  <div class="about-grid reveal">
-    <div class="about-text">
-      <p>I am an <strong>ACCA Member</strong> and Oracle Fusion Cloud Consultant with over 7 years of experience in ERP implementation, finance transformation, and accounting solutions. My career began at <strong>Capital Accounting & Business Consulting Services</strong> and was shaped at <strong>A.F. Ferguson & Co. (PwC Pakistan)</strong>, where I delivered four complete end-to-end Oracle Fusion implementations.</p>
-      <p>I have since led Oracle ERP engagements at <strong>TATA Pakistan</strong> and <strong>Gerry's Group</strong>, managing teams of up to 8 consultants across concurrent global projects. Today, I work as an independent consultant serving clients across the UAE, USA, Saudi Arabia, Canada, and Australia.</p>
-      <p>Beyond enterprise ERP, I bring hands-on expertise in <strong>Microsoft Excel</strong> (advanced data manipulation, dashboards, financial modelling), <strong>Xero</strong>, <strong>QuickBooks</strong>, and accounting & bookkeeping — making me equally effective for SMEs and large enterprises.</p>
-      <div class="about-highlights">
-        <div class="highlight-item">
-          <div class="highlight-num">7+</div>
-          <div class="highlight-label">Years Experience</div>
-        </div>
-        <div class="highlight-item">
-          <div class="highlight-num">13+</div>
-          <div class="highlight-label">Clients Served</div>
-        </div>
-        <div class="highlight-item">
-          <div class="highlight-num">5</div>
-          <div class="highlight-label">Oracle Certifications</div>
-        </div>
-        <div class="highlight-item">
-          <div class="highlight-num">Big 4</div>
-          <div class="highlight-label">PwC Background</div>
-        </div>
+<section id="about" class="wrap-white">
+<div class="sec">
+  <span class="eyebrow">Who I Am</span>
+  <h2 class="sec-title">About Me</h2>
+  <div class="about-grid fade-up">
+    <div>
+      <div class="about-body">
+        <p>I am an <strong>ACCA Member</strong> and Oracle Fusion Cloud Consultant with over 7 years of experience in ERP implementation, finance transformation, and accounting solutions. My career began at <strong>Capital Accounting & Business Consulting Services</strong> and was shaped at <strong>A.F. Ferguson & Co. (PwC Pakistan)</strong>, where I delivered four complete end-to-end Oracle Fusion implementations.</p>
+        <p>I have since led Oracle ERP engagements at <strong>TATA Pakistan</strong> and <strong>Gerry's Group</strong>, managing teams of up to 8 consultants. Today I work as an independent consultant serving clients in the UAE, USA, Saudi Arabia, Canada, and Australia.</p>
+        <p>Beyond enterprise ERP, I bring hands-on expertise in <strong>Microsoft Excel</strong>, <strong>Xero</strong>, <strong>QuickBooks</strong>, financial modelling, and bookkeeping — effective for both SMEs and large enterprises.</p>
+      </div>
+      <div class="hl-grid">
+        <div class="hl"><div class="hl-n">7+</div><div class="hl-l">Years Experience</div></div>
+        <div class="hl"><div class="hl-n">13+</div><div class="hl-l">Clients Served</div></div>
+        <div class="hl"><div class="hl-n">5</div><div class="hl-l">Oracle Certifications</div></div>
+        <div class="hl"><div class="hl-n">Big 4</div><div class="hl-l">PwC Background</div></div>
       </div>
     </div>
-    <div class="about-info">
-      <div class="info-row">
-        <div class="info-key">Name</div>
-        <div class="info-val">Arshad Hanif</div>
-      </div>
-      <div class="info-row">
-        <div class="info-key">Location</div>
-        <div class="info-val">Riyadh, Saudi Arabia</div>
-      </div>
-      <div class="info-row">
-        <div class="info-key">Origin</div>
-        <div class="info-val">Karachi, Pakistan</div>
-      </div>
-      <div class="info-row">
-        <div class="info-key">Qualification</div>
-        <div class="info-val">ACCA Member</div>
-      </div>
-      <div class="info-row">
-        <div class="info-key">Specialization</div>
-        <div class="info-val">Oracle Fusion Cloud ERP</div>
-      </div>
-      <div class="info-row">
-        <div class="info-key">Email</div>
-        <div class="info-val"><a href="/cdn-cgi/l/email-protection#c7a6b5b4afa6a3afa6a9aea1f6fefefe87a0aaa6aeabe9a4a8aa"><span class="__cf_email__" data-cfemail="523320213a33363a333c3b34636b6b6b12353f333b3e7c313d3f">[email&#160;protected]</span></a></div>
-      </div>
-      <div class="info-row">
-        <div class="info-key">Availability</div>
-        <div class="info-val" style="color: #4caf50;">Open to Projects</div>
-      </div>
-      <div class="tag-list">
-        <span class="tag">Oracle Fusion</span>
-        <span class="tag">ERP Implementation</span>
-        <span class="tag">Finance Transformation</span>
-        <span class="tag">ACCA</span>
-        <span class="tag">PwC Alumni</span>
-        <span class="tag">Excel Expert</span>
-        <span class="tag">Xero</span>
-        <span class="tag">QuickBooks</span>
+    <div class="info-rows">
+      <div class="ir"><div class="ik">Name</div><div class="iv">Arshad Hanif</div></div>
+      <div class="ir"><div class="ik">Location</div><div class="iv">Riyadh, Saudi Arabia</div></div>
+      <div class="ir"><div class="ik">Origin</div><div class="iv">Karachi, Pakistan</div></div>
+      <div class="ir"><div class="ik">Qualification</div><div class="iv">ACCA Member</div></div>
+      <div class="ir"><div class="ik">Specialization</div><div class="iv">Oracle Fusion Cloud ERP</div></div>
+      <div class="ir"><div class="ik">Email</div><div class="iv"><a href="mailto:arshadhanif1999@gmail.com">arshadhanif1999@gmail.com</a></div></div>
+      <div class="ir"><div class="ik">Status</div><div class="iv avail">✓ Open to Projects</div></div>
+      <div class="tags">
+        <span class="tag">Oracle Fusion</span><span class="tag">ERP Implementation</span>
+        <span class="tag">Finance Transformation</span><span class="tag">ACCA</span>
+        <span class="tag">Excel Expert</span><span class="tag">Xero</span><span class="tag">QuickBooks</span>
       </div>
     </div>
   </div>
+</div>
 </section>
 
-<hr class="section-divider">
+<div class="divider"></div>
 
 <!-- SERVICES -->
-<section id="services">
-  <div class="section-label">What I Do</div>
-  <h2 class="section-title">Services</h2>
-  <div class="section-line"></div>
-  <div class="services-grid reveal">
-    <div class="service-card">
-      <div class="service-icon">⚙️</div>
-      <div class="service-title">ERP Implementation</div>
-      <p class="service-desc">End-to-end Oracle Fusion Cloud implementations covering As-Is mapping, Fit-Gap analysis, configuration, Go-Live, and post-implementation support.</p>
-      <div class="service-tags">
-        <span class="service-tag">Oracle Fusion</span>
-        <span class="service-tag">Financials</span>
-        <span class="service-tag">Procurement</span>
-        <span class="service-tag">SCM</span>
-      </div>
-    </div>
-    <div class="service-card">
-      <div class="service-icon">📊</div>
-      <div class="service-title">BI & Reporting</div>
-      <p class="service-desc">Custom dashboards and financial reports using OTBI, BI Publisher, and Financial Reporting Web Studio. From operational KPIs to consolidated financial statements.</p>
-      <div class="service-tags">
-        <span class="service-tag">OTBI</span>
-        <span class="service-tag">BI Publisher</span>
-        <span class="service-tag">FRWS</span>
-        <span class="service-tag">Dashboards</span>
-      </div>
-    </div>
-    <div class="service-card">
-      <div class="service-icon">🔧</div>
-      <div class="service-title">ERP Support & Optimization</div>
-      <p class="service-desc">Functional support, troubleshooting, and optimization for live Oracle Fusion environments. Issue diagnosis, process improvements, and user training.</p>
-      <div class="service-tags">
-        <span class="service-tag">Functional Support</span>
-        <span class="service-tag">Configuration</span>
-        <span class="service-tag">Training</span>
-      </div>
-    </div>
-    <div class="service-card">
-      <div class="service-icon">💹</div>
-      <div class="service-title">Financial Modelling</div>
-      <p class="service-desc">Automated multi-sheet budget templates, forecasting models, and scenario analysis tools in Excel. Designed to reduce manual errors and minimize inputs.</p>
-      <div class="service-tags">
-        <span class="service-tag">Excel</span>
-        <span class="service-tag">Budgeting</span>
-        <span class="service-tag">Forecasting</span>
-      </div>
-    </div>
-    <div class="service-card">
-      <div class="service-icon">🗂️</div>
-      <div class="service-title">Excel & Data Solutions</div>
-      <p class="service-desc">Advanced Excel work including data manipulation, cleansing, transformation, pivot tables, dynamic dashboards, and visualization for management reporting.</p>
-      <div class="service-tags">
-        <span class="service-tag">Data Cleansing</span>
-        <span class="service-tag">Pivot Tables</span>
-        <span class="service-tag">Visualization</span>
-      </div>
-    </div>
-    <div class="service-card">
-      <div class="service-icon">📒</div>
-      <div class="service-title">SME Accounting</div>
-      <p class="service-desc">Xero and QuickBooks setup, configuration, and support. Bookkeeping, accounts reconciliation, period-end closing, and financial statement preparation.</p>
-      <div class="service-tags">
-        <span class="service-tag">Xero</span>
-        <span class="service-tag">QuickBooks</span>
-        <span class="service-tag">Bookkeeping</span>
-      </div>
-    </div>
+<section id="services" class="wrap-warm">
+<div class="sec">
+  <span class="eyebrow">What I Do</span>
+  <h2 class="sec-title">Services</h2>
+  <p class="sec-sub">From enterprise Oracle ERP to SME accounting — I cover the full spectrum of finance and ERP consulting.</p>
+  <div class="svc-grid fade-up">
+    <div class="svc"><div class="svc-ico">⚙️</div><div class="svc-title">ERP Implementation</div><p class="svc-desc">End-to-end Oracle Fusion Cloud implementations covering As-Is mapping, Fit-Gap analysis, configuration, Go-Live, and post-implementation support.</p><div class="svc-tags"><span class="svc-tag">Oracle Fusion</span><span class="svc-tag">Financials</span><span class="svc-tag">Procurement</span><span class="svc-tag">SCM</span></div></div>
+    <div class="svc"><div class="svc-ico">📊</div><div class="svc-title">BI & Reporting</div><p class="svc-desc">Custom dashboards and financial reports using OTBI, BI Publisher, and Financial Reporting Web Studio — from KPIs to consolidated statements.</p><div class="svc-tags"><span class="svc-tag">OTBI</span><span class="svc-tag">BI Publisher</span><span class="svc-tag">FRWS</span><span class="svc-tag">Dashboards</span></div></div>
+    <div class="svc"><div class="svc-ico">🔧</div><div class="svc-title">ERP Support & Optimization</div><p class="svc-desc">Functional support, troubleshooting and optimization for live Oracle Fusion environments — issue diagnosis, improvements and user training.</p><div class="svc-tags"><span class="svc-tag">Support</span><span class="svc-tag">Configuration</span><span class="svc-tag">Training</span></div></div>
+    <div class="svc"><div class="svc-ico">💹</div><div class="svc-title">Financial Modelling</div><p class="svc-desc">Automated multi-sheet budget templates, forecasting models, and scenario analysis in Excel. Designed to reduce manual errors and minimize inputs.</p><div class="svc-tags"><span class="svc-tag">Excel</span><span class="svc-tag">Budgeting</span><span class="svc-tag">Forecasting</span></div></div>
+    <div class="svc"><div class="svc-ico">🗂️</div><div class="svc-title">Excel & Data Solutions</div><p class="svc-desc">Advanced Excel: data manipulation, cleansing, transformation, pivot tables, dynamic dashboards and visualization for management reporting.</p><div class="svc-tags"><span class="svc-tag">Data Cleansing</span><span class="svc-tag">Pivot Tables</span><span class="svc-tag">Visualization</span></div></div>
+    <div class="svc"><div class="svc-ico">📒</div><div class="svc-title">SME Accounting</div><p class="svc-desc">Xero and QuickBooks setup, configuration and support. Bookkeeping, accounts reconciliation, period-end closing and financial statement preparation.</p><div class="svc-tags"><span class="svc-tag">Xero</span><span class="svc-tag">QuickBooks</span><span class="svc-tag">Bookkeeping</span></div></div>
   </div>
+</div>
 </section>
 
-<hr class="section-divider">
+<div class="divider"></div>
 
 <!-- SKILLS -->
-<section id="skills">
-  <div class="section-label">Expertise</div>
-  <h2 class="section-title">Skills</h2>
-  <div class="section-line"></div>
-  <div class="skills-container reveal">
+<section id="skills" class="wrap-white">
+<div class="sec">
+  <span class="eyebrow">Expertise</span>
+  <h2 class="sec-title">Skills</h2>
+  <p class="sec-sub">Core technical and functional skills built over 7+ years of hands-on consulting.</p>
+  <div class="skill-cols fade-up">
     <div>
-      <div class="skill-group-title">Oracle & ERP</div>
-      <div class="skill-item">
-        <div class="skill-header"><span>Oracle Fusion Cloud</span><span class="skill-pct">98%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-width="98"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-header"><span>ERP Implementation</span><span class="skill-pct">95%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-width="95"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-header"><span>Oracle Financials</span><span class="skill-pct">97%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-width="97"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-header"><span>Oracle Procurement & SCM</span><span class="skill-pct">90%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-width="90"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-header"><span>OTBI / BI Publisher</span><span class="skill-pct">88%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-width="88"></div></div>
-      </div>
+      <div class="sg-lbl">Oracle & ERP</div>
+      <div class="sk"><div class="sk-meta"><span>Oracle Fusion Cloud</span><span class="sk-pct">98%</span></div><div class="sk-track"><div class="sk-bar" data-w="98"></div></div></div>
+      <div class="sk"><div class="sk-meta"><span>Oracle Financials</span><span class="sk-pct">97%</span></div><div class="sk-track"><div class="sk-bar" data-w="97"></div></div></div>
+      <div class="sk"><div class="sk-meta"><span>ERP Implementation</span><span class="sk-pct">95%</span></div><div class="sk-track"><div class="sk-bar" data-w="95"></div></div></div>
+      <div class="sk"><div class="sk-meta"><span>Oracle Procurement & SCM</span><span class="sk-pct">90%</span></div><div class="sk-track"><div class="sk-bar" data-w="90"></div></div></div>
+      <div class="sk"><div class="sk-meta"><span>OTBI / BI Publisher</span><span class="sk-pct">88%</span></div><div class="sk-track"><div class="sk-bar" data-w="88"></div></div></div>
     </div>
     <div>
-      <div class="skill-group-title">Finance & Productivity</div>
-      <div class="skill-item">
-        <div class="skill-header"><span>Microsoft Excel</span><span class="skill-pct">95%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-width="95"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-header"><span>Financial Modelling</span><span class="skill-pct">90%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-width="90"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-header"><span>Data Analysis & Visualization</span><span class="skill-pct">88%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-width="88"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-header"><span>Xero & QuickBooks</span><span class="skill-pct">85%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-width="85"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-header"><span>Accounting & Bookkeeping</span><span class="skill-pct">92%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-width="92"></div></div>
-      </div>
+      <div class="sg-lbl">Finance & Productivity</div>
+      <div class="sk"><div class="sk-meta"><span>Microsoft Excel</span><span class="sk-pct">95%</span></div><div class="sk-track"><div class="sk-bar" data-w="95"></div></div></div>
+      <div class="sk"><div class="sk-meta"><span>Accounting & Bookkeeping</span><span class="sk-pct">92%</span></div><div class="sk-track"><div class="sk-bar" data-w="92"></div></div></div>
+      <div class="sk"><div class="sk-meta"><span>Financial Modelling</span><span class="sk-pct">90%</span></div><div class="sk-track"><div class="sk-bar" data-w="90"></div></div></div>
+      <div class="sk"><div class="sk-meta"><span>Data Analysis & Visualization</span><span class="sk-pct">88%</span></div><div class="sk-track"><div class="sk-bar" data-w="88"></div></div></div>
+      <div class="sk"><div class="sk-meta"><span>Xero & QuickBooks</span><span class="sk-pct">85%</span></div><div class="sk-track"><div class="sk-bar" data-w="85"></div></div></div>
     </div>
   </div>
-  <div class="section-label" style="margin-top: 60px; margin-bottom: 16px;">Oracle Fusion Modules</div>
-  <div class="modules-grid reveal">
-    <span class="module-tag">General Ledger</span>
-    <span class="module-tag">Fixed Assets</span>
-    <span class="module-tag">Payables</span>
-    <span class="module-tag">Receivables</span>
-    <span class="module-tag">Cash Management</span>
-    <span class="module-tag">Intercompany</span>
-    <span class="module-tag">Budgetary Control</span>
-    <span class="module-tag">Procurement</span>
-    <span class="module-tag">Sourcing</span>
-    <span class="module-tag">Inventory</span>
-    <span class="module-tag">Costing</span>
-    <span class="module-tag">Order Management</span>
-    <span class="module-tag">Expenses</span>
-    <span class="module-tag">Lease Accounting</span>
-    <span class="module-tag">Revenue Management</span>
-    <span class="module-tag">Subscription Mgmt</span>
-    <span class="module-tag">Risk Management</span>
+  <div class="mods-wrap">
+    <div class="mods-lbl">Oracle Fusion Modules</div>
+    <div class="mods">
+      <span class="mod">General Ledger</span><span class="mod">Fixed Assets</span><span class="mod">Payables</span><span class="mod">Receivables</span><span class="mod">Cash Management</span><span class="mod">Intercompany</span><span class="mod">Budgetary Control</span><span class="mod">Procurement</span><span class="mod">Sourcing</span><span class="mod">Inventory</span><span class="mod">Costing</span><span class="mod">Order Management</span><span class="mod">Expenses</span><span class="mod">Lease Accounting</span><span class="mod">Revenue Management</span><span class="mod">Subscription Mgmt</span><span class="mod">Risk Management</span>
+    </div>
   </div>
+</div>
 </section>
 
-<hr class="section-divider">
+<div class="divider"></div>
 
 <!-- EXPERIENCE -->
-<section id="experience">
-  <div class="section-label">Career</div>
-  <h2 class="section-title">Work Experience</h2>
-  <div class="section-line"></div>
-  <div class="timeline reveal">
-
-    <div class="timeline-item">
-      <div class="timeline-dot"></div>
-      <div class="timeline-header">
-        <div class="timeline-role">Freelance Oracle Functional Consultant</div>
-        <div class="timeline-period">Sep 2024 — Present</div>
-      </div>
-      <div class="timeline-company">Independent · UAE, USA, Saudi Arabia, Canada, Australia</div>
-      <ul class="timeline-points">
-        <li>Leading multiple concurrent Oracle Fusion ERP projects across Financials, Procurement, Supply Chain, and Projects modules for global clients</li>
-        <li>Managing a team of 8 consultants delivering end-to-end Oracle Fusion Cloud implementations</li>
-        <li>Overseeing full project lifecycle: requirements gathering, solution design, configuration, Go-Live, and post-implementation support</li>
-        <li>Ensuring on-time, within-budget delivery while maintaining high client satisfaction across global engagements</li>
-      </ul>
+<section id="experience" class="wrap-warm">
+<div class="sec">
+  <span class="eyebrow">Career</span>
+  <h2 class="sec-title">Work Experience</h2>
+  <p class="sec-sub">7+ years across consulting firms, enterprise clients, and independent practice.</p>
+  <div class="exp-layout fade-up">
+    <div class="exp-tabs">
+      <button class="etab on" onclick="showE('e1',this)"><div class="etab-role">Freelance Consultant</div><div class="etab-co">Independent · 2024–Now</div></button>
+      <button class="etab" onclick="showE('e2',this)"><div class="etab-role">Oracle Consultant</div><div class="etab-co">Dubai Holdings · 2024</div></button>
+      <button class="etab" onclick="showE('e3',this)"><div class="etab-role">Lead Consultant</div><div class="etab-co">TATA Pakistan · 2023–24</div></button>
+      <button class="etab" onclick="showE('e4',this)"><div class="etab-role">Functional Consultant</div><div class="etab-co">Gerry's Group · 2023</div></button>
+      <button class="etab" onclick="showE('e5',this)"><div class="etab-role">Cloud Consultant</div><div class="etab-co">PwC Pakistan · 2020–23</div></button>
+      <button class="etab" onclick="showE('e6',this)"><div class="etab-role">Oracle Consultant</div><div class="etab-co">Capital Accounting · 2017–20</div></button>
     </div>
-
-    <div class="timeline-item">
-      <div class="timeline-dot"></div>
-      <div class="timeline-header">
-        <div class="timeline-role">Oracle Functional Consultant (Remote)</div>
-        <div class="timeline-period">Jul 2024 — Aug 2024</div>
+    <div class="exp-body">
+      <div class="ep on" id="e1">
+        <div class="ep-role">Freelance Oracle Functional Consultant</div>
+        <div class="ep-co">Independent</div>
+        <div class="ep-period">Sep 2024 — Present · UAE, USA, Saudi Arabia, Canada, Australia</div>
+        <ul class="ep-pts">
+          <li>Leading multiple concurrent Oracle Fusion ERP projects across Financials, Procurement, Supply Chain, and Projects modules for global clients</li>
+          <li>Managing a team of 8 consultants delivering end-to-end Oracle Fusion Cloud implementations</li>
+          <li>Overseeing full project lifecycle: requirements gathering, solution design, configuration, Go-Live, and post-implementation support</li>
+          <li>Ensuring on-time, within-budget delivery while maintaining high client satisfaction</li>
+          <li>Providing mentorship, training, and quality assurance across all deliverables</li>
+        </ul>
       </div>
-      <div class="timeline-company">Dubai Holdings · UAE</div>
-      <ul class="timeline-points">
-        <li>Provided functional support and configuration assistance on Oracle Fusion Financials</li>
-        <li>Diagnosed and resolved critical system issues, minimizing business disruption for end users</li>
-        <li>Delivered process improvement recommendations and reporting enhancements for management</li>
-      </ul>
-    </div>
-
-    <div class="timeline-item">
-      <div class="timeline-dot"></div>
-      <div class="timeline-header">
-        <div class="timeline-role">Lead Functional Consultant — Manager</div>
-        <div class="timeline-period">Sep 2023 — Jun 2024</div>
+      <div class="ep" id="e2">
+        <div class="ep-role">Oracle Functional Consultant (Remote)</div>
+        <div class="ep-co">Dubai Holdings · UAE</div>
+        <div class="ep-period">Jul 2024 — Aug 2024</div>
+        <ul class="ep-pts">
+          <li>Provided functional support and configuration assistance on Oracle Fusion Financials</li>
+          <li>Diagnosed and resolved critical system issues, minimizing business disruption</li>
+          <li>Delivered process improvement recommendations and reporting enhancements for management</li>
+          <li>Collaborated with internal teams to ensure system stability and business alignment</li>
+        </ul>
       </div>
-      <div class="timeline-company">TATA Pakistan · Karachi</div>
-      <ul class="timeline-points">
-        <li>Primary functional contact across Oracle Fusion ERP modules: Financials, Procurement, SCM, Order Management, and Projects</li>
-        <li>Developed BI dashboards enabling timely decision-making and resolution of operational issues for senior management</li>
-        <li>Led, trained, and guided a junior functional team fostering skill development and team productivity</li>
-        <li>Managed Oracle licensing compliance and user access controls to uphold system security and data integrity</li>
-      </ul>
-    </div>
-
-    <div class="timeline-item">
-      <div class="timeline-dot"></div>
-      <div class="timeline-header">
-        <div class="timeline-role">Functional Consultant — Assistant Manager</div>
-        <div class="timeline-period">Apr 2023 — Aug 2023</div>
+      <div class="ep" id="e3">
+        <div class="ep-role">Lead Functional Consultant — Manager</div>
+        <div class="ep-co">TATA Pakistan · Karachi</div>
+        <div class="ep-period">Sep 2023 — Jun 2024</div>
+        <ul class="ep-pts">
+          <li>Primary functional contact across Oracle Fusion ERP: Financials, Procurement, SCM, Order Management, and Projects</li>
+          <li>Developed BI dashboards enabling timely decision-making for senior management</li>
+          <li>Led, trained, and guided junior functional team fostering skill development and productivity</li>
+          <li>Managed Oracle licensing compliance and user access controls</li>
+          <li>Redesigned business processes and implemented controls across Oracle Fusion ERP</li>
+        </ul>
       </div>
-      <div class="timeline-company">Gerry's Group · Karachi</div>
-      <ul class="timeline-points">
-        <li>Provided functional support across Financials, Procurement, and SCM for one of Pakistan's largest conglomerates</li>
-        <li>Led reconciliation of system and physical inventory and assisted in month-end and year-end closing for four entities</li>
-        <li>Implemented the Fixed Assets module at newly onboarded entities and improved financial reporting processes</li>
-      </ul>
-    </div>
-
-    <div class="timeline-item">
-      <div class="timeline-dot"></div>
-      <div class="timeline-header">
-        <div class="timeline-role">Oracle Fusion Cloud Consultant</div>
-        <div class="timeline-period">Jul 2020 — Apr 2023</div>
+      <div class="ep" id="e4">
+        <div class="ep-role">Functional Consultant — Assistant Manager</div>
+        <div class="ep-co">Gerry's Group · Karachi</div>
+        <div class="ep-period">Apr 2023 — Aug 2023</div>
+        <ul class="ep-pts">
+          <li>Provided functional support across Financials, Procurement, and SCM for one of Pakistan's largest conglomerates</li>
+          <li>Led reconciliation of system and physical inventory for four entities</li>
+          <li>Assisted in month-end and year-end closing for four entities</li>
+          <li>Implemented the Fixed Assets module at newly onboarded entities</li>
+          <li>Identified risks and implemented controls to strengthen compliance</li>
+        </ul>
       </div>
-      <div class="timeline-company">A.F. Ferguson & Co. (PwC Pakistan) · Karachi</div>
-      <ul class="timeline-points">
-        <li>Delivered four complete end-to-end Oracle Fusion ERP implementations from As-Is mapping to Go-Live and post-implementation support</li>
-        <li>Served as Module Lead for GL, FA, AP, AR, CM, Intercompany, Budgetary Control, Procurement, Risk Management, and Sourcing</li>
-        <li>Implemented Lease Accounting in compliance with IFRS 16 and designed Chart of Accounts for multiple client organizations</li>
-        <li>Collaborated with Steering Committees to review progress, address risks, and ensure delivery within agreed timelines and budgets</li>
-      </ul>
-    </div>
-
-    <div class="timeline-item">
-      <div class="timeline-dot"></div>
-      <div class="timeline-header">
-        <div class="timeline-role">Oracle Consultant</div>
-        <div class="timeline-period">Jan 2017 — Jun 2020</div>
+      <div class="ep" id="e5">
+        <div class="ep-role">Oracle Fusion Cloud Consultant</div>
+        <div class="ep-co">A.F. Ferguson & Co. (PwC Pakistan) · Karachi</div>
+        <div class="ep-period">Jul 2020 — Apr 2023</div>
+        <ul class="ep-pts">
+          <li>Delivered four complete end-to-end Oracle Fusion ERP implementations from As-Is mapping to Go-Live</li>
+          <li>Served as Module Lead for GL, FA, AP, AR, CM, Intercompany, Budgetary Control, Procurement, Risk Management, and Sourcing</li>
+          <li>Implemented Lease Accounting in compliance with IFRS 16 and designed Chart of Accounts</li>
+          <li>Prepared custom reports and dashboards in OTBI and Financial Reporting Web Studio</li>
+          <li>Collaborated with Steering Committees to manage risks and ensure on-time delivery</li>
+        </ul>
       </div>
-      <div class="timeline-company">Capital Accounting & Business Consulting Services · Karachi</div>
-      <ul class="timeline-points">
-        <li>Migrated financial data from legacy systems to Oracle Fusion ensuring data accuracy and integrity</li>
-        <li>Conducted training sessions for clients' finance teams on Oracle Fusion modules</li>
-        <li>Prepared comprehensive finance transformation documentation: BRDs, FDDs, As-Is/To-Be process maps, and Training Manuals</li>
-      </ul>
+      <div class="ep" id="e6">
+        <div class="ep-role">Oracle Consultant</div>
+        <div class="ep-co">Capital Accounting & Business Consulting Services · Karachi</div>
+        <div class="ep-period">Jan 2017 — Jun 2020</div>
+        <ul class="ep-pts">
+          <li>Migrated financial data from legacy systems to Oracle Fusion ensuring accuracy and integrity</li>
+          <li>Conducted training sessions for clients' finance teams on Oracle Fusion modules</li>
+          <li>Prepared BRDs, FDDs, As-Is/To-Be process maps, and Training Manuals</li>
+          <li>Provided ongoing functional support and change management assistance</li>
+          <li>Investigated and resolved ERP issues in collaboration with technical teams</li>
+        </ul>
+      </div>
     </div>
-
   </div>
+</div>
 </section>
 
-<hr class="section-divider">
+<div class="divider"></div>
 
 <!-- PROJECTS -->
-<section id="projects">
-  <div class="section-label">Client Work</div>
-  <h2 class="section-title">Projects</h2>
-  <div class="section-line"></div>
-  <div class="projects-grid reveal">
-    <div class="project-card">
-      <div class="project-industry">Public Education</div>
-      <div class="project-name">Charlotte-Mecklenburg Schools</div>
-      <div class="project-desc">Oracle Fusion ERP implementation for one of the largest public school districts in the United States.</div>
-    </div>
-    <div class="project-card">
-      <div class="project-industry">Public Transit</div>
-      <div class="project-name">Central Florida Regional Transportation Authority (LYNX)</div>
-      <div class="project-desc">ERP solutions and financial process transformation for a major regional transportation authority in Florida, USA.</div>
-    </div>
-    <div class="project-card">
-      <div class="project-industry">Energy & Sustainability</div>
-      <div class="project-name">National Energy Services Co. (Tarshid)</div>
-      <div class="project-desc">Oracle Fusion implementation supporting Saudi Arabia's national energy efficiency and sustainability programs.</div>
-    </div>
-    <div class="project-card">
-      <div class="project-industry">Media & Broadcasting</div>
-      <div class="project-name">Hum Network Limited</div>
-      <div class="project-desc">ERP and financial systems implementation for one of Pakistan's leading media and entertainment broadcasting networks.</div>
-    </div>
-    <div class="project-card">
-      <div class="project-industry">Urban Real Estate</div>
-      <div class="project-name">Saudi Downtown Company</div>
-      <div class="project-desc">Oracle Fusion Cloud deployment supporting urban real estate development and asset management operations in Saudi Arabia.</div>
-    </div>
-    <div class="project-card">
-      <div class="project-industry">Logistics & Courier</div>
-      <div class="project-name">Gerry's International (FedEx Express)</div>
-      <div class="project-desc">Multi-entity Oracle Fusion implementation for Pakistan's largest FedEx Express franchise covering Financials and SCM.</div>
-    </div>
-    <div class="project-card">
-      <div class="project-industry">Healthcare</div>
-      <div class="project-name">Indus Hospital & Health Network</div>
-      <div class="project-desc">Oracle ERP implementation and financial reporting for one of Pakistan's leading non-profit healthcare systems.</div>
-    </div>
-    <div class="project-card">
-      <div class="project-industry">Hospitality</div>
-      <div class="project-name">Golf Saudi (Restructuring Project)</div>
-      <div class="project-desc">Finance transformation and ERP restructuring project for a major Saudi Arabia event hosting and hospitality group.</div>
-    </div>
-    <div class="project-card">
-      <div class="project-industry">Aviation</div>
-      <div class="project-name">Gerry's Dnata Pvt. Ltd.</div>
-      <div class="project-desc">Oracle Fusion implementation for airline ground handling services operations across multiple airport locations.</div>
-    </div>
+<section id="projects" class="wrap-white">
+<div class="sec">
+  <span class="eyebrow">Client Work</span>
+  <h2 class="sec-title">Projects</h2>
+  <p class="sec-sub">Oracle Fusion ERP implementations across 13+ organizations globally.</p>
+  <div class="proj-grid fade-up">
+    <div class="proj"><div class="proj-ind">Public Education</div><div class="proj-name">Charlotte-Mecklenburg Schools</div><div class="proj-desc">Oracle Fusion ERP for one of the largest public school districts in the United States.</div></div>
+    <div class="proj"><div class="proj-ind">Public Transit</div><div class="proj-name">Central Florida Regional Transportation Authority (LYNX)</div><div class="proj-desc">ERP and financial process transformation for a major regional transit authority in Florida, USA.</div></div>
+    <div class="proj"><div class="proj-ind">Energy & Sustainability</div><div class="proj-name">National Energy Services Co. (Tarshid)</div><div class="proj-desc">Oracle Fusion supporting Saudi Arabia's national energy efficiency programs.</div></div>
+    <div class="proj"><div class="proj-ind">Media & Broadcasting</div><div class="proj-name">Hum Network Limited</div><div class="proj-desc">ERP and financial systems for one of Pakistan's leading media networks.</div></div>
+    <div class="proj"><div class="proj-ind">Urban Real Estate</div><div class="proj-name">Saudi Downtown Company</div><div class="proj-desc">Oracle Fusion Cloud for urban real estate development operations in Saudi Arabia.</div></div>
+    <div class="proj"><div class="proj-ind">Logistics & Courier</div><div class="proj-name">Gerry's International (FedEx Express)</div><div class="proj-desc">Multi-entity Oracle Fusion for Pakistan's largest FedEx Express franchise.</div></div>
+    <div class="proj"><div class="proj-ind">Healthcare</div><div class="proj-name">Indus Hospital & Health Network</div><div class="proj-desc">Oracle ERP and financial reporting for a leading non-profit healthcare system.</div></div>
+    <div class="proj"><div class="proj-ind">Hospitality</div><div class="proj-name">Golf Saudi (Restructuring)</div><div class="proj-desc">Finance transformation and ERP restructuring for a Saudi hospitality group.</div></div>
+    <div class="proj"><div class="proj-ind">Aviation</div><div class="proj-name">Gerry's Dnata Pvt. Ltd.</div><div class="proj-desc">Oracle Fusion for airline ground handling services across multiple airports.</div></div>
   </div>
+</div>
 </section>
 
-<hr class="section-divider">
+<div class="divider"></div>
 
 <!-- CERTIFICATIONS -->
-<section id="certifications">
-  <div class="section-label">Credentials</div>
-  <h2 class="section-title">Certifications</h2>
-  <div class="section-line"></div>
-  <div class="certs-grid reveal">
-    <div class="cert-card">
-      <div class="cert-icon">🏅</div>
-      <div class="cert-info">
-        <div class="cert-name">Oracle Financials Business Process Certified Foundations Associate</div>
-        <div class="cert-provider">Oracle University</div>
-        <div class="cert-date">September 2023</div>
-      </div>
-    </div>
-    <div class="cert-card">
-      <div class="cert-icon">🏅</div>
-      <div class="cert-info">
-        <div class="cert-name">Oracle Procurement Business Process Certified Foundations Associate</div>
-        <div class="cert-provider">Oracle University</div>
-        <div class="cert-date">September 2023</div>
-      </div>
-    </div>
-    <div class="cert-card">
-      <div class="cert-icon">🏅</div>
-      <div class="cert-info">
-        <div class="cert-name">Oracle HCM Business Process Foundations Associate</div>
-        <div class="cert-provider">Oracle University</div>
-        <div class="cert-date">October 2023</div>
-      </div>
-    </div>
-    <div class="cert-card">
-      <div class="cert-icon">🏅</div>
-      <div class="cert-info">
-        <div class="cert-name">Oracle SCM Business Process Foundations Associate</div>
-        <div class="cert-provider">Oracle University</div>
-        <div class="cert-date">October 2023</div>
-      </div>
-    </div>
-    <div class="cert-card">
-      <div class="cert-icon">🏆</div>
-      <div class="cert-info">
-        <div class="cert-name">Oracle Cloud Fusion Analytics Warehouse 2023 Certified Implementation Professional</div>
-        <div class="cert-provider">Oracle University</div>
-        <div class="cert-date">September 2023</div>
-      </div>
-    </div>
-    <div class="cert-card">
-      <div class="cert-icon">📜</div>
-      <div class="cert-info">
-        <div class="cert-name">ACCA Member — Association of Chartered Certified Accountants</div>
-        <div class="cert-provider">ACCA Global</div>
-        <div class="cert-date">August 2023</div>
-      </div>
-    </div>
+<section id="certifications" class="wrap-warm">
+<div class="sec">
+  <span class="eyebrow">Credentials</span>
+  <h2 class="sec-title">Certifications</h2>
+  <p class="sec-sub">5 Oracle Cloud certifications plus ACCA membership.</p>
+  <div class="cert-grid fade-up">
+    <div class="crt"><div class="crt-ico">💰</div><div><div class="crt-name">Oracle Financials Business Process Certified Foundations Associate</div><div class="crt-prov">Oracle University</div><div class="crt-date">September 2023</div></div></div>
+    <div class="crt"><div class="crt-ico">🛒</div><div><div class="crt-name">Oracle Procurement Business Process Certified Foundations Associate</div><div class="crt-prov">Oracle University</div><div class="crt-date">September 2023</div></div></div>
+    <div class="crt"><div class="crt-ico">👥</div><div><div class="crt-name">Oracle HCM Business Process Foundations Associate</div><div class="crt-prov">Oracle University</div><div class="crt-date">October 2023</div></div></div>
+    <div class="crt"><div class="crt-ico">📦</div><div><div class="crt-name">Oracle SCM Business Process Foundations Associate</div><div class="crt-prov">Oracle University</div><div class="crt-date">October 2023</div></div></div>
+    <div class="crt"><div class="crt-ico">📊</div><div><div class="crt-name">Oracle Cloud Fusion Analytics Warehouse 2023 Certified Implementation Professional</div><div class="crt-prov">Oracle University</div><div class="crt-date">September 2023</div></div></div>
+    <div class="crt"><div class="crt-ico">📜</div><div><div class="crt-name">ACCA Member — Association of Chartered Certified Accountants</div><div class="crt-prov">ACCA Global</div><div class="crt-date">August 2023</div></div></div>
   </div>
+</div>
 </section>
 
-<hr class="section-divider">
+<div class="divider"></div>
 
 <!-- TESTIMONIALS -->
-<section id="testimonials">
-  <div class="section-label">Client Feedback</div>
-  <h2 class="section-title">Testimonials</h2>
-  <div class="section-line"></div>
-  <div class="testimonials-grid reveal">
-    <div class="testimonial-card">
-      <div class="stars">★★★★★</div>
-      <p class="testimonial-text">Arshad supported me with the creation of various training materials for Oracle Fusion ERP. The collaboration was a great experience in every way. Arshad understands how to communicate effectively and delivers with exceptional quality.</p>
-      <div class="testimonial-author">
-        <div class="author-avatar">O</div>
-        <div>
-          <div class="author-name">Oracle ERP Coaching Client</div>
-          <div class="author-role">Verified Upwork Review · 5.0</div>
-        </div>
-      </div>
-    </div>
-    <div class="testimonial-card">
-      <div class="stars">★★★★★</div>
-      <p class="testimonial-text">Hired as a senior Oracle Financials engineer for a lesson — Arshad demonstrated deep expertise and explained complex concepts with remarkable clarity. Highly professional and knowledgeable.</p>
-      <div class="testimonial-author">
-        <div class="author-avatar">E</div>
-        <div>
-          <div class="author-name">ERP Consulting Client</div>
-          <div class="author-role">Verified Upwork Review · 5.0</div>
-        </div>
-      </div>
-    </div>
-    <div class="testimonial-card">
-      <div class="stars">★★★★★</div>
-      <p class="testimonial-text">Thanks for helping me out, was a massive help! Fast, accurate, and incredibly efficient. Arshad resolved our issue quickly and was a pleasure to work with throughout the engagement.</p>
-      <div class="testimonial-author">
-        <div class="author-avatar">G</div>
-        <div>
-          <div class="author-name">Google Sheets Client</div>
-          <div class="author-role">Verified Upwork Review · 5.0</div>
-        </div>
-      </div>
-    </div>
+<section id="testimonials" class="wrap-white">
+<div class="sec">
+  <span class="eyebrow">Client Feedback</span>
+  <h2 class="sec-title">Testimonials</h2>
+  <p class="sec-sub">What clients say after working with me.</p>
+  <div class="testi-grid fade-up">
+    <div class="testi"><div class="testi-stars">★★★★★</div><p class="testi-txt">"Arshad supported me with the creation of various training materials for Oracle Fusion ERP. The collaboration was a great experience in every way. Arshad understands how to communicate effectively and delivers with exceptional quality."</p><div class="testi-auth"><div class="testi-av">O</div><div><div class="testi-name">Oracle ERP Coaching Client</div><div class="testi-role">Verified Upwork · 5.0</div></div></div></div>
+    <div class="testi"><div class="testi-stars">★★★★★</div><p class="testi-txt">"Hired as a senior Oracle Financials engineer for a lesson — Arshad demonstrated deep expertise and explained complex concepts with remarkable clarity. Highly professional and knowledgeable."</p><div class="testi-auth"><div class="testi-av">E</div><div><div class="testi-name">ERP Consulting Client</div><div class="testi-role">Verified Upwork · 5.0</div></div></div></div>
+    <div class="testi"><div class="testi-stars">★★★★★</div><p class="testi-txt">"Thanks for helping me out, was a massive help! Fast, accurate, and incredibly efficient. Arshad resolved our issue quickly and was a pleasure to work with throughout the engagement."</p><div class="testi-auth"><div class="testi-av">G</div><div><div class="testi-name">Google Sheets Client</div><div class="testi-role">Verified Upwork · 5.0</div></div></div></div>
   </div>
+</div>
 </section>
 
-<hr class="section-divider">
+<div class="divider"></div>
 
 <!-- CONTACT -->
-<section id="contact">
-  <div class="section-label">Get In Touch</div>
-  <h2 class="section-title">Hire Me</h2>
-  <div class="section-line"></div>
-  <div class="contact-grid reveal">
+<section id="contact" class="wrap-warm">
+<div class="sec">
+  <span class="eyebrow">Get In Touch</span>
+  <h2 class="sec-title">Hire Me</h2>
+  <div class="contact-grid fade-up">
     <div>
-      <p class="contact-desc">Whether you need a full Oracle Fusion ERP implementation, targeted functional support, an Excel solution, or SME accounting help — I deliver with structure, accountability, and excellence. Let's talk about your project.</p>
-      <div class="contact-links">
-        <a href="/cdn-cgi/l/email-protection#5b3a2928333a3f333a35323d6a6262621b3c363a323775383436" class="contact-link">
-          <div class="contact-link-icon">✉️</div>
-          <div class="contact-link-info">
-            <div class="contact-link-label">Email</div>
-            <div class="contact-link-val"><span class="__cf_email__" data-cfemail="6d0c1f1e050c09050c03040b5c5454542d0a000c0401430e0200">[email&#160;protected]</span></div>
-          </div>
-        </a>
-        <a href="https://www.upwork.com/freelancers/~014dac072b14207ea9" target="_blank" class="contact-link">
-          <div class="contact-link-icon">💼</div>
-          <div class="contact-link-info">
-            <div class="contact-link-label">Upwork</div>
-            <div class="contact-link-val">View My Upwork Profile</div>
-          </div>
-        </a>
-        <a href="tel:+966579616367" class="contact-link">
-          <div class="contact-link-icon">📞</div>
-          <div class="contact-link-info">
-            <div class="contact-link-label">Phone / WhatsApp (Riyadh)</div>
-            <div class="contact-link-val">+966 579 616 367</div>
-          </div>
-        </a>
-        <a href="tel:+923371346981" class="contact-link">
-          <div class="contact-link-icon">📞</div>
-          <div class="contact-link-info">
-            <div class="contact-link-label">Phone / WhatsApp (Pakistan)</div>
-            <div class="contact-link-val">+92 337 134 6981</div>
-          </div>
-        </a>
-        <div class="contact-link">
-          <div class="contact-link-icon">📍</div>
-          <div class="contact-link-info">
-            <div class="contact-link-label">Location</div>
-            <div class="contact-link-val">Riyadh, Saudi Arabia · Available Globally</div>
-          </div>
-        </div>
+      <p class="contact-desc">Whether you need a full Oracle Fusion ERP implementation, targeted functional support, an Excel solution, or SME accounting help — I deliver with structure, accountability, and excellence.</p>
+      <div class="c-links">
+        <a href="mailto:arshadhanif1999@gmail.com" class="cl"><div class="cl-ico">✉️</div><div><div class="cl-lbl">Email</div><div class="cl-val">arshadhanif1999@gmail.com</div></div></a>
+        <a href="https://www.upwork.com/freelancers/~014dac072b14207ea9" target="_blank" class="cl"><div class="cl-ico">💼</div><div><div class="cl-lbl">Upwork</div><div class="cl-val">View Upwork Profile</div></div></a>
+        <a href="tel:+966579616367" class="cl"><div class="cl-ico">📞</div><div><div class="cl-lbl">Phone — Riyadh</div><div class="cl-val">+966 579 616 367</div></div></a>
+        <a href="tel:+923371346981" class="cl"><div class="cl-ico">📱</div><div><div class="cl-lbl">Phone — Pakistan</div><div class="cl-val">+92 337 134 6981</div></div></a>
+        <div class="cl"><div class="cl-ico">📍</div><div><div class="cl-lbl">Location</div><div class="cl-val">Riyadh, Saudi Arabia · Available Globally</div></div></div>
       </div>
     </div>
-    <div class="contact-form">
-      <div class="form-group">
-        <label class="form-label">Your Name</label>
-        <input type="text" class="form-input" placeholder="John Smith">
+    <div class="cf">
+      <div class="cf-title">Send a Message</div>
+      <div class="f2">
+        <div class="fg"><label>Your Name</label><input type="text" placeholder="John Smith"></div>
+        <div class="fg"><label>Email</label><input type="email" placeholder="john@company.com"></div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Email Address</label>
-        <input type="email" class="form-input" placeholder="john@company.com">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Project Type</label>
-        <input type="text" class="form-input" placeholder="Oracle ERP Implementation / Excel / Accounting...">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Message</label>
-        <textarea class="form-input" placeholder="Tell me about your project..."></textarea>
-      </div>
-      <a href="/cdn-cgi/l/email-protection#5a3b2829323b3e323b34333c6b6363631a3d373b333674393537" class="btn-primary" style="text-align:center;">Send Message</a>
+      <div class="fg"><label>Project Type</label><input type="text" placeholder="Oracle ERP / Excel / Accounting..."></div>
+      <div class="fg"><label>Message</label><textarea placeholder="Tell me about your project..."></textarea></div>
+      <a href="mailto:arshadhanif1999@gmail.com" class="btn btn-dark" style="width:100%;justify-content:center;display:flex;">Send Message →</a>
     </div>
   </div>
+</div>
 </section>
 
 <!-- FOOTER -->
 <footer>
-  <div class="footer-logo">Arshad Hanif</div>
-  <div class="footer-text">Oracle Fusion Cloud Consultant · ACCA Member · Riyadh, Saudi Arabia</div>
-  <div class="footer-links">
+  <div class="fb">Arshad <span>Hanif</span></div>
+  <div class="ft">Oracle Fusion Cloud Consultant · ACCA Member · Riyadh, Saudi Arabia</div>
+  <div class="fl">
     <a href="#home">Home</a>
     <a href="#about">About</a>
     <a href="#services">Services</a>
@@ -1601,71 +726,112 @@
   </div>
 </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-  // Scroll reveal
-  const reveals = document.querySelectorAll('.reveal');
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('visible');
-        // Animate skill bars
-        e.target.querySelectorAll('.skill-fill').forEach(bar => {
-          bar.style.width = bar.dataset.width + '%';
-        });
-      }
-    });
-  }, { threshold: 0.1 });
-  reveals.forEach(r => observer.observe(r));
-
-  // Also trigger skill bars if already visible
-  document.querySelectorAll('.skill-fill').forEach(bar => {
-    const rect = bar.getBoundingClientRect();
-    if (rect.top < window.innerHeight) bar.style.width = bar.dataset.width + '%';
-  });
-
 <script>
-  // Smooth scroll for all nav links
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function(e) {
-      e.preventDefault();
+  // ── EXPERIENCE TABS ──
+  function showE(id, btn) {
+    document.querySelectorAll('.ep').forEach(p => p.classList.remove('on'));
+    document.querySelectorAll('.etab').forEach(t => t.classList.remove('on'));
+    document.getElementById(id).classList.add('on');
+    btn.classList.add('on');
+  }
+
+  // ── SMOOTH SCROLL ──
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', function(e) {
       const target = document.querySelector(this.getAttribute('href'));
       if (target) {
-        const navHeight = document.querySelector('nav').offsetHeight;
-        const top = target.getBoundingClientRect().top + window.pageYOffset - navHeight;
-        window.scrollTo({ top: top, behavior: 'smooth' });
+        e.preventDefault();
+        window.scrollTo({ top: target.getBoundingClientRect().top + window.pageYOffset - 80, behavior: 'smooth' });
       }
     });
   });
 
-  // Animate skill bars on scroll
-  const skillObserver = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.querySelectorAll('.skill-fill').forEach(bar => {
-          bar.style.width = bar.dataset.width + '%';
+  // ── TYPED TEXT ──
+  const phrases = ['Oracle Fusion Cloud Consultant', 'ERP Implementation Expert', 'Finance Transformation Lead', 'ACCA Member & PwC Alumni'];
+  let pi = 0, ci = 0, deleting = false;
+  const typedEl = document.getElementById('typed');
+  function type() {
+    const current = phrases[pi];
+    if (!deleting) {
+      typedEl.textContent = current.slice(0, ci + 1);
+      ci++;
+      if (ci === current.length) { deleting = true; setTimeout(type, 1800); return; }
+    } else {
+      typedEl.textContent = current.slice(0, ci - 1);
+      ci--;
+      if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; }
+    }
+    setTimeout(type, deleting ? 40 : 65);
+  }
+  type();
+
+  // ── SCROLL FADE-UP ──
+  const fadeEls = document.querySelectorAll('.fade-up');
+  const fadeIO = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (en.isIntersecting) {
+        en.target.classList.add('visible');
+        fadeIO.unobserve(en.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  fadeEls.forEach(el => fadeIO.observe(el));
+
+  // ── COUNTER ANIMATION ──
+  function animateCounter(el, target, suffix = '') {
+    let start = 0;
+    const duration = 1800;
+    const step = timestamp => {
+      if (!start) start = timestamp;
+      const progress = Math.min((timestamp - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const val = Math.floor(ease * target);
+      el.textContent = val + suffix;
+      if (progress < 1) requestAnimationFrame(step);
+      else el.textContent = target + suffix;
+    };
+    requestAnimationFrame(step);
+  }
+
+  const counterIO = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (en.isIntersecting) {
+        const counters = en.target.querySelectorAll('.stat-n[data-count]');
+        counters.forEach(c => {
+          const target = parseInt(c.dataset.count);
+          const suffix = c.dataset.suffix || '';
+          animateCounter(c, target, suffix);
         });
+        counterIO.unobserve(en.target);
       }
     });
-  }, { threshold: 0.1 });
+  }, { threshold: 0.3 });
+  document.querySelectorAll('.hero-stats').forEach(el => counterIO.observe(el));
 
-  document.querySelectorAll('.skills-container').forEach(el => skillObserver.observe(el));
+  // ── SKILL BARS ──
+  const skIO = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (en.isIntersecting) {
+        en.target.querySelectorAll('.sk-bar').forEach(b => b.style.width = b.dataset.w + '%');
+        skIO.unobserve(en.target);
+      }
+    });
+  }, { threshold: 0.2 });
+  document.querySelectorAll('.skill-cols').forEach(el => skIO.observe(el));
 
-  // Trigger skill bars if already visible on load
-  document.querySelectorAll('.skill-fill').forEach(bar => {
-    const rect = bar.getBoundingClientRect();
-    if (rect.top < window.innerHeight) bar.style.width = bar.dataset.width + '%';
-  });
-
-  // Active nav link highlight on scroll
-  const sections = document.querySelectorAll('section[id]');
-  const navLinks = document.querySelectorAll('.nav-links a');
+  // ── NAV ACTIVE ──
   window.addEventListener('scroll', () => {
     let current = '';
-    sections.forEach(s => {
-      if (window.scrollY >= s.offsetTop - 100) current = s.getAttribute('id');
+    document.querySelectorAll('section[id]').forEach(s => {
+      if (window.scrollY >= s.offsetTop - 100) current = s.id;
     });
-    navLinks.forEach(a => {
-      a.style.color = a.getAttribute('href') === '#' + current ? 'var(--gold)' : '';
+    document.querySelectorAll('.nav-links a').forEach(a => {
+      const isActive = a.getAttribute('href') === '#' + current;
+      if (!a.classList.contains('nav-hire')) {
+        a.style.color = isActive ? 'var(--ink)' : '';
+        a.style.fontWeight = isActive ? '600' : '';
+        a.style.background = isActive ? 'var(--warm)' : '';
+      }
     });
   });
 </script>
