@@ -10,384 +10,371 @@
 html { scroll-behavior: smooth; scroll-padding-top: 72px; }
 
 :root {
-  --cream: #faf8f4;
-  --warm: #f2ede4;
-  --sand: #e8e0d2;
-  --stone: #c8bfb0;
-  --ink: #1c1814;
-  --ink2: #3a342c;
-  --ink3: #6b6258;
-  --gold: #c4882a;
-  --gold-l: #e8b865;
-  --gold-bg: #fdf6e8;
-  --white: #ffffff;
+  --bg:       #f0f4f8;
+  --bg2:      #e8edf3;
+  --white:    #ffffff;
+  --slate:    #1e2a3a;
+  --slate2:   #2d3f55;
+  --slate3:   #3d5470;
+  --ink:      #0f1923;
+  --ink2:     #2c3e50;
+  --ink3:     #5a7184;
+  --emerald:  #0f7b5e;
+  --em2:      #12a87e;
+  --em3:      #16d4a0;
+  --em-bg:    #e8f7f3;
+  --em-border:#a8dece;
+  --border:   #d4dde8;
+  --shadow:   rgba(15,25,35,0.08);
 }
 
 body {
   font-family: 'Outfit', sans-serif;
-  background: var(--cream);
+  background: var(--bg);
   color: var(--ink);
   font-size: 17px;
   line-height: 1.7;
   overflow-x: hidden;
 }
 
-/* NAV */
+/* ── CANVAS PARTICLES ── */
+#particles {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 0;
+  opacity: 0.5;
+}
+
+/* ── NAV ── */
 nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 999;
-  background: rgba(250,248,244,0.97);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--sand);
-  padding: 0 48px;
-  height: 72px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 52px; height: 72px;
   display: flex; align-items: center; justify-content: space-between;
+  transition: box-shadow 0.3s;
 }
+nav.scrolled { box-shadow: 0 4px 24px var(--shadow); }
 .nav-brand {
   font-family: 'Fraunces', serif;
   font-size: 22px; font-weight: 600;
-  color: var(--ink); text-decoration: none;
+  color: var(--ink); text-decoration: none; letter-spacing: -0.5px;
 }
-.nav-brand span { color: var(--gold); }
+.nav-brand span { color: var(--emerald); }
 .nav-links { display: flex; gap: 4px; list-style: none; align-items: center; }
 .nav-links a {
-  font-size: 14px; font-weight: 400;
-  color: var(--ink3); text-decoration: none;
-  padding: 7px 14px; border-radius: 8px;
+  font-size: 14px; font-weight: 400; color: var(--ink3);
+  text-decoration: none; padding: 7px 14px; border-radius: 8px;
   transition: all 0.2s;
 }
-.nav-links a:hover { color: var(--ink); background: var(--warm); }
-.nav-hire { background: var(--ink) !important; color: white !important; font-weight: 500 !important; }
-.nav-hire:hover { background: var(--gold) !important; }
+.nav-links a:hover { color: var(--ink); background: var(--bg); }
+.nav-hire {
+  background: var(--emerald) !important; color: white !important;
+  font-weight: 500 !important; border-radius: 8px !important;
+}
+.nav-hire:hover { background: var(--em2) !important; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(15,123,94,0.35) !important; }
 
-/* HERO */
-.hero-wrap {
-  max-width: 1200px; margin: 0 auto; padding: 0 48px;
+/* ── HERO ── */
+#home {
+  position: relative; z-index: 1;
   min-height: 100vh;
-  display: grid; grid-template-columns: 1fr 400px;
-  gap: 60px; align-items: center;
-  padding-top: 120px; padding-bottom: 80px;
+  background: linear-gradient(135deg, var(--slate) 0%, var(--slate2) 50%, #1a3a4a 100%);
+  display: flex; align-items: center;
+  padding: 120px 52px 80px;
+  overflow: hidden;
+}
+.hero-glow {
+  position: absolute; border-radius: 50%;
+  filter: blur(80px); pointer-events: none;
+}
+.glow1 { width: 500px; height: 500px; background: rgba(15,123,94,0.25); top: -100px; right: 100px; animation: floatGlow 8s ease-in-out infinite; }
+.glow2 { width: 350px; height: 350px; background: rgba(22,212,160,0.12); bottom: 50px; left: -50px; animation: floatGlow 10s ease-in-out infinite reverse; }
+@keyframes floatGlow { 0%,100%{transform:translate(0,0)} 50%{transform:translate(30px,-30px)} }
+
+.hero-inner {
+  max-width: 1200px; margin: 0 auto; width: 100%;
+  display: grid; grid-template-columns: 1fr 420px; gap: 64px; align-items: center;
+  position: relative; z-index: 2;
 }
 .hero-badge {
   display: inline-flex; align-items: center; gap: 8px;
-  background: var(--gold-bg); border: 1px solid #e8c87a;
-  color: var(--gold); font-size: 13px; font-weight: 500;
-  padding: 6px 16px; border-radius: 20px; margin-bottom: 28px;
+  background: rgba(22,212,160,0.15); border: 1px solid rgba(22,212,160,0.35);
+  color: var(--em3); font-size: 13px; font-weight: 500;
+  padding: 6px 16px; border-radius: 20px; margin-bottom: 24px;
+  animation: fadeDown 0.6s ease both;
 }
 .hero-badge::before {
   content: ''; width: 7px; height: 7px;
-  background: var(--gold); border-radius: 50%;
-  animation: blink 2s infinite;
+  background: var(--em3); border-radius: 50%;
+  animation: pulse 2s infinite;
 }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
 h1.hero-name {
   font-family: 'Fraunces', serif;
-  font-size: clamp(46px, 5.5vw, 72px);
+  font-size: clamp(44px, 5.5vw, 72px);
   font-weight: 600; line-height: 1.05;
-  letter-spacing: -2px; margin-bottom: 20px;
+  letter-spacing: -2px; color: white; margin-bottom: 16px;
+  animation: fadeDown 0.6s 0.1s ease both;
 }
-h1.hero-name em { font-style: italic; color: var(--gold); font-weight: 300; }
+h1.hero-name em { font-style: italic; color: var(--em3); font-weight: 300; }
+.hero-typed {
+  font-size: 20px; font-weight: 400; color: rgba(255,255,255,0.75);
+  margin-bottom: 20px; min-height: 32px;
+  animation: fadeDown 0.6s 0.2s ease both;
+}
+.cursor { color: var(--em3); animation: blink 0.8s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 .hero-sub {
-  font-size: 18px; color: var(--ink3);
+  font-size: 17px; color: rgba(255,255,255,0.65);
   margin-bottom: 36px; max-width: 500px; line-height: 1.75;
+  animation: fadeDown 0.6s 0.3s ease both;
 }
-.hero-btns { display: flex; gap: 12px; margin-bottom: 52px; }
+.hero-btns { display: flex; gap: 12px; margin-bottom: 52px; flex-wrap: wrap; animation: fadeDown 0.6s 0.4s ease both; }
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 13px 26px; border-radius: 10px;
   font-size: 15px; font-weight: 500; font-family: 'Outfit', sans-serif;
-  text-decoration: none; cursor: pointer; border: none; transition: all 0.2s;
+  text-decoration: none; cursor: pointer; border: none;
+  transition: all 0.25s;
 }
-.btn-dark { background: var(--ink); color: white; }
-.btn-dark:hover { background: var(--gold); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(196,136,42,0.3); }
-.btn-outline { background: white; color: var(--ink); border: 1.5px solid var(--sand); }
-.btn-outline:hover { border-color: var(--ink); transform: translateY(-2px); }
+.btn-em { background: var(--emerald); color: white; }
+.btn-em:hover { background: var(--em2); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15,123,94,0.45); }
+.btn-ghost { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.25); backdrop-filter: blur(8px); }
+.btn-ghost:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
 .hero-stats {
   display: grid; grid-template-columns: repeat(4,1fr);
-  gap: 1px; background: var(--sand);
-  border: 1px solid var(--sand); border-radius: 14px; overflow: hidden;
+  gap: 1px; background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; overflow: hidden;
+  animation: fadeDown 0.6s 0.5s ease both;
 }
-.stat { background: white; padding: 20px 12px; text-align: center; }
-.stat-n {
-  font-family: 'Fraunces', serif; font-size: 30px;
-  font-weight: 600; color: var(--gold); line-height: 1; margin-bottom: 4px;
-}
-.stat-l { font-size: 12px; color: var(--ink3); }
+.stat { background: rgba(255,255,255,0.06); backdrop-filter: blur(8px); padding: 20px 12px; text-align: center; transition: background 0.2s; }
+.stat:hover { background: rgba(255,255,255,0.12); }
+.stat-n { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 600; color: var(--em3); line-height: 1; margin-bottom: 4px; }
+.stat-l { font-size: 12px; color: rgba(255,255,255,0.55); }
+
+/* Hero card */
 .hero-card {
-  background: white; border: 1px solid var(--sand);
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.18);
   border-radius: 20px; padding: 28px;
-  box-shadow: 0 4px 32px rgba(28,24,20,0.07);
+  animation: fadeLeft 0.7s 0.3s ease both;
 }
 .hc-title {
-  font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600;
-  color: var(--ink); margin-bottom: 18px;
-  padding-bottom: 14px; border-bottom: 1px solid var(--sand);
+  font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600;
+  color: white; margin-bottom: 16px;
+  padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.12);
 }
-.cert-list { display: flex; flex-direction: column; gap: 10px; }
+.cert-list { display: flex; flex-direction: column; gap: 9px; }
 .cert-row {
-  display: flex; align-items: center; gap: 12px;
-  padding: 11px 13px; border-radius: 10px;
-  background: var(--cream); border: 1px solid var(--sand);
-  transition: all 0.2s;
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 12px; border-radius: 10px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  transition: all 0.25s; cursor: default;
 }
-.cert-row:hover { border-color: var(--gold-l); background: var(--gold-bg); }
+.cert-row:hover { background: rgba(22,212,160,0.1); border-color: rgba(22,212,160,0.3); transform: translateX(4px); }
 .cert-ico {
-  width: 34px; height: 34px; border-radius: 8px;
-  background: var(--gold-bg); border: 1px solid #e8c87a;
+  width: 32px; height: 32px; border-radius: 8px;
+  background: rgba(22,212,160,0.15); border: 1px solid rgba(22,212,160,0.25);
   display: flex; align-items: center; justify-content: center;
-  font-size: 15px; flex-shrink: 0;
+  font-size: 14px; flex-shrink: 0;
 }
-.cert-txt strong { display: block; font-size: 13px; font-weight: 500; color: var(--ink); }
-.cert-txt span { font-size: 12px; color: var(--ink3); }
-.hc-pills {
-  display: flex; flex-wrap: wrap; gap: 7px;
-  margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--sand);
-}
-.pill { background: var(--warm); border: 1px solid var(--sand); color: var(--ink2); font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 20px; }
+.cert-txt strong { display: block; font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.9); }
+.cert-txt span { font-size: 11px; color: rgba(255,255,255,0.45); }
+.hc-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+.pill { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.75); font-size: 12px; font-weight: 400; padding: 4px 12px; border-radius: 20px; }
 
-/* SECTIONS */
-.sec { padding: 88px 48px; max-width: 1200px; margin: 0 auto; }
-.bg-white { background: white; }
-.bg-warm { background: var(--warm); }
-.wrap-white { background: white; }
-.wrap-warm { background: var(--warm); }
-.divider { height: 1px; background: var(--sand); }
-.eyebrow { display: block; font-size: 12px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
-h2.sec-title {
-  font-family: 'Fraunces', serif;
-  font-size: clamp(30px, 3.5vw, 44px);
-  font-weight: 600; line-height: 1.15;
-  letter-spacing: -1px; color: var(--ink); margin-bottom: 12px;
-}
+/* ── SECTIONS ── */
+.sec { padding: 92px 52px; max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+.wrap-white { background: var(--white); }
+.wrap-bg { background: var(--bg); }
+.wrap-slate { background: var(--slate); }
+.divider { height: 1px; background: var(--border); }
+
+.eyebrow { display: block; font-size: 12px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--emerald); margin-bottom: 10px; }
+h2.sec-title { font-family: 'Fraunces', serif; font-size: clamp(28px, 3.5vw, 44px); font-weight: 600; line-height: 1.15; letter-spacing: -1px; color: var(--ink); margin-bottom: 12px; }
+h2.sec-title.light { color: white; }
 .sec-sub { font-size: 17px; color: var(--ink3); max-width: 540px; line-height: 1.7; margin-bottom: 48px; }
+.sec-sub.light { color: rgba(255,255,255,0.6); }
+.eyebrow.light { color: var(--em3); }
 
-/* ABOUT */
+/* ── FADE-UP ── */
+.fu { opacity: 0; transform: translateY(36px); transition: opacity 0.65s ease, transform 0.65s ease; }
+.fu.show { opacity: 1; transform: translateY(0); }
+.fu-d1 { transition-delay: 0.05s; }
+.fu-d2 { transition-delay: 0.12s; }
+.fu-d3 { transition-delay: 0.19s; }
+.fu-d4 { transition-delay: 0.26s; }
+.fu-d5 { transition-delay: 0.33s; }
+.fu-d6 { transition-delay: 0.40s; }
+
+/* ── TILT CARD ── */
+.tilt { transform-style: preserve-3d; transition: box-shadow 0.3s; will-change: transform; }
+
+/* ── ABOUT ── */
 .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; }
 .about-body { font-size: 17px; color: var(--ink2); line-height: 1.85; }
 .about-body p { margin-bottom: 16px; }
 .about-body strong { color: var(--ink); font-weight: 600; }
-.hl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 28px; }
+.hl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 28px; }
 .hl {
-  background: white; border: 1px solid var(--sand);
+  background: var(--white); border: 1px solid var(--border);
   border-radius: 14px; padding: 20px;
-  transition: all 0.2s;
+  transition: all 0.25s; cursor: default;
 }
-.hl:hover { border-color: var(--gold-l); transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
-.hl-n { font-family: 'Fraunces', serif; font-size: 34px; font-weight: 600; color: var(--gold); line-height: 1; }
+.hl:hover { border-color: var(--em-border); transform: translateY(-4px); box-shadow: 0 8px 24px var(--shadow); }
+.hl-n { font-family: 'Fraunces', serif; font-size: 34px; font-weight: 600; color: var(--emerald); line-height: 1; }
 .hl-l { font-size: 13px; color: var(--ink3); margin-top: 4px; }
 .info-rows { }
-.ir { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--sand); font-size: 16px; }
-.ik { width: 110px; flex-shrink: 0; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--stone); padding-top: 3px; }
+.ir { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); font-size: 16px; align-items: flex-start; }
+.ik { width: 110px; flex-shrink: 0; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #9ab0c4; padding-top: 3px; }
 .iv { color: var(--ink2); }
-.iv a { color: var(--gold); text-decoration: none; }
-.iv.avail { color: #2a7a4a; font-weight: 500; }
+.iv a { color: var(--emerald); text-decoration: none; }
+.iv.avail { color: var(--emerald); font-weight: 500; }
 .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
-.tag { background: var(--cream); border: 1px solid var(--sand); color: var(--ink2); font-size: 13px; padding: 5px 13px; border-radius: 20px; }
+.tag { background: var(--em-bg); border: 1px solid var(--em-border); color: var(--emerald); font-size: 13px; padding: 5px 13px; border-radius: 20px; font-weight: 500; }
 
-/* SERVICES */
+/* ── SERVICES ── */
 .svc-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
 .svc {
-  background: white; border: 1px solid var(--sand);
+  background: var(--white); border: 1px solid var(--border);
   border-radius: 16px; padding: 28px 24px;
-  transition: all 0.25s; position: relative; overflow: hidden;
+  transition: box-shadow 0.3s; position: relative; overflow: hidden;
+  cursor: default;
 }
-.svc::after {
-  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
-  height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-l));
-  transform: scaleX(0); transform-origin: left; transition: transform 0.3s;
+.svc::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 3px; background: linear-gradient(90deg, var(--emerald), var(--em3));
+  transform: scaleX(0); transform-origin: left; transition: transform 0.35s;
 }
-.svc:hover { transform: translateY(-4px); box-shadow: 0 10px 32px rgba(0,0,0,0.08); }
-.svc:hover::after { transform: scaleX(1); }
+.svc:hover::before { transform: scaleX(1); }
 .svc-ico { font-size: 30px; margin-bottom: 14px; }
 .svc-title { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
 .svc-desc { font-size: 15px; color: var(--ink3); line-height: 1.7; margin-bottom: 18px; }
 .svc-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.svc-tag { background: var(--cream); border: 1px solid var(--sand); color: var(--ink3); font-size: 12px; padding: 4px 10px; border-radius: 6px; }
+.svc-tag { background: var(--bg); border: 1px solid var(--border); color: var(--ink3); font-size: 12px; padding: 4px 10px; border-radius: 6px; }
 
-/* SKILLS */
+/* ── SKILLS ── */
 .skill-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
-.sg-lbl { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 24px; padding-bottom: 10px; border-bottom: 2px solid var(--gold-bg); }
+.sg-lbl { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--emerald); margin-bottom: 24px; padding-bottom: 10px; border-bottom: 2px solid var(--em-bg); }
 .sk { margin-bottom: 20px; }
 .sk-meta { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 15px; color: var(--ink2); }
-.sk-pct { font-weight: 600; color: var(--gold); font-size: 14px; }
-.sk-track { height: 6px; background: var(--sand); border-radius: 99px; overflow: hidden; }
-.sk-bar { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-l)); border-radius: 99px; width: 0; transition: width 1.4s cubic-bezier(0.4,0,0.2,1); }
+.sk-pct { font-weight: 600; color: var(--emerald); font-size: 14px; }
+.sk-track { height: 7px; background: var(--bg2); border-radius: 99px; overflow: hidden; }
+.sk-bar { height: 100%; background: linear-gradient(90deg, var(--emerald), var(--em3)); border-radius: 99px; width: 0; transition: width 1.4s cubic-bezier(0.4,0,0.2,1); }
 .mods-wrap { margin-top: 52px; }
-.mods-lbl { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 18px; }
+.mods-lbl { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--emerald); margin-bottom: 18px; }
 .mods { display: flex; flex-wrap: wrap; gap: 9px; }
-.mod { background: white; border: 1px solid var(--sand); color: var(--ink2); font-size: 14px; padding: 8px 16px; border-radius: 8px; transition: all 0.2s; cursor: default; }
-.mod:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-bg); }
+.mod { background: var(--white); border: 1px solid var(--border); color: var(--ink2); font-size: 14px; padding: 8px 16px; border-radius: 8px; transition: all 0.2s; cursor: default; }
+.mod:hover { border-color: var(--emerald); color: var(--emerald); background: var(--em-bg); transform: translateY(-2px); }
 
-/* EXPERIENCE */
+/* ── EXPERIENCE ── */
 .exp-layout { display: grid; grid-template-columns: 260px 1fr; gap: 0; }
 .exp-tabs { position: sticky; top: 88px; height: fit-content; display: flex; flex-direction: column; gap: 3px; }
 .etab {
   padding: 13px 16px; border-radius: 10px;
-  font-size: 14px; font-weight: 400; color: var(--ink3);
+  font-size: 14px; color: rgba(255,255,255,0.55);
   cursor: pointer; transition: all 0.2s; border: 1px solid transparent;
   background: transparent; text-align: left; font-family: 'Outfit', sans-serif;
 }
-.etab:hover { background: white; color: var(--ink); }
-.etab.on { background: white; color: var(--ink); font-weight: 600; border-color: var(--sand); box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+.etab:hover { background: rgba(255,255,255,0.06); color: white; }
+.etab.on { background: rgba(22,212,160,0.12); color: white; font-weight: 600; border-color: rgba(22,212,160,0.3); }
 .etab-role { font-size: 14px; }
-.etab-co { font-size: 12px; color: var(--gold); font-weight: 400; margin-top: 2px; }
-.exp-body { padding-left: 44px; border-left: 1px solid var(--sand); }
-.ep { display: none; }
+.etab-co { font-size: 12px; color: var(--em3); font-weight: 400; margin-top: 2px; }
+.exp-body { padding-left: 44px; border-left: 1px solid rgba(255,255,255,0.1); }
+.ep { display: none; animation: fadeIn 0.4s ease; }
 .ep.on { display: block; }
-.ep-role { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
-.ep-co { font-size: 16px; color: var(--gold); font-weight: 500; margin-bottom: 4px; }
-.ep-period { font-size: 14px; color: var(--ink3); margin-bottom: 28px; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.ep-role { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; color: white; margin-bottom: 6px; }
+.ep-co { font-size: 16px; color: var(--em3); font-weight: 500; margin-bottom: 4px; }
+.ep-period { font-size: 14px; color: rgba(255,255,255,0.45); margin-bottom: 28px; }
 .ep-pts { list-style: none; display: flex; flex-direction: column; gap: 11px; }
-.ep-pts li { display: flex; gap: 14px; font-size: 16px; color: var(--ink2); line-height: 1.7; }
-.ep-pts li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); margin-top: 10px; flex-shrink: 0; }
+.ep-pts li { display: flex; gap: 14px; font-size: 16px; color: rgba(255,255,255,0.72); line-height: 1.7; }
+.ep-pts li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--em3); margin-top: 10px; flex-shrink: 0; }
 
-/* PROJECTS */
+/* ── PROJECTS ── */
 .proj-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
 .proj {
-  background: white; border: 1px solid var(--sand);
+  background: var(--white); border: 1px solid var(--border);
   border-radius: 14px; padding: 22px;
-  transition: all 0.2s;
+  transition: box-shadow 0.3s; cursor: default;
 }
-.proj:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); border-color: var(--stone); }
-.proj-ind { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 7px; }
+.proj-ind { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--emerald); margin-bottom: 7px; }
 .proj-name { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: var(--ink); margin-bottom: 7px; line-height: 1.3; }
 .proj-desc { font-size: 14px; color: var(--ink3); line-height: 1.6; }
 
-/* CERTS */
+/* ── CERTS ── */
 .cert-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
 .crt {
-  background: white; border: 1px solid var(--sand);
+  background: var(--white); border: 1px solid var(--border);
   border-radius: 14px; padding: 22px;
   display: flex; gap: 14px; align-items: flex-start;
-  transition: all 0.2s;
+  transition: box-shadow 0.3s; cursor: default;
 }
-.crt:hover { border-color: var(--gold-l); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.07); }
-.crt-ico {
-  width: 42px; height: 42px; border-radius: 10px;
-  background: var(--gold-bg); border: 1px solid #e8c87a;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 19px; flex-shrink: 0;
-}
+.crt-ico { width: 42px; height: 42px; border-radius: 10px; background: var(--em-bg); border: 1px solid var(--em-border); display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
 .crt-name { font-size: 14px; font-weight: 500; color: var(--ink); margin-bottom: 4px; line-height: 1.4; }
-.crt-prov { font-size: 13px; color: var(--gold); font-weight: 500; }
+.crt-prov { font-size: 13px; color: var(--emerald); font-weight: 500; }
 .crt-date { font-size: 12px; color: var(--ink3); margin-top: 2px; }
 
-/* TESTIMONIALS */
+/* ── TESTIMONIALS ── */
 .testi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
-.testi {
-  background: white; border: 1px solid var(--sand);
-  border-radius: 16px; padding: 26px;
-  display: flex; flex-direction: column; gap: 18px;
-}
-.testi-stars { color: var(--gold); font-size: 15px; letter-spacing: 2px; }
+.testi { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 26px; display: flex; flex-direction: column; gap: 18px; transition: box-shadow 0.3s; cursor: default; }
+.testi-stars { color: var(--emerald); font-size: 15px; letter-spacing: 2px; }
 .testi-txt { font-size: 16px; color: var(--ink2); line-height: 1.75; font-style: italic; }
-.testi-auth { display: flex; align-items: center; gap: 12px; padding-top: 14px; border-top: 1px solid var(--sand); }
-.testi-av {
-  width: 40px; height: 40px; border-radius: 50%;
-  background: var(--gold-bg); border: 2px solid var(--gold-l);
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Fraunces', serif; font-size: 17px; color: var(--gold); font-weight: 600;
-}
+.testi-auth { display: flex; align-items: center; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border); }
+.testi-av { width: 40px; height: 40px; border-radius: 50%; background: var(--em-bg); border: 2px solid var(--em-border); display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-size: 17px; color: var(--emerald); font-weight: 600; }
 .testi-name { font-size: 15px; font-weight: 600; color: var(--ink); }
 .testi-role { font-size: 13px; color: var(--ink3); }
 
-/* CONTACT */
+/* ── CONTACT ── */
 .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; }
 .contact-desc { font-size: 17px; color: var(--ink2); line-height: 1.8; margin-bottom: 28px; }
 .c-links { display: flex; flex-direction: column; gap: 10px; }
-.cl {
-  display: flex; align-items: center; gap: 14px;
-  background: white; border: 1px solid var(--sand);
-  border-radius: 12px; padding: 14px 18px;
-  text-decoration: none; transition: all 0.2s;
-}
-.cl:hover { border-color: var(--gold); transform: translateX(4px); }
-.cl-ico {
-  width: 38px; height: 38px; border-radius: 9px;
-  background: var(--gold-bg); border: 1px solid #e8c87a;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 17px; flex-shrink: 0;
-}
-.cl-lbl { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--stone); }
+.cl { display: flex; align-items: center; gap: 14px; background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; text-decoration: none; transition: all 0.2s; }
+.cl:hover { border-color: var(--emerald); transform: translateX(5px); box-shadow: 0 4px 16px var(--shadow); }
+.cl-ico { width: 38px; height: 38px; border-radius: 9px; background: var(--em-bg); border: 1px solid var(--em-border); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+.cl-lbl { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #9ab0c4; }
 .cl-val { font-size: 15px; color: var(--ink); font-weight: 500; margin-top: 1px; }
-.cf { background: white; border: 1px solid var(--sand); border-radius: 18px; padding: 32px; }
+.cf { background: var(--white); border: 1px solid var(--border); border-radius: 18px; padding: 32px; }
 .cf-title { font-family: 'Fraunces', serif; font-size: 21px; font-weight: 600; color: var(--ink); margin-bottom: 22px; }
 .f2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .fg { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
 .fg label { font-size: 13px; font-weight: 600; color: var(--ink2); }
-.fg input, .fg textarea {
-  background: var(--cream); border: 1.5px solid var(--sand);
-  color: var(--ink); padding: 12px 15px; border-radius: 10px;
-  font-size: 15px; font-family: 'Outfit', sans-serif;
-  outline: none; transition: border-color 0.2s; width: 100%;
-}
-.fg input:focus, .fg textarea:focus { border-color: var(--gold); background: white; }
+.fg input, .fg textarea { background: var(--bg); border: 1.5px solid var(--border); color: var(--ink); padding: 12px 15px; border-radius: 10px; font-size: 15px; font-family: 'Outfit', sans-serif; outline: none; transition: border-color 0.2s; width: 100%; }
+.fg input:focus, .fg textarea:focus { border-color: var(--emerald); background: white; }
 .fg textarea { resize: vertical; min-height: 108px; }
-.fg input::placeholder, .fg textarea::placeholder { color: var(--stone); }
+.fg input::placeholder, .fg textarea::placeholder { color: #b0c4d4; }
 
-/* ANIMATIONS */
-.fade-up {
-  opacity: 0;
-  transform: translateY(32px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
-}
-.fade-up.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-.fade-up:nth-child(2) { transition-delay: 0.1s; }
-.fade-up:nth-child(3) { transition-delay: 0.2s; }
-.fade-up:nth-child(4) { transition-delay: 0.3s; }
-.fade-up:nth-child(5) { transition-delay: 0.4s; }
-.fade-up:nth-child(6) { transition-delay: 0.5s; }
-
-.hero-typed {
-  font-size: 22px; font-weight: 500;
-  color: var(--gold); margin-bottom: 20px;
-  min-height: 34px;
-  font-family: 'Outfit', sans-serif;
-}
-.cursor {
-  display: inline-block;
-  color: var(--gold);
-  animation: blink-cursor 0.8s infinite;
-  font-weight: 300;
-}
-@keyframes blink-cursor { 0%,100%{opacity:1} 50%{opacity:0} }
-
-/* Hero entrance animations */
-.hero-badge { animation: fadeDown 0.6s ease both; }
-h1.hero-name { animation: fadeDown 0.6s 0.1s ease both; }
-.hero-typed { animation: fadeDown 0.6s 0.2s ease both; }
-.hero-sub { animation: fadeDown 0.6s 0.3s ease both; }
-.hero-btns { animation: fadeDown 0.6s 0.4s ease both; }
-.hero-stats { animation: fadeDown 0.6s 0.5s ease both; }
-.hero-card { animation: fadeLeft 0.7s 0.3s ease both; }
-
-@keyframes fadeDown {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeLeft {
-  from { opacity: 0; transform: translateX(30px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-footer {
-  background: var(--ink); color: #8a827a;
-  padding: 36px 48px;
-  display: flex; align-items: center; justify-content: space-between;
-}
+/* ── FOOTER ── */
+footer { background: var(--slate); color: rgba(255,255,255,0.4); padding: 36px 52px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
 .fb { font-family: 'Fraunces', serif; font-size: 19px; color: white; }
-.fb span { color: var(--gold-l); }
+.fb span { color: var(--em3); }
 .ft { font-size: 14px; }
 .fl { display: flex; gap: 22px; }
-.fl a { font-size: 13px; color: #8a827a; text-decoration: none; transition: color 0.2s; }
-.fl a:hover { color: var(--gold-l); }
+.fl a { font-size: 13px; color: rgba(255,255,255,0.4); text-decoration: none; transition: color 0.2s; }
+.fl a:hover { color: var(--em3); }
+
+/* ── KEYFRAMES ── */
+@keyframes fadeDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeLeft { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
+
+/* ── SECTION TRANSITION LINE ── */
+.sec-transition {
+  height: 4px;
+  background: linear-gradient(90deg, transparent, var(--emerald), var(--em3), transparent);
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+.sec-transition.show { opacity: 1; }
 </style>
 </head>
 <body>
 
+<!-- PARTICLES -->
+<canvas id="particles"></canvas>
+
 <!-- NAV -->
-<nav>
+<nav id="navbar">
   <a class="nav-brand" href="#home">Arshad <span>H.</span></a>
   <ul class="nav-links">
     <li><a href="#about">About</a></li>
@@ -401,62 +388,62 @@ footer {
 </nav>
 
 <!-- HERO -->
-<section id="home" style="background:var(--cream);">
-<div class="hero-wrap">
-  <div>
-    <div class="hero-badge">Available for New Projects</div>
-    <h1 class="hero-name">Arshad <em>Hanif</em></h1>
-    <div class="hero-typed"><span id="typed"></span><span class="cursor">|</span></div>
-    <p class="hero-sub">ACCA Member with 7+ years delivering end-to-end ERP implementations and finance transformation across UAE, USA, Saudi Arabia, Canada, and Australia.</p>
-    <div class="hero-btns">
-      <a href="#contact" class="btn btn-dark">Start a Project →</a>
-      <a href="#experience" class="btn btn-outline">View Experience</a>
+<section id="home">
+  <div class="hero-glow glow1"></div>
+  <div class="hero-glow glow2"></div>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-badge">Available for New Projects</div>
+      <h1 class="hero-name">Arshad <em>Hanif</em></h1>
+      <div class="hero-typed"><span id="typed"></span><span class="cursor">|</span></div>
+      <p class="hero-sub">ACCA Member with 7+ years delivering end-to-end ERP implementations and finance transformation across UAE, USA, Saudi Arabia, Canada, and Australia.</p>
+      <div class="hero-btns">
+        <a href="#contact" class="btn btn-em">Start a Project →</a>
+        <a href="#experience" class="btn btn-ghost">View Experience</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><div class="stat-n" data-count="7" data-suffix="+">0</div><div class="stat-l">Years Exp.</div></div>
+        <div class="stat"><div class="stat-n" data-count="13" data-suffix="+">0</div><div class="stat-l">Clients</div></div>
+        <div class="stat"><div class="stat-n" data-count="5" data-suffix="">0</div><div class="stat-l">Oracle Certs</div></div>
+        <div class="stat"><div class="stat-n" data-count="4" data-suffix="">0</div><div class="stat-l">Full Impls</div></div>
+      </div>
     </div>
-    <div class="hero-stats">
-      <div class="stat"><div class="stat-n" data-count="7" data-suffix="+">7+</div><div class="stat-l">Years Exp.</div></div>
-      <div class="stat"><div class="stat-n" data-count="13" data-suffix="+">13+</div><div class="stat-l">Clients</div></div>
-      <div class="stat"><div class="stat-n" data-count="5" data-suffix="">5</div><div class="stat-l">Oracle Certs</div></div>
-      <div class="stat"><div class="stat-n" data-count="4" data-suffix="">4</div><div class="stat-l">Full Impls</div></div>
+    <div class="hero-card tilt">
+      <div class="hc-title">🏅 Oracle Certifications</div>
+      <div class="cert-list">
+        <div class="cert-row"><div class="cert-ico">💰</div><div class="cert-txt"><strong>Financials Foundations Associate</strong><span>Oracle University · Sep 2023</span></div></div>
+        <div class="cert-row"><div class="cert-ico">🛒</div><div class="cert-txt"><strong>Procurement Foundations Associate</strong><span>Oracle University · Sep 2023</span></div></div>
+        <div class="cert-row"><div class="cert-ico">👥</div><div class="cert-txt"><strong>HCM Foundations Associate</strong><span>Oracle University · Oct 2023</span></div></div>
+        <div class="cert-row"><div class="cert-ico">📦</div><div class="cert-txt"><strong>SCM Foundations Associate</strong><span>Oracle University · Oct 2023</span></div></div>
+        <div class="cert-row"><div class="cert-ico">📊</div><div class="cert-txt"><strong>FAW Implementation Professional</strong><span>Oracle University · Sep 2023</span></div></div>
+      </div>
+      <div class="hc-pills">
+        <span class="pill">ACCA Member</span><span class="pill">PwC Alumni</span>
+        <span class="pill">Riyadh, KSA</span><span class="pill">Available Globally</span>
+      </div>
     </div>
   </div>
-  <div class="hero-card">
-    <div class="hc-title">🏅 Oracle Certifications</div>
-    <div class="cert-list">
-      <div class="cert-row"><div class="cert-ico">💰</div><div class="cert-txt"><strong>Financials Foundations Associate</strong><span>Oracle University · Sep 2023</span></div></div>
-      <div class="cert-row"><div class="cert-ico">🛒</div><div class="cert-txt"><strong>Procurement Foundations Associate</strong><span>Oracle University · Sep 2023</span></div></div>
-      <div class="cert-row"><div class="cert-ico">👥</div><div class="cert-txt"><strong>HCM Foundations Associate</strong><span>Oracle University · Oct 2023</span></div></div>
-      <div class="cert-row"><div class="cert-ico">📦</div><div class="cert-txt"><strong>SCM Foundations Associate</strong><span>Oracle University · Oct 2023</span></div></div>
-      <div class="cert-row"><div class="cert-ico">📊</div><div class="cert-txt"><strong>FAW Implementation Professional</strong><span>Oracle University · Sep 2023</span></div></div>
-    </div>
-    <div class="hc-pills">
-      <span class="pill">ACCA Member</span>
-      <span class="pill">PwC Alumni</span>
-      <span class="pill">Riyadh, KSA</span>
-      <span class="pill">Available Globally</span>
-    </div>
-  </div>
-</div>
 </section>
 
-<div class="divider"></div>
+<div class="sec-transition" id="t1"></div>
 
 <!-- ABOUT -->
 <section id="about" class="wrap-white">
 <div class="sec">
-  <span class="eyebrow">Who I Am</span>
-  <h2 class="sec-title">About Me</h2>
-  <div class="about-grid fade-up">
+  <span class="eyebrow fu">Who I Am</span>
+  <h2 class="sec-title fu fu-d1">About Me</h2>
+  <div class="about-grid fu fu-d2">
     <div>
       <div class="about-body">
         <p>I am an <strong>ACCA Member</strong> and Oracle Fusion Cloud Consultant with over 7 years of experience in ERP implementation, finance transformation, and accounting solutions. My career began at <strong>Capital Accounting & Business Consulting Services</strong> and was shaped at <strong>A.F. Ferguson & Co. (PwC Pakistan)</strong>, where I delivered four complete end-to-end Oracle Fusion implementations.</p>
         <p>I have since led Oracle ERP engagements at <strong>TATA Pakistan</strong> and <strong>Gerry's Group</strong>, managing teams of up to 8 consultants. Today I work as an independent consultant serving clients in the UAE, USA, Saudi Arabia, Canada, and Australia.</p>
-        <p>Beyond enterprise ERP, I bring hands-on expertise in <strong>Microsoft Excel</strong>, <strong>Xero</strong>, <strong>QuickBooks</strong>, financial modelling, and bookkeeping — effective for both SMEs and large enterprises.</p>
+        <p>Beyond enterprise ERP, I bring hands-on expertise in <strong>Microsoft Excel</strong>, <strong>Xero</strong>, <strong>QuickBooks</strong>, financial modelling, and bookkeeping.</p>
       </div>
       <div class="hl-grid">
-        <div class="hl"><div class="hl-n">7+</div><div class="hl-l">Years Experience</div></div>
-        <div class="hl"><div class="hl-n">13+</div><div class="hl-l">Clients Served</div></div>
-        <div class="hl"><div class="hl-n">5</div><div class="hl-l">Oracle Certifications</div></div>
-        <div class="hl"><div class="hl-n">Big 4</div><div class="hl-l">PwC Background</div></div>
+        <div class="hl tilt"><div class="hl-n">7+</div><div class="hl-l">Years Experience</div></div>
+        <div class="hl tilt"><div class="hl-n">13+</div><div class="hl-l">Clients Served</div></div>
+        <div class="hl tilt"><div class="hl-n">5</div><div class="hl-l">Oracle Certifications</div></div>
+        <div class="hl tilt"><div class="hl-n">Big 4</div><div class="hl-l">PwC Background</div></div>
       </div>
     </div>
     <div class="info-rows">
@@ -477,34 +464,34 @@ footer {
 </div>
 </section>
 
-<div class="divider"></div>
+<div class="sec-transition" id="t2"></div>
 
 <!-- SERVICES -->
-<section id="services" class="wrap-warm">
+<section id="services" class="wrap-bg">
 <div class="sec">
-  <span class="eyebrow">What I Do</span>
-  <h2 class="sec-title">Services</h2>
-  <p class="sec-sub">From enterprise Oracle ERP to SME accounting — I cover the full spectrum of finance and ERP consulting.</p>
-  <div class="svc-grid fade-up">
-    <div class="svc"><div class="svc-ico">⚙️</div><div class="svc-title">ERP Implementation</div><p class="svc-desc">End-to-end Oracle Fusion Cloud implementations covering As-Is mapping, Fit-Gap analysis, configuration, Go-Live, and post-implementation support.</p><div class="svc-tags"><span class="svc-tag">Oracle Fusion</span><span class="svc-tag">Financials</span><span class="svc-tag">Procurement</span><span class="svc-tag">SCM</span></div></div>
-    <div class="svc"><div class="svc-ico">📊</div><div class="svc-title">BI & Reporting</div><p class="svc-desc">Custom dashboards and financial reports using OTBI, BI Publisher, and Financial Reporting Web Studio — from KPIs to consolidated statements.</p><div class="svc-tags"><span class="svc-tag">OTBI</span><span class="svc-tag">BI Publisher</span><span class="svc-tag">FRWS</span><span class="svc-tag">Dashboards</span></div></div>
-    <div class="svc"><div class="svc-ico">🔧</div><div class="svc-title">ERP Support & Optimization</div><p class="svc-desc">Functional support, troubleshooting and optimization for live Oracle Fusion environments — issue diagnosis, improvements and user training.</p><div class="svc-tags"><span class="svc-tag">Support</span><span class="svc-tag">Configuration</span><span class="svc-tag">Training</span></div></div>
-    <div class="svc"><div class="svc-ico">💹</div><div class="svc-title">Financial Modelling</div><p class="svc-desc">Automated multi-sheet budget templates, forecasting models, and scenario analysis in Excel. Designed to reduce manual errors and minimize inputs.</p><div class="svc-tags"><span class="svc-tag">Excel</span><span class="svc-tag">Budgeting</span><span class="svc-tag">Forecasting</span></div></div>
-    <div class="svc"><div class="svc-ico">🗂️</div><div class="svc-title">Excel & Data Solutions</div><p class="svc-desc">Advanced Excel: data manipulation, cleansing, transformation, pivot tables, dynamic dashboards and visualization for management reporting.</p><div class="svc-tags"><span class="svc-tag">Data Cleansing</span><span class="svc-tag">Pivot Tables</span><span class="svc-tag">Visualization</span></div></div>
-    <div class="svc"><div class="svc-ico">📒</div><div class="svc-title">SME Accounting</div><p class="svc-desc">Xero and QuickBooks setup, configuration and support. Bookkeeping, accounts reconciliation, period-end closing and financial statement preparation.</p><div class="svc-tags"><span class="svc-tag">Xero</span><span class="svc-tag">QuickBooks</span><span class="svc-tag">Bookkeeping</span></div></div>
+  <span class="eyebrow fu">What I Do</span>
+  <h2 class="sec-title fu fu-d1">Services</h2>
+  <p class="sec-sub fu fu-d2">From enterprise Oracle ERP to SME accounting — the full spectrum of finance and ERP consulting.</p>
+  <div class="svc-grid">
+    <div class="svc tilt fu fu-d1"><div class="svc-ico">⚙️</div><div class="svc-title">ERP Implementation</div><p class="svc-desc">End-to-end Oracle Fusion Cloud implementations covering As-Is mapping, Fit-Gap analysis, configuration, Go-Live, and post-implementation support.</p><div class="svc-tags"><span class="svc-tag">Oracle Fusion</span><span class="svc-tag">Financials</span><span class="svc-tag">Procurement</span><span class="svc-tag">SCM</span></div></div>
+    <div class="svc tilt fu fu-d2"><div class="svc-ico">📊</div><div class="svc-title">BI & Reporting</div><p class="svc-desc">Custom dashboards and financial reports using OTBI, BI Publisher, and Financial Reporting Web Studio — from KPIs to consolidated statements.</p><div class="svc-tags"><span class="svc-tag">OTBI</span><span class="svc-tag">BI Publisher</span><span class="svc-tag">FRWS</span><span class="svc-tag">Dashboards</span></div></div>
+    <div class="svc tilt fu fu-d3"><div class="svc-ico">🔧</div><div class="svc-title">ERP Support & Optimization</div><p class="svc-desc">Functional support, troubleshooting and optimization for live Oracle Fusion environments — issue diagnosis, improvements and user training.</p><div class="svc-tags"><span class="svc-tag">Support</span><span class="svc-tag">Configuration</span><span class="svc-tag">Training</span></div></div>
+    <div class="svc tilt fu fu-d4"><div class="svc-ico">💹</div><div class="svc-title">Financial Modelling</div><p class="svc-desc">Automated multi-sheet budget templates, forecasting models, and scenario analysis in Excel. Designed to reduce manual errors and minimize inputs.</p><div class="svc-tags"><span class="svc-tag">Excel</span><span class="svc-tag">Budgeting</span><span class="svc-tag">Forecasting</span></div></div>
+    <div class="svc tilt fu fu-d5"><div class="svc-ico">🗂️</div><div class="svc-title">Excel & Data Solutions</div><p class="svc-desc">Advanced Excel: data manipulation, cleansing, transformation, pivot tables, dynamic dashboards and visualization for management reporting.</p><div class="svc-tags"><span class="svc-tag">Data Cleansing</span><span class="svc-tag">Pivot Tables</span><span class="svc-tag">Visualization</span></div></div>
+    <div class="svc tilt fu fu-d6"><div class="svc-ico">📒</div><div class="svc-title">SME Accounting</div><p class="svc-desc">Xero and QuickBooks setup, configuration and support. Bookkeeping, accounts reconciliation, period-end closing and financial statement preparation.</p><div class="svc-tags"><span class="svc-tag">Xero</span><span class="svc-tag">QuickBooks</span><span class="svc-tag">Bookkeeping</span></div></div>
   </div>
 </div>
 </section>
 
-<div class="divider"></div>
+<div class="sec-transition" id="t3"></div>
 
 <!-- SKILLS -->
 <section id="skills" class="wrap-white">
 <div class="sec">
-  <span class="eyebrow">Expertise</span>
-  <h2 class="sec-title">Skills</h2>
-  <p class="sec-sub">Core technical and functional skills built over 7+ years of hands-on consulting.</p>
-  <div class="skill-cols fade-up">
+  <span class="eyebrow fu">Expertise</span>
+  <h2 class="sec-title fu fu-d1">Skills</h2>
+  <p class="sec-sub fu fu-d2">Core technical and functional skills built over 7+ years.</p>
+  <div class="skill-cols fu fu-d3">
     <div>
       <div class="sg-lbl">Oracle & ERP</div>
       <div class="sk"><div class="sk-meta"><span>Oracle Fusion Cloud</span><span class="sk-pct">98%</span></div><div class="sk-track"><div class="sk-bar" data-w="98"></div></div></div>
@@ -522,7 +509,7 @@ footer {
       <div class="sk"><div class="sk-meta"><span>Xero & QuickBooks</span><span class="sk-pct">85%</span></div><div class="sk-track"><div class="sk-bar" data-w="85"></div></div></div>
     </div>
   </div>
-  <div class="mods-wrap">
+  <div class="mods-wrap fu fu-d4">
     <div class="mods-lbl">Oracle Fusion Modules</div>
     <div class="mods">
       <span class="mod">General Ledger</span><span class="mod">Fixed Assets</span><span class="mod">Payables</span><span class="mod">Receivables</span><span class="mod">Cash Management</span><span class="mod">Intercompany</span><span class="mod">Budgetary Control</span><span class="mod">Procurement</span><span class="mod">Sourcing</span><span class="mod">Inventory</span><span class="mod">Costing</span><span class="mod">Order Management</span><span class="mod">Expenses</span><span class="mod">Lease Accounting</span><span class="mod">Revenue Management</span><span class="mod">Subscription Mgmt</span><span class="mod">Risk Management</span>
@@ -531,15 +518,15 @@ footer {
 </div>
 </section>
 
-<div class="divider"></div>
+<div class="sec-transition" id="t4"></div>
 
 <!-- EXPERIENCE -->
-<section id="experience" class="wrap-warm">
+<section id="experience" class="wrap-slate">
 <div class="sec">
-  <span class="eyebrow">Career</span>
-  <h2 class="sec-title">Work Experience</h2>
-  <p class="sec-sub">7+ years across consulting firms, enterprise clients, and independent practice.</p>
-  <div class="exp-layout fade-up">
+  <span class="eyebrow light fu">Career</span>
+  <h2 class="sec-title light fu fu-d1">Work Experience</h2>
+  <p class="sec-sub light fu fu-d2">7+ years across consulting firms, enterprise clients, and independent practice.</p>
+  <div class="exp-layout fu fu-d3">
     <div class="exp-tabs">
       <button class="etab on" onclick="showE('e1',this)"><div class="etab-role">Freelance Consultant</div><div class="etab-co">Independent · 2024–Now</div></button>
       <button class="etab" onclick="showE('e2',this)"><div class="etab-role">Oracle Consultant</div><div class="etab-co">Dubai Holdings · 2024</div></button>
@@ -625,71 +612,71 @@ footer {
 </div>
 </section>
 
-<div class="divider"></div>
+<div class="sec-transition" id="t5"></div>
 
 <!-- PROJECTS -->
-<section id="projects" class="wrap-white">
+<section id="projects" class="wrap-bg">
 <div class="sec">
-  <span class="eyebrow">Client Work</span>
-  <h2 class="sec-title">Projects</h2>
-  <p class="sec-sub">Oracle Fusion ERP implementations across 13+ organizations globally.</p>
-  <div class="proj-grid fade-up">
-    <div class="proj"><div class="proj-ind">Public Education</div><div class="proj-name">Charlotte-Mecklenburg Schools</div><div class="proj-desc">Oracle Fusion ERP for one of the largest public school districts in the United States.</div></div>
-    <div class="proj"><div class="proj-ind">Public Transit</div><div class="proj-name">Central Florida Regional Transportation Authority (LYNX)</div><div class="proj-desc">ERP and financial process transformation for a major regional transit authority in Florida, USA.</div></div>
-    <div class="proj"><div class="proj-ind">Energy & Sustainability</div><div class="proj-name">National Energy Services Co. (Tarshid)</div><div class="proj-desc">Oracle Fusion supporting Saudi Arabia's national energy efficiency programs.</div></div>
-    <div class="proj"><div class="proj-ind">Media & Broadcasting</div><div class="proj-name">Hum Network Limited</div><div class="proj-desc">ERP and financial systems for one of Pakistan's leading media networks.</div></div>
-    <div class="proj"><div class="proj-ind">Urban Real Estate</div><div class="proj-name">Saudi Downtown Company</div><div class="proj-desc">Oracle Fusion Cloud for urban real estate development operations in Saudi Arabia.</div></div>
-    <div class="proj"><div class="proj-ind">Logistics & Courier</div><div class="proj-name">Gerry's International (FedEx Express)</div><div class="proj-desc">Multi-entity Oracle Fusion for Pakistan's largest FedEx Express franchise.</div></div>
-    <div class="proj"><div class="proj-ind">Healthcare</div><div class="proj-name">Indus Hospital & Health Network</div><div class="proj-desc">Oracle ERP and financial reporting for a leading non-profit healthcare system.</div></div>
-    <div class="proj"><div class="proj-ind">Hospitality</div><div class="proj-name">Golf Saudi (Restructuring)</div><div class="proj-desc">Finance transformation and ERP restructuring for a Saudi hospitality group.</div></div>
-    <div class="proj"><div class="proj-ind">Aviation</div><div class="proj-name">Gerry's Dnata Pvt. Ltd.</div><div class="proj-desc">Oracle Fusion for airline ground handling services across multiple airports.</div></div>
+  <span class="eyebrow fu">Client Work</span>
+  <h2 class="sec-title fu fu-d1">Projects</h2>
+  <p class="sec-sub fu fu-d2">Oracle Fusion ERP implementations across 13+ organizations globally.</p>
+  <div class="proj-grid">
+    <div class="proj tilt fu fu-d1"><div class="proj-ind">Public Education</div><div class="proj-name">Charlotte-Mecklenburg Schools</div><div class="proj-desc">Oracle Fusion ERP for one of the largest public school districts in the United States.</div></div>
+    <div class="proj tilt fu fu-d2"><div class="proj-ind">Public Transit</div><div class="proj-name">Central Florida Regional Transportation Authority (LYNX)</div><div class="proj-desc">ERP and financial process transformation for a major regional transit authority in Florida, USA.</div></div>
+    <div class="proj tilt fu fu-d3"><div class="proj-ind">Energy & Sustainability</div><div class="proj-name">National Energy Services Co. (Tarshid)</div><div class="proj-desc">Oracle Fusion supporting Saudi Arabia's national energy efficiency programs.</div></div>
+    <div class="proj tilt fu fu-d4"><div class="proj-ind">Media & Broadcasting</div><div class="proj-name">Hum Network Limited</div><div class="proj-desc">ERP and financial systems for one of Pakistan's leading media networks.</div></div>
+    <div class="proj tilt fu fu-d5"><div class="proj-ind">Urban Real Estate</div><div class="proj-name">Saudi Downtown Company</div><div class="proj-desc">Oracle Fusion Cloud for urban real estate development in Saudi Arabia.</div></div>
+    <div class="proj tilt fu fu-d6"><div class="proj-ind">Logistics & Courier</div><div class="proj-name">Gerry's International (FedEx Express)</div><div class="proj-desc">Multi-entity Oracle Fusion for Pakistan's largest FedEx Express franchise.</div></div>
+    <div class="proj tilt fu fu-d1"><div class="proj-ind">Healthcare</div><div class="proj-name">Indus Hospital & Health Network</div><div class="proj-desc">Oracle ERP and financial reporting for a leading non-profit healthcare system.</div></div>
+    <div class="proj tilt fu fu-d2"><div class="proj-ind">Hospitality</div><div class="proj-name">Golf Saudi (Restructuring)</div><div class="proj-desc">Finance transformation and ERP restructuring for a Saudi hospitality group.</div></div>
+    <div class="proj tilt fu fu-d3"><div class="proj-ind">Aviation</div><div class="proj-name">Gerry's Dnata Pvt. Ltd.</div><div class="proj-desc">Oracle Fusion for airline ground handling services across multiple airports.</div></div>
   </div>
 </div>
 </section>
 
-<div class="divider"></div>
+<div class="sec-transition" id="t6"></div>
 
 <!-- CERTIFICATIONS -->
-<section id="certifications" class="wrap-warm">
+<section id="certifications" class="wrap-white">
 <div class="sec">
-  <span class="eyebrow">Credentials</span>
-  <h2 class="sec-title">Certifications</h2>
-  <p class="sec-sub">5 Oracle Cloud certifications plus ACCA membership.</p>
-  <div class="cert-grid fade-up">
-    <div class="crt"><div class="crt-ico">💰</div><div><div class="crt-name">Oracle Financials Business Process Certified Foundations Associate</div><div class="crt-prov">Oracle University</div><div class="crt-date">September 2023</div></div></div>
-    <div class="crt"><div class="crt-ico">🛒</div><div><div class="crt-name">Oracle Procurement Business Process Certified Foundations Associate</div><div class="crt-prov">Oracle University</div><div class="crt-date">September 2023</div></div></div>
-    <div class="crt"><div class="crt-ico">👥</div><div><div class="crt-name">Oracle HCM Business Process Foundations Associate</div><div class="crt-prov">Oracle University</div><div class="crt-date">October 2023</div></div></div>
-    <div class="crt"><div class="crt-ico">📦</div><div><div class="crt-name">Oracle SCM Business Process Foundations Associate</div><div class="crt-prov">Oracle University</div><div class="crt-date">October 2023</div></div></div>
-    <div class="crt"><div class="crt-ico">📊</div><div><div class="crt-name">Oracle Cloud Fusion Analytics Warehouse 2023 Certified Implementation Professional</div><div class="crt-prov">Oracle University</div><div class="crt-date">September 2023</div></div></div>
-    <div class="crt"><div class="crt-ico">📜</div><div><div class="crt-name">ACCA Member — Association of Chartered Certified Accountants</div><div class="crt-prov">ACCA Global</div><div class="crt-date">August 2023</div></div></div>
+  <span class="eyebrow fu">Credentials</span>
+  <h2 class="sec-title fu fu-d1">Certifications</h2>
+  <p class="sec-sub fu fu-d2">5 Oracle Cloud certifications plus ACCA membership.</p>
+  <div class="cert-grid">
+    <div class="crt tilt fu fu-d1"><div class="crt-ico">💰</div><div><div class="crt-name">Oracle Financials Business Process Certified Foundations Associate</div><div class="crt-prov">Oracle University</div><div class="crt-date">September 2023</div></div></div>
+    <div class="crt tilt fu fu-d2"><div class="crt-ico">🛒</div><div><div class="crt-name">Oracle Procurement Business Process Certified Foundations Associate</div><div class="crt-prov">Oracle University</div><div class="crt-date">September 2023</div></div></div>
+    <div class="crt tilt fu fu-d3"><div class="crt-ico">👥</div><div><div class="crt-name">Oracle HCM Business Process Foundations Associate</div><div class="crt-prov">Oracle University</div><div class="crt-date">October 2023</div></div></div>
+    <div class="crt tilt fu fu-d4"><div class="crt-ico">📦</div><div><div class="crt-name">Oracle SCM Business Process Foundations Associate</div><div class="crt-prov">Oracle University</div><div class="crt-date">October 2023</div></div></div>
+    <div class="crt tilt fu fu-d5"><div class="crt-ico">📊</div><div><div class="crt-name">Oracle Cloud Fusion Analytics Warehouse 2023 Certified Implementation Professional</div><div class="crt-prov">Oracle University</div><div class="crt-date">September 2023</div></div></div>
+    <div class="crt tilt fu fu-d6"><div class="crt-ico">📜</div><div><div class="crt-name">ACCA Member — Association of Chartered Certified Accountants</div><div class="crt-prov">ACCA Global</div><div class="crt-date">August 2023</div></div></div>
   </div>
 </div>
 </section>
 
-<div class="divider"></div>
+<div class="sec-transition" id="t7"></div>
 
 <!-- TESTIMONIALS -->
-<section id="testimonials" class="wrap-white">
+<section id="testimonials" class="wrap-bg">
 <div class="sec">
-  <span class="eyebrow">Client Feedback</span>
-  <h2 class="sec-title">Testimonials</h2>
-  <p class="sec-sub">What clients say after working with me.</p>
-  <div class="testi-grid fade-up">
-    <div class="testi"><div class="testi-stars">★★★★★</div><p class="testi-txt">"Arshad supported me with the creation of various training materials for Oracle Fusion ERP. The collaboration was a great experience in every way. Arshad understands how to communicate effectively and delivers with exceptional quality."</p><div class="testi-auth"><div class="testi-av">O</div><div><div class="testi-name">Oracle ERP Coaching Client</div><div class="testi-role">Verified Upwork · 5.0</div></div></div></div>
-    <div class="testi"><div class="testi-stars">★★★★★</div><p class="testi-txt">"Hired as a senior Oracle Financials engineer for a lesson — Arshad demonstrated deep expertise and explained complex concepts with remarkable clarity. Highly professional and knowledgeable."</p><div class="testi-auth"><div class="testi-av">E</div><div><div class="testi-name">ERP Consulting Client</div><div class="testi-role">Verified Upwork · 5.0</div></div></div></div>
-    <div class="testi"><div class="testi-stars">★★★★★</div><p class="testi-txt">"Thanks for helping me out, was a massive help! Fast, accurate, and incredibly efficient. Arshad resolved our issue quickly and was a pleasure to work with throughout the engagement."</p><div class="testi-auth"><div class="testi-av">G</div><div><div class="testi-name">Google Sheets Client</div><div class="testi-role">Verified Upwork · 5.0</div></div></div></div>
+  <span class="eyebrow fu">Client Feedback</span>
+  <h2 class="sec-title fu fu-d1">Testimonials</h2>
+  <p class="sec-sub fu fu-d2">What clients say after working with me.</p>
+  <div class="testi-grid">
+    <div class="testi tilt fu fu-d1"><div class="testi-stars">★★★★★</div><p class="testi-txt">"Arshad supported me with the creation of various training materials for Oracle Fusion ERP. The collaboration was a great experience in every way. Arshad understands how to communicate effectively and delivers with exceptional quality."</p><div class="testi-auth"><div class="testi-av">O</div><div><div class="testi-name">Oracle ERP Coaching Client</div><div class="testi-role">Verified Upwork · 5.0</div></div></div></div>
+    <div class="testi tilt fu fu-d2"><div class="testi-stars">★★★★★</div><p class="testi-txt">"Hired as a senior Oracle Financials engineer for a lesson — Arshad demonstrated deep expertise and explained complex concepts with remarkable clarity. Highly professional and knowledgeable."</p><div class="testi-auth"><div class="testi-av">E</div><div><div class="testi-name">ERP Consulting Client</div><div class="testi-role">Verified Upwork · 5.0</div></div></div></div>
+    <div class="testi tilt fu fu-d3"><div class="testi-stars">★★★★★</div><p class="testi-txt">"Thanks for helping me out, was a massive help! Fast, accurate, and incredibly efficient. Arshad resolved our issue quickly and was a pleasure to work with throughout the engagement."</p><div class="testi-auth"><div class="testi-av">G</div><div><div class="testi-name">Google Sheets Client</div><div class="testi-role">Verified Upwork · 5.0</div></div></div></div>
   </div>
 </div>
 </section>
 
-<div class="divider"></div>
+<div class="sec-transition" id="t8"></div>
 
 <!-- CONTACT -->
-<section id="contact" class="wrap-warm">
+<section id="contact" class="wrap-white">
 <div class="sec">
-  <span class="eyebrow">Get In Touch</span>
-  <h2 class="sec-title">Hire Me</h2>
-  <div class="contact-grid fade-up">
+  <span class="eyebrow fu">Get In Touch</span>
+  <h2 class="sec-title fu fu-d1">Hire Me</h2>
+  <div class="contact-grid fu fu-d2">
     <div>
       <p class="contact-desc">Whether you need a full Oracle Fusion ERP implementation, targeted functional support, an Excel solution, or SME accounting help — I deliver with structure, accountability, and excellence.</p>
       <div class="c-links">
@@ -708,7 +695,7 @@ footer {
       </div>
       <div class="fg"><label>Project Type</label><input type="text" placeholder="Oracle ERP / Excel / Accounting..."></div>
       <div class="fg"><label>Message</label><textarea placeholder="Tell me about your project..."></textarea></div>
-      <a href="mailto:arshadhanif1999@gmail.com" class="btn btn-dark" style="width:100%;justify-content:center;display:flex;">Send Message →</a>
+      <a href="mailto:arshadhanif1999@gmail.com" class="btn btn-em" style="width:100%;justify-content:center;display:flex;">Send Message →</a>
     </div>
   </div>
 </div>
@@ -719,121 +706,191 @@ footer {
   <div class="fb">Arshad <span>Hanif</span></div>
   <div class="ft">Oracle Fusion Cloud Consultant · ACCA Member · Riyadh, Saudi Arabia</div>
   <div class="fl">
-    <a href="#home">Home</a>
-    <a href="#about">About</a>
-    <a href="#services">Services</a>
-    <a href="#contact">Contact</a>
+    <a href="#home">Home</a><a href="#about">About</a>
+    <a href="#services">Services</a><a href="#contact">Contact</a>
   </div>
 </footer>
 
 <script>
-  // ── EXPERIENCE TABS ──
-  function showE(id, btn) {
-    document.querySelectorAll('.ep').forEach(p => p.classList.remove('on'));
-    document.querySelectorAll('.etab').forEach(t => t.classList.remove('on'));
-    document.getElementById(id).classList.add('on');
-    btn.classList.add('on');
+// ── PARTICLES ──
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+    this.r = Math.random() * 2 + 0.5;
+    this.vx = (Math.random() - 0.5) * 0.4;
+    this.vy = (Math.random() - 0.5) * 0.4;
+    this.alpha = Math.random() * 0.4 + 0.1;
   }
+  update() {
+    this.x += this.vx; this.y += this.vy;
+    if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(15,123,94,${this.alpha})`;
+    ctx.fill();
+  }
+}
 
-  // ── SMOOTH SCROLL ──
-  document.querySelectorAll('a[href^="#"]').forEach(a => {
-    a.addEventListener('click', function(e) {
-      const target = document.querySelector(this.getAttribute('href'));
-      if (target) {
-        e.preventDefault();
-        window.scrollTo({ top: target.getBoundingClientRect().top + window.pageYOffset - 80, behavior: 'smooth' });
+for (let i = 0; i < 80; i++) particles.push(new Particle());
+
+function drawLines() {
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 120) {
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(15,123,94,${0.08 * (1 - dist/120)})`;
+        ctx.lineWidth = 0.5;
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.stroke();
       }
-    });
-  });
-
-  // ── TYPED TEXT ──
-  const phrases = ['Oracle Fusion Cloud Consultant', 'ERP Implementation Expert', 'Finance Transformation Lead', 'ACCA Member & PwC Alumni'];
-  let pi = 0, ci = 0, deleting = false;
-  const typedEl = document.getElementById('typed');
-  function type() {
-    const current = phrases[pi];
-    if (!deleting) {
-      typedEl.textContent = current.slice(0, ci + 1);
-      ci++;
-      if (ci === current.length) { deleting = true; setTimeout(type, 1800); return; }
-    } else {
-      typedEl.textContent = current.slice(0, ci - 1);
-      ci--;
-      if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; }
     }
-    setTimeout(type, deleting ? 40 : 65);
   }
-  type();
+}
 
-  // ── SCROLL FADE-UP ──
-  const fadeEls = document.querySelectorAll('.fade-up');
-  const fadeIO = new IntersectionObserver(entries => {
-    entries.forEach(en => {
-      if (en.isIntersecting) {
-        en.target.classList.add('visible');
-        fadeIO.unobserve(en.target);
-      }
-    });
-  }, { threshold: 0.12 });
-  fadeEls.forEach(el => fadeIO.observe(el));
+function animParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => { p.update(); p.draw(); });
+  drawLines();
+  requestAnimationFrame(animParticles);
+}
+animParticles();
 
-  // ── COUNTER ANIMATION ──
-  function animateCounter(el, target, suffix = '') {
-    let start = 0;
-    const duration = 1800;
-    const step = timestamp => {
-      if (!start) start = timestamp;
-      const progress = Math.min((timestamp - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - progress, 3);
-      const val = Math.floor(ease * target);
-      el.textContent = val + suffix;
-      if (progress < 1) requestAnimationFrame(step);
-      else el.textContent = target + suffix;
-    };
-    requestAnimationFrame(step);
+// ── TYPED TEXT ──
+const phrases = ['Oracle Fusion Cloud Consultant', 'ERP Implementation Expert', 'Finance Transformation Lead', 'ACCA Member & PwC Alumni'];
+let pi = 0, ci = 0, deleting = false;
+const typedEl = document.getElementById('typed');
+function type() {
+  const current = phrases[pi];
+  if (!deleting) {
+    typedEl.textContent = current.slice(0, ci + 1); ci++;
+    if (ci === current.length) { deleting = true; setTimeout(type, 1800); return; }
+  } else {
+    typedEl.textContent = current.slice(0, ci - 1); ci--;
+    if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; }
   }
+  setTimeout(type, deleting ? 38 : 62);
+}
+type();
 
-  const counterIO = new IntersectionObserver(entries => {
-    entries.forEach(en => {
-      if (en.isIntersecting) {
-        const counters = en.target.querySelectorAll('.stat-n[data-count]');
-        counters.forEach(c => {
-          const target = parseInt(c.dataset.count);
-          const suffix = c.dataset.suffix || '';
-          animateCounter(c, target, suffix);
-        });
-        counterIO.unobserve(en.target);
-      }
-    });
-  }, { threshold: 0.3 });
-  document.querySelectorAll('.hero-stats').forEach(el => counterIO.observe(el));
-
-  // ── SKILL BARS ──
-  const skIO = new IntersectionObserver(entries => {
-    entries.forEach(en => {
-      if (en.isIntersecting) {
-        en.target.querySelectorAll('.sk-bar').forEach(b => b.style.width = b.dataset.w + '%');
-        skIO.unobserve(en.target);
-      }
-    });
-  }, { threshold: 0.2 });
-  document.querySelectorAll('.skill-cols').forEach(el => skIO.observe(el));
-
-  // ── NAV ACTIVE ──
-  window.addEventListener('scroll', () => {
-    let current = '';
-    document.querySelectorAll('section[id]').forEach(s => {
-      if (window.scrollY >= s.offsetTop - 100) current = s.id;
-    });
-    document.querySelectorAll('.nav-links a').forEach(a => {
-      const isActive = a.getAttribute('href') === '#' + current;
-      if (!a.classList.contains('nav-hire')) {
-        a.style.color = isActive ? 'var(--ink)' : '';
-        a.style.fontWeight = isActive ? '600' : '';
-        a.style.background = isActive ? 'var(--warm)' : '';
-      }
-    });
+// ── SCROLL FADE-UP (staggered) ──
+const fuIO = new IntersectionObserver(entries => {
+  entries.forEach(en => {
+    if (en.isIntersecting) { en.target.classList.add('show'); fuIO.unobserve(en.target); }
   });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fu').forEach(el => fuIO.observe(el));
+
+// ── SECTION TRANSITION LINES ──
+const transIO = new IntersectionObserver(entries => {
+  entries.forEach(en => {
+    if (en.isIntersecting) en.target.classList.add('show');
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('.sec-transition').forEach(el => transIO.observe(el));
+
+// ── COUNTER ANIMATION ──
+const counterIO = new IntersectionObserver(entries => {
+  entries.forEach(en => {
+    if (en.isIntersecting) {
+      en.target.querySelectorAll('.stat-n[data-count]').forEach(c => {
+        const target = parseInt(c.dataset.count), suffix = c.dataset.suffix || '';
+        let start = null;
+        const step = ts => {
+          if (!start) start = ts;
+          const p = Math.min((ts - start) / 1600, 1);
+          c.textContent = Math.floor((1 - Math.pow(1-p, 3)) * target) + suffix;
+          if (p < 1) requestAnimationFrame(step);
+          else c.textContent = target + suffix;
+        };
+        requestAnimationFrame(step);
+      });
+      counterIO.unobserve(en.target);
+    }
+  });
+}, { threshold: 0.3 });
+document.querySelectorAll('.hero-stats').forEach(el => counterIO.observe(el));
+
+// ── SKILL BARS ──
+const skIO = new IntersectionObserver(entries => {
+  entries.forEach(en => {
+    if (en.isIntersecting) {
+      en.target.querySelectorAll('.sk-bar').forEach(b => b.style.width = b.dataset.w + '%');
+      skIO.unobserve(en.target);
+    }
+  });
+}, { threshold: 0.2 });
+document.querySelectorAll('.skill-cols').forEach(el => skIO.observe(el));
+
+// ── TILT EFFECT ──
+document.querySelectorAll('.tilt').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5;
+    const y = (e.clientY - r.top) / r.height - 0.5;
+    card.style.transform = `perspective(600px) rotateY(${x * 10}deg) rotateX(${-y * 10}deg) translateZ(8px)`;
+    card.style.boxShadow = `${-x * 16}px ${y * 16}px 32px rgba(15,25,35,0.12)`;
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+    card.style.boxShadow = '';
+  });
+});
+
+// ── EXPERIENCE TABS ──
+function showE(id, btn) {
+  document.querySelectorAll('.ep').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.etab').forEach(t => t.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  btn.classList.add('on');
+}
+
+// ── SMOOTH SCROLL ──
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', function(e) {
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      window.scrollTo({ top: target.getBoundingClientRect().top + window.pageYOffset - 80, behavior: 'smooth' });
+    }
+  });
+});
+
+// ── NAV SCROLL SHADOW + ACTIVE ──
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20);
+  let current = '';
+  document.querySelectorAll('section[id]').forEach(s => {
+    if (window.scrollY >= s.offsetTop - 100) current = s.id;
+  });
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    if (!a.classList.contains('nav-hire')) {
+      const active = a.getAttribute('href') === '#' + current;
+      a.style.color = active ? 'var(--ink)' : '';
+      a.style.fontWeight = active ? '600' : '';
+      a.style.background = active ? 'var(--bg)' : '';
+    }
+  });
+});
 </script>
 </body>
 </html>
+  
