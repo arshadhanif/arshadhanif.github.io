@@ -731,13 +731,33 @@ footer { background: var(--slate); color: rgba(255,255,255,0.4); padding: 36px 5
     </div>
     <div class="cf">
       <div class="cf-title">Send a Message</div>
-      <div class="f2">
-        <div class="fg"><label>Your Name</label><input type="text" placeholder="John Smith"></div>
-        <div class="fg"><label>Email</label><input type="email" placeholder="john@company.com"></div>
-      </div>
-      <div class="fg"><label>Project Type</label><input type="text" placeholder="Oracle ERP / Excel / Accounting..."></div>
-      <div class="fg"><label>Message</label><textarea placeholder="Tell me about your project..."></textarea></div>
-      <a href="mailto:arshadhanif1999@gmail.com" class="btn btn-em" style="width:100%;justify-content:center;display:flex;">Send Message →</a>
+      <form id="contactForm" action="https://formspree.io/f/xnjbeqjn" method="POST" onsubmit="handleSubmit(event)">
+        <div class="f2">
+          <div class="fg"><label>Your Name</label><input type="text" name="name" placeholder="John Smith" required></div>
+          <div class="fg"><label>Email</label><input type="email" name="email" placeholder="john@company.com" required></div>
+        </div>
+        <div class="fg">
+          <label>Project Type</label>
+          <select name="project_type" style="background:var(--bg);border:1.5px solid var(--border);color:var(--ink);padding:12px 15px;border-radius:10px;font-size:15px;font-family:'Outfit',sans-serif;outline:none;transition:border-color 0.2s;width:100%;appearance:none;cursor:pointer;">
+            <option value="" disabled selected>Select a service...</option>
+            <option>Oracle Fusion ERP Implementation</option>
+            <option>ERP Support & Optimization</option>
+            <option>BI & Reporting</option>
+            <option>Financial Modelling</option>
+            <option>Excel & Data Solutions</option>
+            <option>SME Accounting (Xero / QuickBooks)</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="fg"><label>Message</label><textarea name="message" placeholder="Tell me about your project..." required></textarea></div>
+        <button type="submit" class="btn btn-em" style="width:100%;justify-content:center;display:flex;border:none;cursor:pointer;" id="submitBtn">Send Message →</button>
+        <div id="formSuccess" style="display:none;margin-top:16px;padding:14px;background:var(--em-bg);border:1px solid var(--em-border);border-radius:10px;color:var(--emerald);font-weight:500;text-align:center;">
+          ✅ Message sent! Arshad will get back to you shortly.
+        </div>
+        <div id="formError" style="display:none;margin-top:16px;padding:14px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#dc2626;font-weight:500;text-align:center;">
+          ❌ Something went wrong. Please try again or email directly.
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -942,6 +962,37 @@ function showE(id, btn) {
   document.querySelectorAll('.etab').forEach(function(t) { t.classList.remove('on'); });
   document.getElementById(id).classList.add('on');
   btn.classList.add('on');
+}
+
+// ── CONTACT FORM ──
+function handleSubmit(e) {
+  e.preventDefault();
+  var btn = document.getElementById('submitBtn');
+  var success = document.getElementById('formSuccess');
+  var error = document.getElementById('formError');
+  btn.textContent = 'Sending...';
+  btn.disabled = true;
+  fetch(e.target.action, {
+    method: 'POST',
+    body: new FormData(e.target),
+    headers: { 'Accept': 'application/json' }
+  }).then(function(res) {
+    if (res.ok) {
+      success.style.display = 'block';
+      error.style.display = 'none';
+      e.target.reset();
+      btn.textContent = 'Sent ✓';
+    } else {
+      error.style.display = 'block';
+      success.style.display = 'none';
+      btn.textContent = 'Send Message →';
+      btn.disabled = false;
+    }
+  }).catch(function() {
+    error.style.display = 'block';
+    btn.textContent = 'Send Message →';
+    btn.disabled = false;
+  });
 }
 
 // ── SMOOTH SCROLL ──
