@@ -317,13 +317,22 @@ h2.sec-title.light { color: white; }
 .fg select { appearance: none; cursor: pointer; }
 
 /* FOOTER */
-footer { background: var(--slate); color: rgba(255,255,255,0.4); padding: 36px 52px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
-.fb { font-family: 'Fraunces', serif; font-size: 19px; color: white; }
+footer { background: var(--slate); color: rgba(255,255,255,0.5); padding: 48px 52px 0; position: relative; z-index: 1; overflow: hidden; }
+.footer-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 24px; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.fb { font-family: 'Fraunces', serif; font-size: 22px; color: white; }
 .fb span { color: var(--em3); }
-.ft { font-size: 14px; }
+.ft { font-size: 14px; color: rgba(255,255,255,0.45); margin-top: 4px; }
+.footer-tagline { font-size: 13px; color: rgba(255,255,255,0.3); margin-top: 4px; font-style: italic; }
+.footer-socials { display: flex; gap: 12px; flex-wrap: wrap; }
+.footer-social-btn { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 500; padding: 9px 16px; border-radius: 10px; text-decoration: none; transition: all 0.2s; font-family: 'Outfit', sans-serif; }
+.footer-social-btn:hover { background: rgba(22,212,160,0.15); border-color: rgba(22,212,160,0.4); color: var(--em3); transform: translateY(-2px); }
+.footer-bottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 20px 0 24px; }
+.footer-copy { font-size: 13px; color: rgba(255,255,255,0.3); }
 .fl { display: flex; gap: 22px; }
-.fl a { font-size: 13px; color: rgba(255,255,255,0.4); text-decoration: none; transition: color 0.2s; }
+.fl a { font-size: 13px; color: rgba(255,255,255,0.35); text-decoration: none; transition: color 0.2s; }
 .fl a:hover { color: var(--em3); }
+.footer-emerald-bar { height: 5px; background: linear-gradient(90deg, var(--emerald), var(--em3), #7fffd4, var(--em3), var(--emerald)); background-size: 300% 100%; animation: shimmer 4s linear infinite; }
+@keyframes shimmer { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
 
 @keyframes fadeDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
 @keyframes fadeLeft { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
@@ -374,7 +383,10 @@ footer { background: var(--slate); color: rgba(255,255,255,0.4); padding: 36px 5
   .testi-grid { grid-template-columns: 1fr; gap: 14px; }
   .contact-grid { grid-template-columns: 1fr; gap: 40px; }
   .f2 { grid-template-columns: 1fr; }
-  footer { flex-direction: column; gap: 16px; text-align: center; padding: 32px 24px; }
+  footer { padding: 36px 24px 0; }
+  .footer-inner { flex-direction: column; text-align: center; align-items: center; }
+  .footer-socials { justify-content: center; }
+  .footer-bottom { flex-direction: column; text-align: center; align-items: center; }
   .fl { flex-wrap: wrap; justify-content: center; }
   h2.sec-title { font-size: 30px; }
   .sec-sub { font-size: 15px; }
@@ -494,7 +506,7 @@ footer { background: var(--slate); color: rgba(255,255,255,0.4); padding: 36px 5
       <div class="ir"><div class="ik">Origin</div><div class="iv">Karachi, Pakistan</div></div>
       <div class="ir"><div class="ik">Qualification</div><div class="iv">ACCA Member</div></div>
       <div class="ir"><div class="ik">Specialization</div><div class="iv">Oracle Fusion Cloud ERP</div></div>
-      <div class="ir"><div class="ik">Email</div><div class="iv"><a href="mailto:arshadhanif1999@gmail.com">arshadhanif1999@gmail.com</a></div></div>
+      <div class="ir"><div class="ik">Email</div><div class="iv"><a href="/cdn-cgi/l/email-protection#cfaebdbca7aeaba7aea1a6a9fef6f6f68fa8a2aea6a3e1aca0a2"><span class="__cf_email__" data-cfemail="3a5b4849525b5e525b54535c0b0303037a5d575b535614595557">[email&#160;protected]</span></a></div></div>
       <div class="ir"><div class="ik">Status</div><div class="iv avail">✓ Open to Projects</div></div>
       <div class="tags">
         <span class="tag">Oracle Fusion</span><span class="tag">ERP Implementation</span>
@@ -722,7 +734,7 @@ footer { background: var(--slate); color: rgba(255,255,255,0.4); padding: 36px 5
     <div>
       <p class="contact-desc">Whether you need a full Oracle Fusion ERP implementation, targeted functional support, an Excel solution, or SME accounting help — I deliver with structure, accountability, and excellence.</p>
       <div class="c-links">
-        <a href="mailto:arshadhanif1999@gmail.com" class="cl"><div class="cl-ico">✉️</div><div><div class="cl-lbl">Email</div><div class="cl-val">arshadhanif1999@gmail.com</div></div></a>
+        <a href="/cdn-cgi/l/email-protection#0d6c7f7e656c69656c63646b3c3434344d6a606c6461236e6260" class="cl"><div class="cl-ico">✉️</div><div><div class="cl-lbl">Email</div><div class="cl-val"><span class="__cf_email__" data-cfemail="ceafbcbda6afaaa6afa0a7a8fff7f7f78ea9a3afa7a2e0ada1a3">[email&#160;protected]</span></div></div></a>
         <a href="https://www.upwork.com/freelancers/~014dac072b14207ea9" target="_blank" class="cl"><div class="cl-ico">💼</div><div><div class="cl-lbl">Upwork</div><div class="cl-val">View Upwork Profile</div></div></a>
         <a href="https://www.linkedin.com/in/arshad-hanif-acca-erp/" target="_blank" class="cl"><div class="cl-ico">🔗</div><div><div class="cl-lbl">LinkedIn</div><div class="cl-val">arshad-hanif-acca-erp</div></div></a>
         <a href="https://wa.me/966579616367" target="_blank" class="cl"><div class="cl-ico">💬</div><div><div class="cl-lbl">WhatsApp — Riyadh</div><div class="cl-val">+966 579 616 367</div></div></a>
@@ -766,15 +778,31 @@ footer { background: var(--slate); color: rgba(255,255,255,0.4); padding: 36px 5
 
 <!-- FOOTER -->
 <footer>
-  <div class="fb">Arshad <span>Hanif</span></div>
-  <div class="ft">Oracle Fusion Cloud Consultant · ACCA Member · Riyadh, Saudi Arabia</div>
-  <div class="fl">
-    <a href="#home">Home</a><a href="#about">About</a>
-    <a href="#services">Services</a><a href="#contact">Contact</a>
+  <div class="footer-inner">
+    <div>
+      <div class="fb">Arshad <span>Hanif</span></div>
+      <div class="ft">Oracle Fusion Cloud Consultant · ACCA Member · Riyadh, Saudi Arabia</div>
+      <div class="footer-tagline">Available for Oracle Fusion ERP projects globally</div>
+    </div>
+    <div class="footer-socials">
+      <a href="https://www.upwork.com/freelancers/~014dac072b14207ea9" target="_blank" class="footer-social-btn">💼 Upwork</a>
+      <a href="https://www.linkedin.com/in/arshad-hanif-acca-erp/" target="_blank" class="footer-social-btn">🔗 LinkedIn</a>
+      <a href="https://wa.me/966579616367" target="_blank" class="footer-social-btn">💬 WhatsApp</a>
+    </div>
   </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2025 Arshad Hanif. All rights reserved.</div>
+    <div class="fl">
+      <a href="#home">Home</a>
+      <a href="#about">About</a>
+      <a href="#services">Services</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </div>
+  <div class="footer-emerald-bar"></div>
 </footer>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ── HAMBURGER ──
 var hamburger = document.getElementById('hamburger');
 var mobileMenu = document.getElementById('mobileMenu');
@@ -994,15 +1022,4 @@ var navLinks = document.querySelectorAll('.nav-links a');
 window.addEventListener('scroll', function() {
   document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20);
   var scrollY = window.pageYOffset;
-  sections.forEach(function(sec) {
-    var top = sec.offsetTop - 100, bottom = top + sec.offsetHeight;
-    if (scrollY >= top && scrollY < bottom) {
-      navLinks.forEach(function(l) { l.classList.remove('active'); });
-      var active = document.querySelector('.nav-links a[href="#' + sec.id + '"]');
-      if (active) active.classList.add('active');
-    }
-  });
-});
-</script>
-</body>
-</html>
+  s
