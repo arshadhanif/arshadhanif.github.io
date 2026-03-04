@@ -189,7 +189,6 @@ h1.hero-name em { font-style: italic; color: var(--em3); font-weight: 300; }
 .wrap-white { background: var(--white); }
 .wrap-bg { background: var(--bg); }
 .wrap-slate { background: var(--slate); }
-.divider { height: 1px; background: var(--border); }
 
 .eyebrow { display: block; font-size: 12px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--emerald); margin-bottom: 10px; }
 h2.sec-title { font-family: 'Fraunces', serif; font-size: clamp(28px, 3.5vw, 44px); font-weight: 600; line-height: 1.15; letter-spacing: -1px; color: var(--ink); margin-bottom: 12px; }
@@ -198,7 +197,6 @@ h2.sec-title.light { color: white; }
 .sec-sub.light { color: rgba(255,255,255,0.6); }
 .eyebrow.light { color: var(--em3); }
 
-/* FADE-UP — only applied after JS runs; fallback is visible */
 .fu { opacity: 1; transform: translateY(0); transition: opacity 0.65s ease, transform 0.65s ease; }
 .fu.hidden { opacity: 0; transform: translateY(36px); }
 .fu.hidden.show { opacity: 1; transform: translateY(0); }
@@ -312,25 +310,55 @@ h2.sec-title.light { color: white; }
 .f2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .fg { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
 .fg label { font-size: 13px; font-weight: 600; color: var(--ink2); }
-.fg input, .fg textarea { background: var(--bg); border: 1.5px solid var(--border); color: var(--ink); padding: 12px 15px; border-radius: 10px; font-size: 15px; font-family: 'Outfit', sans-serif; outline: none; transition: border-color 0.2s; width: 100%; }
-.fg input:focus, .fg textarea:focus { border-color: var(--emerald); background: white; }
+.fg input, .fg textarea, .fg select { background: var(--bg); border: 1.5px solid var(--border); color: var(--ink); padding: 12px 15px; border-radius: 10px; font-size: 15px; font-family: 'Outfit', sans-serif; outline: none; transition: border-color 0.2s; width: 100%; }
+.fg input:focus, .fg textarea:focus, .fg select:focus { border-color: var(--emerald); background: white; }
 .fg textarea { resize: vertical; min-height: 108px; }
 .fg input::placeholder, .fg textarea::placeholder { color: #b0c4d4; }
+.fg select { appearance: none; cursor: pointer; }
 
 /* FOOTER */
-footer { background: var(--slate); color: rgba(255,255,255,0.4); padding: 36px 52px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
-.fb { font-family: 'Fraunces', serif; font-size: 19px; color: white; }
+footer {
+  background: var(--slate);
+  color: rgba(255,255,255,0.5);
+  padding: 48px 52px 0;
+  position: relative; z-index: 1;
+  overflow: hidden;
+}
+.footer-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 24px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.fb { font-family: 'Fraunces', serif; font-size: 22px; color: white; }
 .fb span { color: var(--em3); }
-.ft { font-size: 14px; }
+.ft { font-size: 14px; color: rgba(255,255,255,0.45); margin-top: 4px; }
+.footer-tagline { font-size: 13px; color: rgba(255,255,255,0.35); margin-top: 4px; font-style: italic; }
+.footer-socials { display: flex; gap: 12px; }
+.footer-social-btn {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 500;
+  padding: 9px 16px; border-radius: 10px; text-decoration: none;
+  transition: all 0.2s; font-family: 'Outfit', sans-serif;
+}
+.footer-social-btn:hover { background: rgba(22,212,160,0.15); border-color: rgba(22,212,160,0.4); color: var(--em3); transform: translateY(-2px); }
+.footer-bottom {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+  padding: 20px 0 0;
+}
+.footer-copy { font-size: 13px; color: rgba(255,255,255,0.3); }
 .fl { display: flex; gap: 22px; }
-.fl a { font-size: 13px; color: rgba(255,255,255,0.4); text-decoration: none; transition: color 0.2s; }
+.fl a { font-size: 13px; color: rgba(255,255,255,0.35); text-decoration: none; transition: color 0.2s; }
 .fl a:hover { color: var(--em3); }
-
-@keyframes fadeDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
-@keyframes fadeLeft { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
-
-.sec-transition { height: 4px; background: linear-gradient(90deg, transparent, var(--emerald), var(--em3), transparent); opacity: 0; transition: opacity 0.6s; }
-.sec-transition.show { opacity: 1; }
+.footer-emerald-bar {
+  height: 5px; margin-top: 20px;
+  background: linear-gradient(90deg, var(--emerald), var(--em3), #7fffd4, var(--em3), var(--emerald));
+  background-size: 300% 100%;
+  animation: shimmer 4s linear infinite;
+}
+@keyframes shimmer { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
 
 /* HAMBURGER */
 .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; background: none; border: none; }
@@ -375,7 +403,10 @@ footer { background: var(--slate); color: rgba(255,255,255,0.4); padding: 36px 5
   .testi-grid { grid-template-columns: 1fr; gap: 14px; }
   .contact-grid { grid-template-columns: 1fr; gap: 40px; }
   .f2 { grid-template-columns: 1fr; }
-  footer { flex-direction: column; gap: 16px; text-align: center; padding: 32px 24px; }
+  footer { padding: 36px 24px 0; }
+.footer-inner { flex-direction: column; text-align: center; align-items: center; }
+.footer-socials { justify-content: center; flex-wrap: wrap; }
+.footer-bottom { flex-direction: column; text-align: center; align-items: center; padding-bottom: 0; }
   .fl { flex-wrap: wrap; justify-content: center; }
   h2.sec-title { font-size: 30px; }
   .sec-sub { font-size: 15px; }
@@ -442,7 +473,7 @@ footer { background: var(--slate); color: rgba(255,255,255,0.4); padding: 36px 5
       <div class="hero-btns">
         <a href="#contact" class="btn btn-em">Start a Project →</a>
         <a href="#experience" class="btn btn-ghost">View Experience</a>
-        <a href="assets/Arshad-Hanif-Resume.pdf" download class="btn btn-ghost">⬇ Download CV</a>
+        <a href="Assets/Arshad-Hanif-Resume.pdf" download class="btn btn-ghost">⬇ Download CV</a>
       </div>
       <div class="hero-stats">
         <div class="stat"><div class="stat-n" data-count="7" data-suffix="+">7+</div><div class="stat-l">Years Exp.</div></div>
@@ -725,7 +756,7 @@ footer { background: var(--slate); color: rgba(255,255,255,0.4); padding: 36px 5
       <div class="c-links">
         <a href="mailto:arshadhanif1999@gmail.com" class="cl"><div class="cl-ico">✉️</div><div><div class="cl-lbl">Email</div><div class="cl-val">arshadhanif1999@gmail.com</div></div></a>
         <a href="https://www.upwork.com/freelancers/~014dac072b14207ea9" target="_blank" class="cl"><div class="cl-ico">💼</div><div><div class="cl-lbl">Upwork</div><div class="cl-val">View Upwork Profile</div></div></a>
-        <a href="https://www.linkedin.com/in/arshad-hanif-acca-erp/" target="_blank" class="cl"><div class="cl-ico">🔗</div><div><div class="cl-lbl">LinkedIn</div><div class="cl-val">arshad-hanif-acca-erp</div></div></div></a>
+        <a href="https://www.linkedin.com/in/arshad-hanif-acca-erp/" target="_blank" class="cl"><div class="cl-ico">🔗</div><div><div class="cl-lbl">LinkedIn</div><div class="cl-val">arshad-hanif-acca-erp</div></div></a>
         <a href="https://wa.me/966579616367" target="_blank" class="cl"><div class="cl-ico">💬</div><div><div class="cl-lbl">WhatsApp — Riyadh</div><div class="cl-val">+966 579 616 367</div></div></a>
         <a href="https://wa.me/923371346981" target="_blank" class="cl"><div class="cl-ico">💬</div><div><div class="cl-lbl">WhatsApp — Pakistan</div><div class="cl-val">+92 337 134 6981</div></div></a>
         <div class="cl"><div class="cl-ico">📍</div><div><div class="cl-lbl">Location</div><div class="cl-val">Riyadh, Saudi Arabia · Available Globally</div></div></div>
@@ -740,7 +771,7 @@ footer { background: var(--slate); color: rgba(255,255,255,0.4); padding: 36px 5
         </div>
         <div class="fg">
           <label>Project Type</label>
-          <select name="project_type" style="background:var(--bg);border:1.5px solid var(--border);color:var(--ink);padding:12px 15px;border-radius:10px;font-size:15px;font-family:'Outfit',sans-serif;outline:none;transition:border-color 0.2s;width:100%;appearance:none;cursor:pointer;">
+          <select name="project_type">
             <option value="" disabled selected>Select a service...</option>
             <option>Oracle Fusion ERP Implementation</option>
             <option>ERP Support & Optimization</option>
@@ -765,14 +796,29 @@ footer { background: var(--slate); color: rgba(255,255,255,0.4); padding: 36px 5
 </div>
 </section>
 
-<!-- FOOTER -->
 <footer>
-  <div class="fb">Arshad <span>Hanif</span></div>
-  <div class="ft">Oracle Fusion Cloud Consultant · ACCA Member · Riyadh, Saudi Arabia</div>
-  <div class="fl">
-    <a href="#home">Home</a><a href="#about">About</a>
-    <a href="#services">Services</a><a href="#contact">Contact</a>
+  <div class="footer-inner">
+    <div>
+      <div class="fb">Arshad <span>Hanif</span></div>
+      <div class="ft">Oracle Fusion Cloud Consultant · ACCA Member · Riyadh, KSA</div>
+      <div class="footer-tagline">Available for Oracle Fusion ERP projects globally</div>
+    </div>
+    <div class="footer-socials">
+      <a href="https://www.upwork.com/freelancers/~014dac072b14207ea9" target="_blank" class="footer-social-btn">💼 Upwork</a>
+      <a href="https://www.linkedin.com/in/arshad-hanif-acca-erp/" target="_blank" class="footer-social-btn">🔗 LinkedIn</a>
+      <a href="https://wa.me/966579616367" target="_blank" class="footer-social-btn">💬 WhatsApp</a>
+    </div>
   </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2025 Arshad Hanif. All rights reserved.</div>
+    <div class="fl">
+      <a href="#home">Home</a>
+      <a href="#about">About</a>
+      <a href="#services">Services</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </div>
+  <div class="footer-emerald-bar"></div>
 </footer>
 
 <script>
@@ -851,7 +897,7 @@ function animParticles() {
 }
 animParticles();
 
-// ── TYPED TEXT (fixed) ──
+// ── TYPED TEXT ──
 var phrases = ['Oracle Fusion Cloud Consultant','ERP Implementation Expert','Finance Transformation Lead','ACCA Member & PwC Alumni'];
 var pi = 0, ci = 0, deleting = false;
 var typedEl = document.getElementById('typed');
@@ -860,34 +906,23 @@ function type() {
   if (!deleting) {
     ci++;
     typedEl.textContent = current.slice(0, ci);
-    if (ci === current.length) {
-      deleting = true;
-      setTimeout(type, 1800);
-      return;
-    }
+    if (ci === current.length) { deleting = true; setTimeout(type, 1800); return; }
   } else {
     ci--;
     typedEl.textContent = current.slice(0, ci);
-    if (ci === 0) {
-      deleting = false;
-      pi = (pi + 1) % phrases.length;
-    }
+    if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; }
   }
   setTimeout(type, deleting ? 38 : 62);
 }
-// Delay start slightly to ensure DOM is fully ready
 setTimeout(type, 400);
 
-// ── FADE-UP — use 'hidden' class, NOT 'ready', to avoid conflicts ──
+// ── FADE-UP ──
 if ('IntersectionObserver' in window) {
   var fuEls = document.querySelectorAll('.fu');
   fuEls.forEach(function(el) { el.classList.add('hidden'); });
   var fuIO = new IntersectionObserver(function(entries) {
     entries.forEach(function(en) {
-      if (en.isIntersecting) {
-        en.target.classList.add('show');
-        fuIO.unobserve(en.target);
-      }
+      if (en.isIntersecting) { en.target.classList.add('show'); fuIO.unobserve(en.target); }
     });
   }, { threshold: 0.05, rootMargin: '0px 0px -20px 0px' });
   fuEls.forEach(function(el) { fuIO.observe(el); });
@@ -901,7 +936,7 @@ if ('IntersectionObserver' in window) {
   document.querySelectorAll('.sec-transition').forEach(function(el) { transIO.observe(el); });
 }
 
-// ── COUNTERS — set initial text to final value as fallback, animate on scroll ──
+// ── COUNTERS ──
 function runCounters(container) {
   container.querySelectorAll('.stat-n[data-count]').forEach(function(c) {
     var tgt = parseInt(c.dataset.count), sfx = c.dataset.suffix || '';
@@ -919,14 +954,10 @@ function runCounters(container) {
 }
 if ('IntersectionObserver' in window) {
   var cIO = new IntersectionObserver(function(entries) {
-    entries.forEach(function(en) {
-      if (en.isIntersecting) { runCounters(en.target); cIO.unobserve(en.target); }
-    });
+    entries.forEach(function(en) { if (en.isIntersecting) { runCounters(en.target); cIO.unobserve(en.target); } });
   }, { threshold: 0.2 });
   document.querySelectorAll('.hero-stats').forEach(function(el) { cIO.observe(el); });
-} else {
-  document.querySelectorAll('.hero-stats').forEach(runCounters);
-}
+} else { document.querySelectorAll('.hero-stats').forEach(runCounters); }
 
 // ── SKILL BARS ──
 function runBars(container) {
@@ -934,14 +965,10 @@ function runBars(container) {
 }
 if ('IntersectionObserver' in window) {
   var bIO = new IntersectionObserver(function(entries) {
-    entries.forEach(function(en) {
-      if (en.isIntersecting) { runBars(en.target); bIO.unobserve(en.target); }
-    });
+    entries.forEach(function(en) { if (en.isIntersecting) { runBars(en.target); bIO.unobserve(en.target); } });
   }, { threshold: 0.1 });
   document.querySelectorAll('.skill-cols').forEach(function(el) { bIO.observe(el); });
-} else {
-  document.querySelectorAll('.skill-cols').forEach(runBars);
-}
+} else { document.querySelectorAll('.skill-cols').forEach(runBars); }
 
 // ── TILT ──
 document.querySelectorAll('.tilt').forEach(function(card) {
