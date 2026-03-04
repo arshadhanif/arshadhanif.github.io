@@ -317,48 +317,19 @@ h2.sec-title.light { color: white; }
 .fg select { appearance: none; cursor: pointer; }
 
 /* FOOTER */
-footer {
-  background: var(--slate);
-  color: rgba(255,255,255,0.5);
-  padding: 48px 52px 0;
-  position: relative; z-index: 1;
-  overflow: hidden;
-}
-.footer-inner {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 24px;
-  padding-bottom: 32px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-.fb { font-family: 'Fraunces', serif; font-size: 22px; color: white; }
+footer { background: var(--slate); color: rgba(255,255,255,0.4); padding: 36px 52px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
+.fb { font-family: 'Fraunces', serif; font-size: 19px; color: white; }
 .fb span { color: var(--em3); }
-.ft { font-size: 14px; color: rgba(255,255,255,0.45); margin-top: 4px; }
-.footer-tagline { font-size: 13px; color: rgba(255,255,255,0.35); margin-top: 4px; font-style: italic; }
-.footer-socials { display: flex; gap: 12px; }
-.footer-social-btn {
-  display: flex; align-items: center; gap: 8px;
-  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 500;
-  padding: 9px 16px; border-radius: 10px; text-decoration: none;
-  transition: all 0.2s; font-family: 'Outfit', sans-serif;
-}
-.footer-social-btn:hover { background: rgba(22,212,160,0.15); border-color: rgba(22,212,160,0.4); color: var(--em3); transform: translateY(-2px); }
-.footer-bottom {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 12px;
-  padding: 20px 0 0;
-}
-.footer-copy { font-size: 13px; color: rgba(255,255,255,0.3); }
+.ft { font-size: 14px; }
 .fl { display: flex; gap: 22px; }
-.fl a { font-size: 13px; color: rgba(255,255,255,0.35); text-decoration: none; transition: color 0.2s; }
+.fl a { font-size: 13px; color: rgba(255,255,255,0.4); text-decoration: none; transition: color 0.2s; }
 .fl a:hover { color: var(--em3); }
-.footer-emerald-bar {
-  height: 5px; margin-top: 20px;
-  background: linear-gradient(90deg, var(--emerald), var(--em3), #7fffd4, var(--em3), var(--emerald));
-  background-size: 300% 100%;
-  animation: shimmer 4s linear infinite;
-}
-@keyframes shimmer { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
+
+@keyframes fadeDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeLeft { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
+
+.sec-transition { height: 4px; background: linear-gradient(90deg, transparent, var(--emerald), var(--em3), transparent); opacity: 0; transition: opacity 0.6s; }
+.sec-transition.show { opacity: 1; }
 
 /* HAMBURGER */
 .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; background: none; border: none; }
@@ -403,10 +374,7 @@ footer {
   .testi-grid { grid-template-columns: 1fr; gap: 14px; }
   .contact-grid { grid-template-columns: 1fr; gap: 40px; }
   .f2 { grid-template-columns: 1fr; }
-  footer { padding: 36px 24px 0; }
-.footer-inner { flex-direction: column; text-align: center; align-items: center; }
-.footer-socials { justify-content: center; flex-wrap: wrap; }
-.footer-bottom { flex-direction: column; text-align: center; align-items: center; padding-bottom: 0; }
+  footer { flex-direction: column; gap: 16px; text-align: center; padding: 32px 24px; }
   .fl { flex-wrap: wrap; justify-content: center; }
   h2.sec-title { font-size: 30px; }
   .sec-sub { font-size: 15px; }
@@ -796,29 +764,14 @@ footer {
 </div>
 </section>
 
+<!-- FOOTER -->
 <footer>
-  <div class="footer-inner">
-    <div>
-      <div class="fb">Arshad <span>Hanif</span></div>
-      <div class="ft">Oracle Fusion Cloud Consultant · ACCA Member · Riyadh, KSA</div>
-      <div class="footer-tagline">Available for Oracle Fusion ERP projects globally</div>
-    </div>
-    <div class="footer-socials">
-      <a href="https://www.upwork.com/freelancers/~014dac072b14207ea9" target="_blank" class="footer-social-btn">💼 Upwork</a>
-      <a href="https://www.linkedin.com/in/arshad-hanif-acca-erp/" target="_blank" class="footer-social-btn">🔗 LinkedIn</a>
-      <a href="https://wa.me/966579616367" target="_blank" class="footer-social-btn">💬 WhatsApp</a>
-    </div>
+  <div class="fb">Arshad <span>Hanif</span></div>
+  <div class="ft">Oracle Fusion Cloud Consultant · ACCA Member · Riyadh, Saudi Arabia</div>
+  <div class="fl">
+    <a href="#home">Home</a><a href="#about">About</a>
+    <a href="#services">Services</a><a href="#contact">Contact</a>
   </div>
-  <div class="footer-bottom">
-    <div class="footer-copy">© 2025 Arshad Hanif. All rights reserved.</div>
-    <div class="fl">
-      <a href="#home">Home</a>
-      <a href="#about">About</a>
-      <a href="#services">Services</a>
-      <a href="#contact">Contact</a>
-    </div>
-  </div>
-  <div class="footer-emerald-bar"></div>
 </footer>
 
 <script>
