@@ -356,7 +356,7 @@ footer { background: var(--slate); color: rgba(255,255,255,0.5); padding: 48px 5
 /* MOBILE MENU */
 .mobile-menu { display: none; position: fixed; top: 72px; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.98); backdrop-filter: blur(16px); z-index: 998; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 32px; }
 .mobile-menu.open { display: flex; }
-.mobile-menu a { font-size: 22px; font-weight: 500; color: var(--ink); text-decoration: none; padding: 12px 32px; border-radius: 12px; width: 100%; text-align: center; transition: all 0.2s; border: 1px solid transparent; }
+.mobile-menu a { font-size: 22px; font-weight: 500; color: var(--ink); text-decoration: none; padding: 16px 32px; border-radius: 12px; width: 100%; text-align: center; transition: all 0.2s; border: 1px solid transparent; display: block; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .mobile-menu a:hover { background: var(--bg); border-color: var(--border); }
 .mobile-menu .m-hire { background: var(--emerald); color: white !important; margin-top: 8px; }
 .mobile-menu .m-hire:hover { background: var(--em2) !important; }
@@ -860,39 +860,16 @@ document.addEventListener('DOMContentLoaded', function() {
 var hamburger = document.getElementById('hamburger');
 var mobileMenu = document.getElementById('mobileMenu');
 
-function openMenu() {
-  hamburger.classList.add('open');
-  mobileMenu.classList.add('open');
-}
-
-function closeMenu() {
-  hamburger.classList.remove('open');
-  mobileMenu.classList.remove('open');
-}
-
-function toggleMenu() {
-  if (mobileMenu.classList.contains('open')) {
-    closeMenu();
-  } else {
-    openMenu();
-  }
-}
-
-hamburger.addEventListener('click', function(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  toggleMenu();
-});
-
-hamburger.addEventListener('touchend', function(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  toggleMenu();
+hamburger.addEventListener('click', function() {
+  hamburger.classList.toggle('open');
+  mobileMenu.classList.toggle('open');
 });
 
 document.querySelectorAll('.mobile-menu a').forEach(function(a) {
-  a.addEventListener('click', closeMenu);
-  a.addEventListener('touchend', closeMenu);
+  a.addEventListener('click', function() {
+    hamburger.classList.remove('open');
+    mobileMenu.classList.remove('open');
+  });
 });
 
 // ── PARTICLES ──
