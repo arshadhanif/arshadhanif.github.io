@@ -126,7 +126,7 @@ h1.hero-name em { font-style: italic; color: var(--em3); font-weight: 300; }
 .cursor { color: var(--em3); animation: blink 0.8s infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 .hero-sub {
-  font-size: 17px; color: rgba(255,255,255,0.65);
+  font-size: 20px; color: rgba(255,255,255,0.65);
   margin-bottom: 36px; max-width: 500px; line-height: 1.75;
   animation: fadeDown 0.6s 0.3s ease both;
 }
@@ -179,8 +179,8 @@ h1.hero-name em { font-style: italic; color: var(--em3); font-weight: 300; }
   display: flex; align-items: center; justify-content: center;
   font-size: 14px; flex-shrink: 0;
 }
-.cert-txt strong { display: block; font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.9); }
-.cert-txt span { font-size: 11px; color: rgba(255,255,255,0.45); }
+.cert-txt strong { display: block; font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.9); }
+.cert-txt span { font-size: 13px; color: rgba(255,255,255,0.45); }
 .hc-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
 .pill { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.75); font-size: 12px; font-weight: 400; padding: 4px 12px; border-radius: 20px; }
 
@@ -239,14 +239,20 @@ h2.sec-title.light { color: white; }
 .svc-tag { background: var(--bg); border: 1px solid var(--border); color: var(--ink3); font-size: 12px; padding: 4px 10px; border-radius: 6px; }
 
 /* SKILLS */
-.skill-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
-.sg-lbl { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--emerald); margin-bottom: 24px; padding-bottom: 10px; border-bottom: 2px solid var(--em-bg); }
-.sk { margin-bottom: 20px; }
-.sk-meta { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 15px; color: var(--ink2); }
-.sk-pct { font-weight: 600; color: var(--emerald); font-size: 14px; }
-.sk-track { height: 7px; background: var(--bg2); border-radius: 99px; overflow: hidden; }
-.sk-bar { height: 100%; background: linear-gradient(90deg, var(--emerald), var(--em3)); border-radius: 99px; width: 0; transition: width 1.4s cubic-bezier(0.4,0,0.2,1); }
-.mods-wrap { margin-top: 52px; }
+.stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 52px; }
+.stat-card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 28px 24px; position: relative; overflow: hidden; transition: all 0.25s; cursor: default; }
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--emerald), var(--em3)); transform: scaleX(0); transform-origin: left; transition: transform 0.35s; }
+.stat-card:hover::before { transform: scaleX(1); }
+.stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px var(--shadow); border-color: var(--em-border); }
+.stat-card-num { font-family: 'Fraunces', serif; font-size: 48px; font-weight: 600; line-height: 1; color: var(--emerald); margin-bottom: 8px; }
+.stat-card-label { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.stat-card-desc { font-size: 13px; color: var(--ink3); line-height: 1.5; }
+.skill-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-bottom: 0; }
+.sg-lbl { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--emerald); margin-bottom: 18px; padding-bottom: 10px; border-bottom: 2px solid var(--em-bg); }
+.sk-tags { display: flex; flex-wrap: wrap; gap: 9px; }
+.sk-tag { background: var(--bg); border: 1px solid var(--border); color: var(--ink2); font-size: 14px; font-weight: 500; padding: 9px 16px; border-radius: 8px; transition: all 0.2s; cursor: default; }
+.sk-tag:hover { border-color: var(--emerald); color: var(--emerald); background: var(--em-bg); transform: translateY(-2px); }
+.mods-wrap { margin-top: 44px; }
 .mods-lbl { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--emerald); margin-bottom: 18px; }
 .mods { display: flex; flex-wrap: wrap; gap: 9px; }
 .mod { background: var(--white); border: 1px solid var(--border); color: var(--ink2); font-size: 14px; padding: 8px 16px; border-radius: 8px; transition: all 0.2s; cursor: default; }
@@ -374,6 +380,7 @@ footer { background: var(--slate); color: rgba(255,255,255,0.5); padding: 48px 5
   .hl-grid { grid-template-columns: repeat(2,1fr); }
   .svc-grid { grid-template-columns: 1fr; gap: 14px; }
   .skill-cols { grid-template-columns: 1fr; gap: 36px; }
+  .stats-grid { grid-template-columns: repeat(2,1fr); gap: 12px; }
   .exp-layout { grid-template-columns: 1fr; gap: 24px; }
   .exp-tabs { position: static; display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
   .exp-body { padding-left: 0; border-left: none; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); }
@@ -545,25 +552,70 @@ footer { background: var(--slate); color: rgba(255,255,255,0.5); padding: 48px 5
   <span class="eyebrow fu">Expertise</span>
   <h2 class="sec-title fu fu-d1">Skills</h2>
   <p class="sec-sub fu fu-d2">Core technical and functional skills built over 7+ years.</p>
-  <div class="skill-cols fu fu-d3">
+
+  <div class="stats-grid fu fu-d3">
+    <div class="stat-card tilt">
+      <div class="stat-card-num">17</div>
+      <div class="stat-card-label">Oracle Modules</div>
+      <div class="stat-card-desc">Implemented across full project lifecycles — GL, AP, AR, SCM, Procurement and more</div>
+    </div>
+    <div class="stat-card tilt">
+      <div class="stat-card-num">4</div>
+      <div class="stat-card-label">End-to-End Go-Lives</div>
+      <div class="stat-card-desc">Complete ERP implementations from As-Is mapping through to Go-Live and post-go-live support</div>
+    </div>
+    <div class="stat-card tilt">
+      <div class="stat-card-num">13+</div>
+      <div class="stat-card-label">Clients Served</div>
+      <div class="stat-card-desc">Across UAE, USA, Saudi Arabia, Canada, Australia and Pakistan</div>
+    </div>
+    <div class="stat-card tilt">
+      <div class="stat-card-num">7+</div>
+      <div class="stat-card-label">Years of Experience</div>
+      <div class="stat-card-desc">Specialising in Oracle Fusion Cloud ERP and finance transformation</div>
+    </div>
+    <div class="stat-card tilt">
+      <div class="stat-card-num">Big 4</div>
+      <div class="stat-card-label">PwC-Trained</div>
+      <div class="stat-card-desc">Consulting background at A.F. Ferguson & Co. (PwC Pakistan) — the gold standard</div>
+    </div>
+    <div class="stat-card tilt">
+      <div class="stat-card-num">5</div>
+      <div class="stat-card-label">Oracle Certifications</div>
+      <div class="stat-card-desc">Financials, Procurement, HCM, SCM and FAW — all Oracle University certified</div>
+    </div>
+  </div>
+
+  <div class="skill-cols fu fu-d4">
     <div>
       <div class="sg-lbl">Oracle & ERP</div>
-      <div class="sk"><div class="sk-meta"><span>Oracle Fusion Cloud</span><span class="sk-pct">98%</span></div><div class="sk-track"><div class="sk-bar" data-w="98"></div></div></div>
-      <div class="sk"><div class="sk-meta"><span>Oracle Financials</span><span class="sk-pct">97%</span></div><div class="sk-track"><div class="sk-bar" data-w="97"></div></div></div>
-      <div class="sk"><div class="sk-meta"><span>ERP Implementation</span><span class="sk-pct">95%</span></div><div class="sk-track"><div class="sk-bar" data-w="95"></div></div></div>
-      <div class="sk"><div class="sk-meta"><span>Oracle Procurement & SCM</span><span class="sk-pct">90%</span></div><div class="sk-track"><div class="sk-bar" data-w="90"></div></div></div>
-      <div class="sk"><div class="sk-meta"><span>OTBI / BI Publisher</span><span class="sk-pct">88%</span></div><div class="sk-track"><div class="sk-bar" data-w="88"></div></div></div>
+      <div class="sk-tags">
+        <span class="sk-tag">Oracle Fusion Cloud</span>
+        <span class="sk-tag">Oracle Financials</span>
+        <span class="sk-tag">ERP Implementation</span>
+        <span class="sk-tag">Oracle Procurement</span>
+        <span class="sk-tag">Supply Chain (SCM)</span>
+        <span class="sk-tag">OTBI</span>
+        <span class="sk-tag">BI Publisher</span>
+        <span class="sk-tag">Financial Reporting Studio</span>
+      </div>
     </div>
     <div>
       <div class="sg-lbl">Finance & Productivity</div>
-      <div class="sk"><div class="sk-meta"><span>Microsoft Excel</span><span class="sk-pct">95%</span></div><div class="sk-track"><div class="sk-bar" data-w="95"></div></div></div>
-      <div class="sk"><div class="sk-meta"><span>Accounting & Bookkeeping</span><span class="sk-pct">92%</span></div><div class="sk-track"><div class="sk-bar" data-w="92"></div></div></div>
-      <div class="sk"><div class="sk-meta"><span>Financial Modelling</span><span class="sk-pct">90%</span></div><div class="sk-track"><div class="sk-bar" data-w="90"></div></div></div>
-      <div class="sk"><div class="sk-meta"><span>Data Analysis & Visualization</span><span class="sk-pct">88%</span></div><div class="sk-track"><div class="sk-bar" data-w="88"></div></div></div>
-      <div class="sk"><div class="sk-meta"><span>Xero & QuickBooks</span><span class="sk-pct">85%</span></div><div class="sk-track"><div class="sk-bar" data-w="85"></div></div></div>
+      <div class="sk-tags">
+        <span class="sk-tag">Microsoft Excel</span>
+        <span class="sk-tag">Financial Modelling</span>
+        <span class="sk-tag">Accounting & Bookkeeping</span>
+        <span class="sk-tag">Data Analysis</span>
+        <span class="sk-tag">Data Visualization</span>
+        <span class="sk-tag">Xero</span>
+        <span class="sk-tag">QuickBooks</span>
+        <span class="sk-tag">Budgeting & Forecasting</span>
+      </div>
     </div>
   </div>
-  <div class="mods-wrap fu fu-d4">
+
+  <div class="mods-wrap fu fu-d5">
     <div class="mods-lbl">Oracle Fusion Modules</div>
     <div class="mods">
       <span class="mod">General Ledger</span><span class="mod">Fixed Assets</span><span class="mod">Payables</span><span class="mod">Receivables</span><span class="mod">Cash Management</span><span class="mod">Intercompany</span><span class="mod">Budgetary Control</span><span class="mod">Procurement</span><span class="mod">Sourcing</span><span class="mod">Inventory</span><span class="mod">Costing</span><span class="mod">Order Management</span><span class="mod">Expenses</span><span class="mod">Lease Accounting</span><span class="mod">Revenue Management</span><span class="mod">Subscription Mgmt</span><span class="mod">Risk Management</span>
