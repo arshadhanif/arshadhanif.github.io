@@ -858,12 +858,17 @@ footer { background: var(--slate); color: rgba(255,255,255,0.5); padding: 48px 5
 // ── HAMBURGER ──
 var hamburger = document.getElementById('hamburger');
 var mobileMenu = document.getElementById('mobileMenu');
+var menuJustOpened = false;
+
 hamburger.addEventListener('click', function(e) {
   e.stopPropagation();
   hamburger.classList.toggle('open');
   mobileMenu.classList.toggle('open');
   document.body.style.overflow = mobileMenu.classList.contains('open') ? 'hidden' : '';
+  menuJustOpened = true;
+  setTimeout(function() { menuJustOpened = false; }, 300);
 });
+
 document.querySelectorAll('.mobile-menu a').forEach(function(a) {
   a.addEventListener('click', function() {
     hamburger.classList.remove('open');
@@ -871,7 +876,9 @@ document.querySelectorAll('.mobile-menu a').forEach(function(a) {
     document.body.style.overflow = '';
   });
 });
+
 document.addEventListener('click', function(e) {
+  if (menuJustOpened) return;
   if (mobileMenu.classList.contains('open') && !mobileMenu.contains(e.target) && !hamburger.contains(e.target)) {
     hamburger.classList.remove('open');
     mobileMenu.classList.remove('open');
