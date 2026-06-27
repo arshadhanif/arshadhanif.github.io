@@ -65,7 +65,7 @@ export default function Insights() {
             <Stat v={s.tv} l="TV shows" />
             {s.episodes > 0 && <Stat v={s.episodes} l="Episodes" />}
             <Stat v={s.thisYear} l={`Watched in ${s.year}`} />
-            {s.people.map((p) => (
+            {s.people.filter((p) => p.count > 0).map((p) => (
               <Stat key={p.id} v={p.avg ?? '—'} l={`${p.name}'s avg`} s={`${p.count} rated · tap`} color={p.color}
                 onClick={p.count ? () => setDrill({ title: `${p.name}'s ratings`, entries: p.entries }) : undefined} />
             ))}
