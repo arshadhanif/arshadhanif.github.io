@@ -1,0 +1,254 @@
+import { supabase } from './supabase'
+import { getDetail } from './tmdb'
+
+// ---------- Profiles ----------
+
+export async function listProfiles() {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, name, color, avatar_url')
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function getProfile(id) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, name, color, avatar_url')
+    .eq('id', id)
+    .maybeSingle()
+  if (error) throw error
+  return data
+}
+
+export async function updateProfile(id, fields) {
+  const { error } = await supabase.from('profiles').update(fields).eq('id', id)
+  if (error) throw error
+}
+
+// ---------- Titles (TMDB cache) ----------
+
+// Make sure a TMDB title exists in our `titles` cache; returns the row id.
+// `seed` is a normalized search result; we fetch full detail (genre, episodes)
+// the first time we cache it.
+export async function ensureTitle(seed) {
+  const { tmdb_id, media_type } = seed
+  const { data: existing, error: selErr } = await supabase
+    .from('titles')
+    .select('id')
+    .eq('tmdb_id', tmdb_id)
+    .eq('media_type', media_type)
+    .maybeSingle()
+  if (selErr) throw selErr
+  if (existing) return existing.id
+
+  let row = seed
+  try {
+    row = await getDetail(tmdb_id, media_type)
+  } catch (e) {
+    // If detail fetch fails, fall back to the seed we already have.
+    console.warn('TMDB detail fetch failed, caching basic info', e)
+  }
+
+  const { data: inserted, error: insErr } = await supabase
+    .from('titles')
+    .insert({
+      tmdb_id: row.tmdb_id,
+      media_type: row.media_type,
+      title: row.title,
+      year: row.year ?? null,
+      poster_path: row.poster_path ?? null,
+      overview: row.overview ?? null,
+      genre: row.genre ?? null,
+      total_episodes: row.total_episodes ?? null,
+    })
+    .select('id')
+    .single()
+  if (insErr) throw insErr
+  return inserted.id
+}
+
+export async function getTitle(id) {
+  const { data, error } = await supabase
+    .from('titles')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle()
+  if (error) throw error
+  return data
+}
+
+// ---------- Groups ----------
+
+export async function listGroups() {
+  const { data, error } = await supabase
+    .from('groups')
+    .select('id, name, color, owner_id, created_at, group_members(id, profile_id, member_name)')
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function createGroup({ name, color, ownerId, memberNames = [] }) {
+  const { data: group, error } = await supabase
+    .from('groups')
+    .insert({ name, color: color || undefined, owner_id: ownerId })
+    .select('id')
+    .single()
+  if (error) throw error
+  if (memberNames.length) {
+    const rows = memberNames
+      .filter((n) => n.trim())
+      .map((member_name) => ({ group_id: group.id, member_name: member_name.trim() }))
+    if (rows.length) {
+      const { error: mErr } = await supabase.from('group_members').insert(rows)
+      if (mErr) throw mErr
+    }
+  }
+  return group.id
+}
+
+export async function addProfileToGroup(groupId, profileId) {
+  const { error } = await supabase
+    .from('group_members')
+    .insert({ group_id: groupId, profile_id: profileId })
+  if (error) throw error
+}
+
+export async function deleteGroup(groupId) {
+  const { error } = await supabase.from('groups').delete().eq('id', groupId)
+  if (error) throw error
+}
+
+// ---------- Watchlist ----------
+
+export async function listWatchlist(groupId = null) {
+  let q = supabase
+    .from('watchlist')
+    .select('id, group_id, added_by, created_at, titles(*), groups(id, name, color)')
+    .order('created_at', { ascending: false })
+  if (groupId) q = q.eq('group_id', groupId)
+  const { data, error } = await q
+  if (error) throw error
+  return data
+}
+
+export async function addToWatchlist({ seed, groupId, addedBy }) {
+  const titleId = await ensureTitle(seed)
+  // Avoid duplicates for the same group.
+  const { data: existing } = await supabase
+    .from('watchlist')
+    .select('id')
+    .eq('title_id', titleId)
+    .eq('group_id', groupId)
+    .maybeSingle()
+  if (existing) return existing.id
+  const { data, error } = await supabase
+    .from('watchlist')
+    .insert({ title_id: titleId, group_id: groupId, added_by: addedBy })
+    .select('id')
+    .single()
+  if (error) throw error
+  return data.id
+}
+
+export async function removeFromWatchlist(id) {
+  const { error } = await supabase.from('watchlist').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ---------- Watches + Ratings (the "Mark as Watched" + dual-rating core) ----------
+
+// Create a watch and its ratings in one go.
+// ratings: { [profileId]: score|null }
+export async function markWatched({
+  seed,
+  titleId,
+  groupId,
+  watchedOn,
+  note,
+  episodesWatched = 0,
+  createdBy,
+  ratings = {},
+}) {
+  const tId = titleId || (await ensureTitle(seed))
+  const { data: watch, error } = await supabase
+    .from('watches')
+    .insert({
+      title_id: tId,
+      group_id: groupId,
+      watched_on: watchedOn || undefined,
+      note: note || null,
+      episodes_watched: episodesWatched || 0,
+      created_by: createdBy,
+    })
+    .select('id')
+    .single()
+  if (error) throw error
+
+  const ratingRows = Object.entries(ratings)
+    .filter(([, score]) => score != null && score !== '')
+    .map(([profile_id, score]) => ({
+      watch_id: watch.id,
+      profile_id,
+      score: Number(score),
+    }))
+  if (ratingRows.length) {
+    const { error: rErr } = await supabase.from('ratings').insert(ratingRows)
+    if (rErr) throw rErr
+  }
+  return watch.id
+}
+
+// Diary = all watches, newest first, with title + group + ratings.
+export async function listDiary({ groupId = null, limit = 200 } = {}) {
+  let q = supabase
+    .from('watches')
+    .select(
+      'id, watched_on, note, episodes_watched, group_id, created_by, created_at, ' +
+        'titles(*), groups(id, name, color), ratings(id, profile_id, score)'
+    )
+    .order('watched_on', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (groupId) q = q.eq('group_id', groupId)
+  const { data, error } = await q
+  if (error) throw error
+  return data
+}
+
+export async function updateWatch(id, fields) {
+  const { error } = await supabase.from('watches').update(fields).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteWatch(id) {
+  const { error } = await supabase.from('watches').delete().eq('id', id)
+  if (error) throw error
+}
+
+// Upsert a single person's rating on a watch.
+export async function setRating(watchId, profileId, score) {
+  const { data: existing } = await supabase
+    .from('ratings')
+    .select('id')
+    .eq('watch_id', watchId)
+    .eq('profile_id', profileId)
+    .maybeSingle()
+  if (existing) {
+    const { error } = await supabase
+      .from('ratings')
+      .update({ score })
+      .eq('id', existing.id)
+    if (error) throw error
+    return existing.id
+  }
+  const { data, error } = await supabase
+    .from('ratings')
+    .insert({ watch_id: watchId, profile_id: profileId, score })
+    .select('id')
+    .single()
+  if (error) throw error
+  return data.id
+}
