@@ -1,9 +1,19 @@
 import { useState } from 'react'
-import { findByImdbId, findByTitle } from '../lib/tmdb'
-import { ensureTitle, markWatched, addToWatchlist } from '../lib/db'
+import { findByImdbId, findByTitle, findByTvdbId } from '../lib/tmdb'
+import { ensureTitle, markWatched, addToWatchlist, markEpisodesBulk } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
 import { Empty } from '../components/ui'
+
+// Identify which TV Time export file this is, from its header row.
+function detectTvType(headers) {
+  const h = headers.map((x) => x.toLowerCase())
+  if (h.includes('season') && h.includes('episode') && h.includes('series_tvdb_id')) return 'episodes'
+  if (h.includes('is_watched') && h.includes('year') && !h.includes('season')) return 'movies'
+  if (h.includes('status') && h.includes('tvdb_id') && h.includes('title')) return 'series'
+  if (h.includes('list_name') && h.includes('item_type')) return 'lists'
+  return 'unknown'
+}
 
 const MODES = {
   imdb_ratings: {
@@ -15,8 +25,8 @@ const MODES = {
     help: 'IMDb → Watchlist → ⋯ → Export. Titles are added to your “want to watch” list for the chosen group (no rating, not logged as watched).',
   },
   tvtime: {
-    label: 'TV Time', icon: '📺', target: 'diary', needsPerson: true,
-    help: 'TV Time export (CSV or JSON). Shows & movies are matched to TMDB and added as watches for the chosen group.',
+    label: 'TV Time', icon: '📺', target: 'diary', needsPerson: false, multi: true,
+    help: 'Upload your TV Time CSV export files together (movies, series-episodes, series). Watched movies & shows go to the diary, your per-episode history powers episode tracking, and not-started shows go to your watchlist — all for the chosen group.',
   },
 }
 
@@ -113,6 +123,7 @@ export default function Import() {
   const [status, setStatus] = useState(null)
   const [progress, setProgress] = useState({ done: 0, total: 0, ok: 0, skipped: 0 })
   const [running, setRunning] = useState(false)
+  const [tvFiles, setTvFiles] = useState([])
 
   const cfg = MODES[mode]
 
@@ -132,8 +143,99 @@ export default function Import() {
   }
 
   function pickMode(m) {
-    setMode(m); setItems([]); setFilename(''); setStatus(null)
+    setMode(m); setItems([]); setFilename(''); setStatus(null); setTvFiles([])
     setProgress({ done: 0, total: 0, ok: 0, skipped: 0 })
+  }
+
+  function onTvFiles(e) {
+    const files = [...(e.target.files || [])]
+    if (!files.length) return
+    setStatus(null); setProgress({ done: 0, total: 0, ok: 0, skipped: 0 })
+    Promise.all(files.map((f) => new Promise((res) => {
+      const r = new FileReader()
+      r.onload = () => {
+        const rows = parseCSV(r.result)
+        res({ name: f.name, type: detectTvType(rows[0] || []), objs: rowsToObjects(rows) })
+      }
+      r.readAsText(f)
+    }))).then(setTvFiles)
+  }
+
+  async function runTvTime() {
+    if (!groupId) { setStatus({ type: 'error', text: 'Pick a group first.' }); return }
+    const truthy = (v) => String(v).toLowerCase() === 'true'
+    const ep = tvFiles.find((f) => f.type === 'episodes')
+    const seriesRows = (tvFiles.find((f) => f.type === 'series')?.objs) || []
+    const movieRows = (tvFiles.find((f) => f.type === 'movies')?.objs) || []
+
+    const epBySeries = {}
+    for (const r of (ep?.objs || [])) { (epBySeries[r.series_tvdb_id] ||= []).push(r) }
+    const epIds = Object.keys(epBySeries)
+    const total = epIds.length + seriesRows.length + movieRows.length
+    if (!total) { setStatus({ type: 'error', text: 'No recognised TV Time files.' }); return }
+
+    setRunning(true)
+    setProgress({ done: 0, total, ok: 0, skipped: 0 })
+    let done = 0, ok = 0, skipped = 0
+    const bump = (good) => { done++; good ? ok++ : skipped++; setProgress({ done, total, ok, skipped }) }
+    const handled = new Set()
+
+    // 1) per-episode history → episode tracking + a diary entry per show
+    for (const tvdbId of epIds) {
+      const rows = epBySeries[tvdbId]
+      try {
+        const watched = rows.filter((r) => truthy(r.is_watched) && !truthy(r.special))
+          .map((r) => ({ season: Number(r.season), episode: Number(r.episode), watchedOn: normDate(r.watched_at) }))
+          .filter((e) => Number.isFinite(e.season) && Number.isFinite(e.episode))
+        // No watched episodes here — leave it for the series pass (watchlist / following).
+        if (!watched.length) { bump(true); continue }
+        let seed = await findByTvdbId(tvdbId)
+        if (!seed) seed = await findByTitle(rows[0]?.title, null, 'tv')
+        if (!seed) { bump(false); continue }
+        const titleId = await ensureTitle(seed)
+        await markEpisodesBulk({ titleId, groupId, episodes: watched, createdBy: user.id })
+        const dates = watched.map((e) => e.watchedOn).filter(Boolean).sort()
+        const last = dates[dates.length - 1]
+        await markWatched({ titleId, groupId, watchedOn: last || undefined, noDate: !last, datePrecision: 'day', episodesWatched: watched.length, createdBy: user.id, visibility: 'private' })
+        handled.add(String(tvdbId))
+        bump(true)
+      } catch (e) { console.warn('tvtime episodes', tvdbId, e); bump(false) }
+    }
+
+    // 2) followed series: not-started → watchlist (skip ones already handled by episodes)
+    for (const r of seriesRows) {
+      try {
+        if (handled.has(String(r.tvdb_id))) { bump(true); continue }
+        let seed = await findByTvdbId(r.tvdb_id)
+        if (!seed && r.imdb_id) seed = await findByImdbId(r.imdb_id)
+        if (!seed) seed = await findByTitle(r.title, null, 'tv')
+        if (!seed) { bump(false); continue }
+        const titleId = await ensureTitle(seed)
+        if ((r.status || '').toLowerCase() === 'not_started_yet') await addToWatchlist({ titleId, groupId, addedBy: user.id })
+        else await markWatched({ titleId, groupId, noDate: true, createdBy: user.id, visibility: 'private' })
+        bump(true)
+      } catch (e) { console.warn('tvtime series', r, e); bump(false) }
+    }
+
+    // 3) movies: watched → diary; not watched → watchlist
+    for (const r of movieRows) {
+      try {
+        let seed = r.imdb_id ? await findByImdbId(r.imdb_id) : null
+        if (!seed) seed = await findByTitle(r.title, r.year, 'movie')
+        if (!seed) { bump(false); continue }
+        const titleId = await ensureTitle(seed)
+        if (truthy(r.is_watched)) {
+          const wd = normDate(r.watched_at) || normDate(r.created_at)
+          await markWatched({ titleId, groupId, watchedOn: wd || undefined, noDate: !wd, datePrecision: 'day', createdBy: user.id, visibility: 'private' })
+        } else {
+          await addToWatchlist({ titleId, groupId, addedBy: user.id })
+        }
+        bump(true)
+      } catch (e) { console.warn('tvtime movie', r, e); bump(false) }
+    }
+
+    setRunning(false)
+    setStatus({ type: 'ok', text: `Done — ${ok} processed, ${skipped} skipped.` })
   }
 
   async function runImport() {
@@ -209,14 +311,50 @@ export default function Import() {
           </div>
         )}
         <div className="field">
-          <label>File (.csv or .json)</label>
-          <input type="file" accept=".csv,.json,text/csv,application/json" onChange={onFile} />
+          <label>{cfg.multi ? 'TV Time CSV files (pick all of them at once)' : 'File (.csv or .json)'}</label>
+          {cfg.multi
+            ? <input type="file" accept=".csv" multiple onChange={onTvFiles} />
+            : <input type="file" accept=".csv,.json,text/csv,application/json" onChange={onFile} />}
         </div>
       </div>
 
       {status && <div className={`banner ${status.type === 'error' ? 'error' : ''}`}>{status.text}</div>}
 
-      {items.length > 0 && (
+      {cfg.multi && (
+        <>
+          {tvFiles.length > 0 && (
+            <div className="card" style={{ marginBottom: 12 }}>
+              <strong>Detected files</strong>
+              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {tvFiles.map((f, i) => (
+                  <div key={i} className="spread">
+                    <span>{f.name}</span>
+                    <span className="faint">{f.type === 'unknown' ? '⚠ unrecognised' : `${f.type} · ${f.objs.length}`}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {(running || progress.done > 0) && (
+            <div className="card" style={{ marginBottom: 12 }}>
+              <div className="spread"><span>{running ? 'Importing…' : 'Finished'}</span><span className="faint">{progress.done}/{progress.total}</span></div>
+              <div style={{ height: 8, background: 'var(--bg-elev-2)', borderRadius: 999, overflow: 'hidden', margin: '8px 0' }}>
+                <div style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%`, height: '100%', background: 'var(--accent)' }} />
+              </div>
+              <span className="faint">✓ {progress.ok} done · ⤫ {progress.skipped} skipped</span>
+            </div>
+          )}
+          {tvFiles.some((f) => f.type !== 'unknown') ? (
+            <button className="btn primary block" disabled={running || !groupId} onClick={runTvTime}>
+              {running ? 'Importing…' : 'Import TV Time export'}
+            </button>
+          ) : tvFiles.length === 0 && !status ? (
+            <Empty icon="📺">Select your TV Time CSV files above — you can choose several at once (movies, series-episodes, series).</Empty>
+          ) : null}
+        </>
+      )}
+
+      {!cfg.multi && items.length > 0 && (
         <>
           <div className="spread" style={{ marginBottom: 12 }}>
             <strong>{filename}</strong>
@@ -256,7 +394,7 @@ export default function Import() {
         </>
       )}
 
-      {items.length === 0 && !status && (
+      {!cfg.multi && items.length === 0 && !status && (
         <Empty>Choose a file above to preview and import your history.</Empty>
       )}
     </div>
