@@ -613,21 +613,92 @@ export async function getLoggedTmdbIds() {
   return set
 }
 
+// ---------- Custom lists (collections) ----------
+
+export async function listCollections() {
+  const { data, error } = await supabase
+    .from('collections')
+    .select('id, name, description, emoji, ranked, owner_id, created_at, collection_items(count)')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data || []).map((c) => ({ ...c, item_count: c.collection_items?.[0]?.count || 0 }))
+}
+
+export async function getCollection(id) {
+  const { data, error } = await supabase
+    .from('collections')
+    .select('id, name, description, emoji, ranked, owner_id, created_at, ' +
+      'collection_items(id, position, note, added_at, titles(*))')
+    .eq('id', id)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) return null
+  data.items = (data.collection_items || []).sort((a, b) => a.position - b.position || a.added_at.localeCompare(b.added_at))
+  return data
+}
+
+export async function createCollection({ name, description, emoji, ranked, ownerId }) {
+  const { data: hm } = await supabase
+    .from('household_members').select('household_id').eq('profile_id', ownerId).limit(1).maybeSingle()
+  const { data, error } = await supabase
+    .from('collections')
+    .insert({ name, description: description || null, emoji: emoji || null, ranked: !!ranked, owner_id: ownerId, household_id: hm?.household_id || null })
+    .select('id').single()
+  if (error) throw error
+  return data.id
+}
+
+export async function updateCollection(id, fields) {
+  const { error } = await supabase.from('collections').update(fields).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteCollection(id) {
+  const { error } = await supabase.from('collections').delete().eq('id', id)
+  if (error) throw error
+}
+
+// Add a title (by TMDB seed) to a collection, appended at the end.
+export async function addToCollection({ collectionId, seed, titleId, note }) {
+  const tId = titleId || (await ensureTitle(seed))
+  const { data: last } = await supabase
+    .from('collection_items').select('position').eq('collection_id', collectionId)
+    .order('position', { ascending: false }).limit(1).maybeSingle()
+  const position = (last?.position ?? -1) + 1
+  const { error } = await supabase
+    .from('collection_items')
+    .upsert({ collection_id: collectionId, title_id: tId, position, note: note || null }, { onConflict: 'collection_id,title_id', ignoreDuplicates: true })
+  if (error) throw error
+  return tId
+}
+
+export async function removeFromCollection(itemId) {
+  const { error } = await supabase.from('collection_items').delete().eq('id', itemId)
+  if (error) throw error
+}
+
+// Persist a new ordering: array of item ids in desired order.
+export async function reorderCollection(orderedIds) {
+  await Promise.all(orderedIds.map((id, i) =>
+    supabase.from('collection_items').update({ position: i }).eq('id', id)))
+}
+
 // ---------- Backup / export ----------
 // Gather everything the household can see into one plain object for download.
 export async function exportAllData() {
-  const [profiles, groups, diary, episodes, watchlist] = await Promise.all([
+  const [profiles, groups, diary, episodes, watchlist, collections] = await Promise.all([
     listProfiles(),
     listGroups(),
     listDiary({ limit: 100000 }),
     listEpisodeDiary({ limit: 100000 }),
     listWatchlist(),
+    listCollections(),
   ])
   return {
     app: 'ReelBook',
-    schema: 1,
-    counts: { profiles: profiles.length, groups: groups.length, diary: diary.length, episodes: episodes.length, watchlist: watchlist.length },
-    profiles, groups, diary, episodes, watchlist,
+    schema: 2,
+    counts: { profiles: profiles.length, groups: groups.length, diary: diary.length, episodes: episodes.length, watchlist: watchlist.length, collections: collections.length },
+    profiles, groups, diary, episodes, watchlist, collections,
   }
 }
 
