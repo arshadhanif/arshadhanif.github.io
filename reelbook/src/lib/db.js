@@ -108,7 +108,7 @@ export async function ensureTitleFromFull(full) {
 export async function getWatchesForTitle(titleId) {
   const { data, error } = await supabase
     .from('watches')
-    .select('id, watched_on, note, episodes_watched, group_id, groups(id, name, color), ratings(id, profile_id, score)')
+    .select('id, watched_on, note, episodes_watched, where_watched, service, group_id, groups(id, name, color), ratings(id, profile_id, score)')
     .eq('title_id', titleId)
     .order('watched_on', { ascending: false })
   if (error) throw error
@@ -350,6 +350,9 @@ export async function markWatched({
   createdBy,
   ratings = {},
   visibility = 'private',
+  whereWatched = null,
+  service = null,
+  noDate = false,
 }) {
   const tId = titleId || (await ensureTitle(seed))
   const { data: watch, error } = await supabase
@@ -357,11 +360,14 @@ export async function markWatched({
     .insert({
       title_id: tId,
       group_id: groupId,
-      watched_on: watchedOn || undefined,
+      // noDate => "don't remember" => store null (column is nullable)
+      watched_on: noDate ? null : (watchedOn || undefined),
       note: note || null,
       episodes_watched: episodesWatched || 0,
       created_by: createdBy,
       visibility,
+      where_watched: whereWatched || null,
+      service: service || null,
     })
     .select('id')
     .single()
@@ -386,7 +392,7 @@ export async function listDiary({ groupId = null, limit = 200 } = {}) {
   let q = supabase
     .from('watches')
     .select(
-      'id, watched_on, note, episodes_watched, group_id, created_by, created_at, ' +
+      'id, watched_on, note, episodes_watched, where_watched, service, group_id, created_by, created_at, ' +
         'titles(*), groups(id, name, color), ratings(id, profile_id, score)'
     )
     .order('watched_on', { ascending: false })

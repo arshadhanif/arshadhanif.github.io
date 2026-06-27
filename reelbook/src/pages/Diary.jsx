@@ -78,6 +78,8 @@ export default function Diary() {
                     {t?.media_type === 'tv' && e.episodes_watched > 0 && (
                       <> · {e.episodes_watched}{t.total_episodes ? `/${t.total_episodes}` : ''} eps</>
                     )}
+                    {e.service && <> · 📺 {e.service}</>}
+                    {e.where_watched && <> · {e.where_watched}</>}
                   </div>
                   <DualScore profiles={profiles} ratings={e.ratings} />
                   {e.note && <p className="muted" style={{ margin: '8px 0 0', fontSize: 14 }}>“{e.note}”</p>}
@@ -106,6 +108,8 @@ function EditWatch({ entry, profiles, onClose, onChanged }) {
   const [ratings, setRatings] = useState(initial)
   const [episodes, setEpisodes] = useState(entry.episodes_watched || 0)
   const [note, setNote] = useState(entry.note || '')
+  const [whereWatched, setWhereWatched] = useState(entry.where_watched || '')
+  const [service, setService] = useState(entry.service || '')
   const [busy, setBusy] = useState(false)
   const isTv = t?.media_type === 'tv'
 
@@ -115,6 +119,8 @@ function EditWatch({ entry, profiles, onClose, onChanged }) {
       await updateWatch(entry.id, {
         note: note || null,
         episodes_watched: isTv ? Number(episodes) || 0 : 0,
+        where_watched: whereWatched || null,
+        service: service.trim() || null,
       })
       for (const p of profiles) {
         const score = ratings[p.id]
@@ -152,6 +158,22 @@ function EditWatch({ entry, profiles, onClose, onChanged }) {
           </div>
         ))}
       </div>
+      <div className="row" style={{ gap: 12, alignItems: 'flex-start' }}>
+        <div className="field" style={{ flex: 1 }}>
+          <label>Where?</label>
+          <select value={whereWatched} onChange={(e) => setWhereWatched(e.target.value)}>
+            <option value="">—</option>
+            {['Cinema / Theatre', 'TV', 'Laptop', 'Computer', 'Mobile', 'Tablet', 'Projector', 'Other'].map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ flex: 1 }}>
+          <label>Service</label>
+          <input list="service-list-edit" value={service} onChange={(e) => setService(e.target.value)} placeholder="e.g. Netflix" />
+          <datalist id="service-list-edit">
+            {['Netflix', 'OSN', 'Prime Video', 'Disney+', 'Apple TV+', 'Shahid', 'StarzPlay', 'Max', 'Hulu', 'YouTube', 'Cinema', 'Other'].map((o) => <option key={o} value={o} />)}
+          </datalist>
+        </div>
+      </div>
       <div className="field">
         <label>Note</label>
         <textarea rows="3" value={note} onChange={(e) => setNote(e.target.value)} />
@@ -167,7 +189,7 @@ function EditWatch({ entry, profiles, onClose, onChanged }) {
 }
 
 function fmtDate(d) {
-  if (!d) return ''
+  if (!d) return 'Date not set'
   return new Date(d + 'T00:00:00').toLocaleDateString(undefined, {
     year: 'numeric', month: 'short', day: 'numeric',
   })
