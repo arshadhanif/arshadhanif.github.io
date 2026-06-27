@@ -38,6 +38,7 @@ export default function Insights() {
   }), [entries, groupId, mediaType, decade])
 
   const s = useMemo(() => compute(data, profiles, groups), [data, profiles, groups])
+  const streaks = useMemo(() => computeStreaks(data, epData), [data, epData])
 
   if (loading) return <div className="page"><Spinner label="Crunching your numbers…" /></div>
 
@@ -152,6 +153,17 @@ export default function Insights() {
               </Section>
 
               <YearHeatmap days={es.heatmap} year={es.hmYear} onPick={(day, list) => list.length && setEpDrill({ title: `Episodes on ${fmtDate(day)}`, eps: list })} />
+            </Section>
+          )}
+
+          {streaks && (
+            <Section title="🔥 Watch streaks">
+              <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px,1fr))' }}>
+                <Stat v={streaks.current} l="Current streak" s={streaks.current ? 'days in a row' : 'watch today to start one'} color={streaks.current ? 'var(--green)' : undefined} />
+                <Stat v={streaks.longest} l="Longest streak" s={streaks.longestStart ? `${fmtDate(streaks.longestStart)} → ${fmtDate(streaks.longestEnd)}` : 'days in a row'} />
+                <Stat v={streaks.totalDays} l="Active days" s="days with a watch" />
+                <Stat v={streaks.thisMonth} l="Active this month" s="days so far" />
+              </div>
             </Section>
           )}
 
@@ -285,6 +297,36 @@ function Distribution({ dist, color, onPick }) {
       ))}
     </div>
   )
+}
+
+// Streaks across ANY watch activity (movies + episodes), one tick per calendar day.
+function computeStreaks(diary, eps) {
+  const days = new Set()
+  for (const e of diary) if (e.watched_on) days.add(String(e.watched_on).slice(0, 10))
+  for (const e of eps) if (e.watched_on) days.add(String(e.watched_on).slice(0, 10))
+  if (!days.size) return null
+  const DAY = 864e5
+  const at = (k) => new Date(k + 'T00:00:00').getTime()      // local midnight
+  const localKey = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
+  const sorted = [...days].sort()
+
+  let longest = 1, run = 1, longestEnd = sorted[0]
+  for (let i = 1; i < sorted.length; i++) {
+    if (Math.round((at(sorted[i]) - at(sorted[i - 1])) / DAY) === 1) {
+      run++; if (run > longest) { longest = run; longestEnd = sorted[i] }
+    } else run = 1
+  }
+  const longestStart = localKey(at(longestEnd) - (longest - 1) * DAY)
+
+  // Current streak: walk back from today (allow it to still count if today is blank but yesterday isn't).
+  const todayKey = localKey(Date.now())
+  let cur = 0, cursor = days.has(todayKey) ? at(todayKey) : at(todayKey) - DAY
+  while (days.has(localKey(cursor))) { cur++; cursor -= DAY }
+
+  const ymNow = todayKey.slice(0, 7)
+  const thisMonth = [...days].filter((d) => d.slice(0, 7) === ymNow).length
+
+  return { longest, longestStart, longestEnd, current: cur, totalDays: days.size, thisMonth }
 }
 
 function computeEpisodes(eps) {
