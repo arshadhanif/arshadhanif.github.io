@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { listInProgressShows } from '../lib/db'
+import { listTrackedShows } from '../lib/db'
+import { initBaselines, buildNotifications, getUnread } from '../lib/notify'
 import { initials } from './ui'
 
 const TABS = [
@@ -16,13 +17,23 @@ const TABS = [
 export default function Layout() {
   const { profile, signOut } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [notifCount, setNotifCount] = useState(0)
+  const [notifCount, setNotifCount] = useState(getUnread())
   const menuRef = useRef(null)
   const navigate = useNavigate()
+  const location = useLocation()
 
+  // Seed the badge from cached episode counts vs. what's been acknowledged.
   useEffect(() => {
-    listInProgressShows().then((s) => setNotifCount(s.length)).catch(() => {})
+    listTrackedShows().then((tracked) => {
+      const objs = tracked.map((s) => ({ id: s.title.id, watched: s.watched, aired: s.cachedTotal || null, next: null }))
+      initBaselines(objs)
+      buildNotifications(objs)
+      setNotifCount(getUnread())
+    }).catch(() => {})
   }, [])
+
+  // Re-read the badge whenever the route changes (e.g. after "Mark all read").
+  useEffect(() => { setNotifCount(getUnread()) }, [location.pathname])
 
   useEffect(() => {
     const onClick = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false) }
