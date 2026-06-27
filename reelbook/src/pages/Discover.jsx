@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { searchMulti, getTrending, getPopular, getTopRated, IMG } from '../lib/tmdb'
-import { listInProgressShows } from '../lib/db'
+import { searchMulti, getTrending, getPopular, getTopRated, getTvStatus, IMG } from '../lib/tmdb'
+import { listInProgressShows, setTitleTotalEpisodes } from '../lib/db'
 import { Poster, Empty, SkeletonGrid, TitleLink } from '../components/ui'
 
 export default function Discover() {
@@ -22,7 +22,23 @@ export default function Discover() {
         trending: val(tr), popMovies: val(pm), popTv: val(ptv), topMovies: val(trm),
       })
     })
-    listInProgressShows().then(setContinueShows).catch(() => {})
+    listInProgressShows().then(async (shows) => {
+      setContinueShows(shows)
+      // Refresh AIRED episode counts (TMDB's total counts unaired episodes),
+      // so shows you're fully caught up on drop off. Gated to once every 6h.
+      const KEY = 'reelbook.epRefresh'
+      if (Date.now() - Number(localStorage.getItem(KEY) || 0) < 6 * 3600 * 1000) return
+      const out = await Promise.allSettled(shows.map(async (s) => {
+        const st = await getTvStatus(s.title.tmdb_id)
+        const aired = st.aired_episodes ?? st.number_of_episodes
+        if (aired && aired !== s.total) await setTitleTotalEpisodes(s.title.id, aired).catch(() => {})
+        return { ...s, total: aired ?? s.total }
+      }))
+      try { localStorage.setItem(KEY, String(Date.now())) } catch {}
+      const refreshed = out.filter((r) => r.status === 'fulfilled').map((r) => r.value)
+        .filter((s) => !s.total || s.watched < s.total)
+      setContinueShows(refreshed)
+    }).catch(() => {})
   }, [])
 
   useEffect(() => {

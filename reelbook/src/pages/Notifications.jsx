@@ -14,14 +14,12 @@ export default function Notifications() {
       const results = await Promise.allSettled(
         shows.map(async (s) => {
           const status = await getTvStatus(s.title.tmdb_id)
-          const currentTotal = status.number_of_episodes ?? s.cachedTotal
-          if (currentTotal && currentTotal !== s.cachedTotal) {
-            setTitleTotalEpisodes(s.title.id, currentTotal).catch(() => {})
-          }
+          const aired = status.aired_episodes ?? status.number_of_episodes ?? s.cachedTotal
+          // Cache the AIRED count so "caught up" is judged correctly everywhere.
+          if (aired && aired !== s.cachedTotal) setTitleTotalEpisodes(s.title.id, aired).catch(() => {})
           return {
             title: s.title,
-            unwatched: Math.max(0, currentTotal - s.watched),
-            newlyAired: Math.max(0, currentTotal - s.cachedTotal),
+            unwatched: Math.max(0, aired - s.watched),
             next: status.next_episode,
           }
         })
@@ -35,11 +33,10 @@ export default function Notifications() {
 
   if (loading) return <div className="page"><Spinner label="Checking for new episodes…" /></div>
 
-  const fresh = items.filter((i) => i.newlyAired > 0)
-  const catchUp = items.filter((i) => i.unwatched > 0)
+  const catchUp = items.filter((i) => i.unwatched > 0).sort((a, b) => b.unwatched - a.unwatched)
   const upcoming = items.filter((i) => i.next?.air_date)
 
-  const nothing = fresh.length === 0 && catchUp.length === 0 && upcoming.length === 0
+  const nothing = catchUp.length === 0 && upcoming.length === 0
 
   return (
     <div className="page">
@@ -50,13 +47,6 @@ export default function Notifications() {
         <Empty icon="🔔">You’re all caught up! Track a show’s episodes and new releases will show up here.</Empty>
       ) : (
         <>
-          {fresh.length > 0 && (
-            <Section title="🆕 New episodes aired">
-              {fresh.map((i) => (
-                <Row key={i.title.id} t={i.title} primary={`${i.newlyAired} new episode${i.newlyAired > 1 ? 's' : ''} since you last checked`} />
-              ))}
-            </Section>
-          )}
           {catchUp.length > 0 && (
             <Section title="Catch up">
               {catchUp.map((i) => (

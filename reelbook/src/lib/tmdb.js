@@ -223,12 +223,26 @@ function pickTrailer(videos = []) {
   return t?.key || null
 }
 
-// Current episode status for a tracked show (for new-episode notifications).
+// How many episodes have actually AIRED (TMDB's number_of_episodes also counts
+// announced/unaired episodes for ongoing shows, which breaks "caught up" logic).
+function airedEpisodes(data) {
+  if (!data.next_episode_to_air) return data.number_of_episodes ?? null // ended / fully aired
+  const last = data.last_episode_to_air
+  if (!last) return data.number_of_episodes ?? null
+  let count = (data.seasons || [])
+    .filter((s) => (s.season_number || 0) >= 1 && s.season_number < last.season_number)
+    .reduce((a, s) => a + (s.episode_count || 0), 0)
+  count += last.episode_number || 0
+  return count
+}
+
+// Current episode status for a tracked show (for catch-up + notifications).
 export async function getTvStatus(tmdbId) {
   const data = await tmdb(`/tv/${tmdbId}`)
   const n = data.next_episode_to_air
   return {
     number_of_episodes: data.number_of_episodes ?? null,
+    aired_episodes: airedEpisodes(data),
     status: data.status || null,
     next_episode: n ? { air_date: n.air_date, name: n.name, season: n.season_number, episode: n.episode_number } : null,
   }
