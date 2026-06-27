@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { sendFriendRequest, listFriends, acceptFriend, removeFriend, friendFeed } from '../lib/db'
 import { useToast } from '../context/Toast'
 import { Poster, Spinner, Empty, TitleLink } from '../components/ui'
+import { fmtDate as fmt } from '../lib/dates'
 
 export default function Friends() {
   const toast = useToast()
@@ -134,7 +135,4 @@ function Section({ title, children }) {
 }
 function initials(name = '') {
   return name.split(' ').map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()
-}
-function fmt(d) {
-  return new Date(d + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }

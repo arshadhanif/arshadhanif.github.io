@@ -240,7 +240,9 @@ export async function markEpisodesBulk({ titleId, groupId, episodes, createdBy }
   for (let i = 0; i < rows.length; i += 500) {
     const { error } = await supabase
       .from('episode_watches')
-      .upsert(rows.slice(i, i + 500), { onConflict: 'title_id,group_id,season_number,episode_number' })
+      // ignoreDuplicates: only add episodes that aren't logged yet — never
+      // overwrite an existing episode's real watched date or rating.
+      .upsert(rows.slice(i, i + 500), { onConflict: 'title_id,group_id,season_number,episode_number', ignoreDuplicates: true })
     if (error) throw error
   }
 }
@@ -253,7 +255,8 @@ export async function markSeason({ titleId, groupId, season, episodes, watchedOn
   if (!rows.length) return
   const { error } = await supabase
     .from('episode_watches')
-    .upsert(rows, { onConflict: 'title_id,group_id,season_number,episode_number' })
+    // Only fill in episodes not already logged; keep existing dates/ratings.
+    .upsert(rows, { onConflict: 'title_id,group_id,season_number,episode_number', ignoreDuplicates: true })
   if (error) throw error
 }
 
@@ -497,6 +500,21 @@ export async function listDiary({ groupId = null, limit = 200 } = {}) {
   const { data, error } = await q
   if (error) throw error
   return data
+}
+
+// Episode-level diary: individual episode watches, newest first, with title + group.
+export async function listEpisodeDiary({ groupId = null, limit = 400 } = {}) {
+  let q = supabase
+    .from('episode_watches')
+    .select('id, season_number, episode_number, watched_on, rating, created_at, ' +
+      'titles(id, tmdb_id, title, media_type, poster_path, year), groups(id, name, color)')
+    .order('watched_on', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (groupId) q = q.eq('group_id', groupId)
+  const { data, error } = await q
+  if (error) throw error
+  return data || []
 }
 
 export async function updateWatch(id, fields) {
