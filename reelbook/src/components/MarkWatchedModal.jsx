@@ -15,7 +15,10 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
   const initialGroup = (prefGroup && groups.some((g) => g.id === prefGroup)) ? prefGroup : (groups[0]?.id || null)
   const [groupId, setGroupId] = useState(initialGroup)
   const [dateMode, setDateMode] = useState('today') // today | pick | unknown
+  const [precision, setPrecision] = useState('day') // day | month | year
   const [watchedOn, setWatchedOn] = useState(today)
+  const [monthVal, setMonthVal] = useState(today.slice(0, 7))
+  const [yearVal, setYearVal] = useState(today.slice(0, 4))
   const [note, setNote] = useState('')
   const [episodes, setEpisodes] = useState(0)
   const [ratings, setRatings] = useState({}) // {profileId: score}
@@ -27,16 +30,24 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
 
   const isTv = item.media_type === 'tv'
 
+  function resolveDate() {
+    if (dateMode === 'today') return { watchedOn: today, datePrecision: 'day' }
+    if (dateMode === 'unknown') return { noDate: true }
+    if (precision === 'year') return { watchedOn: `${yearVal}-01-01`, datePrecision: 'year' }
+    if (precision === 'month') return { watchedOn: `${monthVal}-01`, datePrecision: 'month' }
+    return { watchedOn, datePrecision: 'day' }
+  }
+
   async function save() {
     setSaving(true)
     setErr(null)
     try {
+      const d = resolveDate()
       await markWatched({
         seed: item.seed,
         titleId: item.titleId,
         groupId,
-        watchedOn: dateMode === 'today' ? today : watchedOn,
-        noDate: dateMode === 'unknown',
+        ...d,
         note,
         episodesWatched: isTv ? Number(episodes) || 0 : 0,
         createdBy: user.id,
@@ -75,7 +86,22 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
           ))}
         </div>
         {dateMode === 'pick' && (
-          <input type="date" value={watchedOn} max={today} onChange={(e) => setWatchedOn(e.target.value)} />
+          <>
+            <div className="seg" style={{ marginBottom: 10 }}>
+              {[['day', 'Exact day'], ['month', 'Month only'], ['year', 'Year only']].map(([v, l]) => (
+                <button key={v} type="button" className={precision === v ? 'on' : ''} onClick={() => setPrecision(v)}>{l}</button>
+              ))}
+            </div>
+            {precision === 'day' && (
+              <input type="date" value={watchedOn} max={today} onChange={(e) => setWatchedOn(e.target.value)} />
+            )}
+            {precision === 'month' && (
+              <input type="month" value={monthVal} max={today.slice(0, 7)} onChange={(e) => setMonthVal(e.target.value)} />
+            )}
+            {precision === 'year' && (
+              <input type="number" min="1900" max={today.slice(0, 4)} value={yearVal} onChange={(e) => setYearVal(e.target.value)} placeholder="e.g. 2019" />
+            )}
+          </>
         )}
       </div>
 

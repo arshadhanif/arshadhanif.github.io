@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { getFullDetail, getSeason, getRecommendations, IMG, providerRegions } from '../lib/tmdb'
 import {
   ensureTitleFromFull, getWatchesForTitle, addToWatchlist,
-  listEpisodeWatches, markEpisode, unmarkEpisode, markSeason,
+  listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, unmarkAllEpisodes,
 } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
@@ -11,6 +11,7 @@ import { useToast } from '../context/Toast'
 import { Poster, Spinner, DualScore, Modal, TitleLink } from '../components/ui'
 import MarkWatchedModal from '../components/MarkWatchedModal'
 import { getPref, DEFAULT_REGION } from '../lib/prefs'
+import { formatWatched } from '../lib/dates'
 
 export default function TitleDetail() {
   const { media, id } = useParams()
@@ -159,7 +160,7 @@ export default function TitleDetail() {
               {watches.map((w) => (
                 <div className="card spread" key={w.id}>
                   <div>
-                    <div className="faint">{fmt(w.watched_on)}{w.groups && <> · <span style={{ color: w.groups.color }}>{w.groups.name}</span></>}{w.service && <> · 📺 {w.service}</>}{w.where_watched && <> · {w.where_watched}</>}</div>
+                    <div className="faint">{formatWatched(w.watched_on, w.date_precision)}{w.groups && <> · <span style={{ color: w.groups.color }}>{w.groups.name}</span></>}{w.service && <> · 📺 {w.service}</>}{w.where_watched && <> · {w.where_watched}</>}</div>
                     {w.note && <div className="muted" style={{ fontSize: 14, marginTop: 4 }}>“{w.note}”</div>}
                   </div>
                   <DualScore profiles={profiles} ratings={w.ratings} />
@@ -207,10 +208,6 @@ function Block({ title, children }) {
   )
 }
 
-function fmt(d) {
-  if (!d) return 'Date not set'
-  return new Date(d + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-}
 
 function AddWatchlist({ titleId, groups, userId }) {
   const toast = useToast()
@@ -332,6 +329,37 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
     toast(`Marked ${eps.length} episodes watched`)
   }
 
+  const [bulkBusy, setBulkBusy] = useState(false)
+  async function markEntireSeries() {
+    if (!trackGroupId) return
+    setBulkBusy(true)
+    try {
+      // Make sure every season's episode list is loaded, then mark each.
+      const lists = await Promise.all(seasons.map(async (s) =>
+        episodesBySeason[s.season_number] || (await getSeason(tmdbId, s.season_number))
+      ))
+      for (let i = 0; i < seasons.length; i++) {
+        const eps = lists[i]
+        if (eps?.length) {
+          await markSeason({ titleId, groupId: trackGroupId, season: seasons[i].season_number, episodes: eps.map((e) => e.episode_number), watchedOn: today, createdBy: userId })
+        }
+      }
+      await reloadWatched()
+      toast('Marked entire series watched')
+    } catch (e) { toast('Could not mark all', 'err') }
+    finally { setBulkBusy(false) }
+  }
+  async function clearSeries() {
+    if (!trackGroupId) return
+    if (!confirm('Unmark every episode for this group?')) return
+    setBulkBusy(true)
+    try {
+      await unmarkAllEpisodes({ titleId, groupId: trackGroupId })
+      await reloadWatched()
+      toast('Cleared all episodes')
+    } finally { setBulkBusy(false) }
+  }
+
   return (
     <div className="detail-block">
       <div className="section-head">
@@ -341,6 +369,13 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
           {groups.map((g) => <option key={g.id} value={g.id}>track as: {g.name}</option>)}
         </select>
       </div>
+
+      {trackGroupId && (
+        <div className="row" style={{ gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+          <button className="btn sm primary" disabled={bulkBusy} onClick={markEntireSeries}>✓ Mark entire series watched</button>
+          <button className="btn sm" disabled={bulkBusy} onClick={clearSeries}>Clear all</button>
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {seasons.map((s) => {

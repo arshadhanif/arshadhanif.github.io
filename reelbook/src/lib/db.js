@@ -108,7 +108,7 @@ export async function ensureTitleFromFull(full) {
 export async function getWatchesForTitle(titleId) {
   const { data, error } = await supabase
     .from('watches')
-    .select('id, watched_on, note, episodes_watched, where_watched, service, group_id, groups(id, name, color), ratings(id, profile_id, score)')
+    .select('id, watched_on, date_precision, note, episodes_watched, where_watched, service, group_id, groups(id, name, color), ratings(id, profile_id, score)')
     .eq('title_id', titleId)
     .order('watched_on', { ascending: false })
   if (error) throw error
@@ -147,6 +147,13 @@ export async function unmarkEpisode({ titleId, groupId, season, episode }) {
     .eq('title_id', titleId)
     .eq('season_number', season)
     .eq('episode_number', episode)
+  q = groupId ? q.eq('group_id', groupId) : q.is('group_id', null)
+  const { error } = await q
+  if (error) throw error
+}
+
+export async function unmarkAllEpisodes({ titleId, groupId }) {
+  let q = supabase.from('episode_watches').delete().eq('title_id', titleId)
   q = groupId ? q.eq('group_id', groupId) : q.is('group_id', null)
   const { error } = await q
   if (error) throw error
@@ -353,6 +360,7 @@ export async function markWatched({
   whereWatched = null,
   service = null,
   noDate = false,
+  datePrecision = 'day',
 }) {
   const tId = titleId || (await ensureTitle(seed))
   const { data: watch, error } = await supabase
@@ -362,6 +370,7 @@ export async function markWatched({
       group_id: groupId,
       // noDate => "don't remember" => store null (column is nullable)
       watched_on: noDate ? null : (watchedOn || undefined),
+      date_precision: noDate ? null : datePrecision,
       note: note || null,
       episodes_watched: episodesWatched || 0,
       created_by: createdBy,
@@ -392,7 +401,7 @@ export async function listDiary({ groupId = null, limit = 200 } = {}) {
   let q = supabase
     .from('watches')
     .select(
-      'id, watched_on, note, episodes_watched, where_watched, service, group_id, created_by, created_at, ' +
+      'id, watched_on, date_precision, note, episodes_watched, where_watched, service, group_id, created_by, created_at, ' +
         'titles(*), groups(id, name, color), ratings(id, profile_id, score)'
     )
     .order('watched_on', { ascending: false })
