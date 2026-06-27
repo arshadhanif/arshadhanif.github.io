@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { listDiary, listWatchlist } from '../lib/db'
-import { recommendFromHistory, keyOf } from '../lib/recommend'
+import { recommendFromHistory, recommendRails, keyOf } from '../lib/recommend'
 import { IMG } from '../lib/tmdb'
 import { useAppData } from '../context/AppData'
-import { Poster, Spinner, Empty, GroupChips, TitleLink } from '../components/ui'
+import { Poster, Spinner, Empty, GroupChips, TitleLink, GridSkeleton } from '../components/ui'
 
 export default function ForYou() {
   const { groups } = useAppData()
@@ -11,6 +11,7 @@ export default function ForYou() {
   const [watchlist, setWatchlist] = useState([])
   const [loadingData, setLoadingData] = useState(true)
   const [recs, setRecs] = useState([])
+  const [rails, setRails] = useState([])
   const [loadingRecs, setLoadingRecs] = useState(true)
   const [groupId, setGroupId] = useState(null)
   const [type, setType] = useState('all')
@@ -39,9 +40,12 @@ export default function ForYou() {
     if (loadingData) return
     let alive = true
     setLoadingRecs(true)
-    recommendFromHistory({ entries: seedEntries, exclude, type })
-      .then((r) => alive && setRecs(r))
-      .catch(() => alive && setRecs([]))
+    Promise.all([
+      recommendFromHistory({ entries: seedEntries, exclude, type }),
+      recommendRails({ entries: seedEntries, exclude, type }),
+    ])
+      .then(([r, rl]) => { if (alive) { setRecs(r); setRails(rl) } })
+      .catch(() => { if (alive) { setRecs([]); setRails([]) } })
       .finally(() => alive && setLoadingRecs(false))
     return () => { alive = false }
   }, [seedEntries, exclude, type, loadingData])
@@ -107,24 +111,48 @@ export default function ForYou() {
         </div>
       )}
 
-      {/* Recommendations grid */}
-      <div className="section-head" style={{ marginTop: 24 }}><h2>Recommended for you</h2></div>
+      {/* "Because you liked X" rails */}
       {!hasHistory ? (
-        <Empty icon="✨">Rate a few things you’ve watched and I’ll start recommending titles you’ll love.</Empty>
+        <>
+          <div className="section-head" style={{ marginTop: 24 }}><h2>Recommended for you</h2></div>
+          <Empty icon="✨">Rate a few things you’ve watched and I’ll start recommending titles you’ll love.</Empty>
+        </>
       ) : loadingRecs ? (
-        <Spinner label="Finding picks…" />
-      ) : recs.length === 0 ? (
-        <Empty icon="🍿">No fresh recommendations for this filter yet. Try a different group or type, or rate more titles.</Empty>
+        <><div className="section-head" style={{ marginTop: 24 }}><h2>Recommended for you</h2></div><GridSkeleton count={12} /></>
       ) : (
-        <div className="grid">
-          {recs.map((r) => (
-            <TitleLink className="tile" key={keyOf(r.media_type, r.tmdb_id)} tmdbId={r.tmdb_id} media={r.media_type}>
-              <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
-              <div className="tile-title">{r.title}</div>
-              <div className="tile-sub">{r.year || 'N/A'} · {r.media_type === 'tv' ? 'TV' : 'Movie'}</div>
-            </TitleLink>
+        <>
+          {rails.map((rail) => (
+            <div key={keyOf(rail.seed.media_type, rail.seed.tmdb_id)} style={{ marginTop: 24 }}>
+              <div className="section-head">
+                <h2 style={{ fontSize: 18 }}>Because you liked <TitleLink className="linklike" tmdbId={rail.seed.tmdb_id} media={rail.seed.media_type}>{rail.seed.title}</TitleLink></h2>
+              </div>
+              <div className="scroll-x rail">
+                {rail.items.map((r) => (
+                  <TitleLink className="tile rail-item" key={keyOf(r.media_type, r.tmdb_id)} tmdbId={r.tmdb_id} media={r.media_type}>
+                    <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
+                    <div className="tile-title">{r.title}</div>
+                    <div className="tile-sub">{r.year || 'N/A'} · {r.media_type === 'tv' ? 'TV' : 'Movie'}</div>
+                  </TitleLink>
+                ))}
+              </div>
+            </div>
           ))}
-        </div>
+
+          <div className="section-head" style={{ marginTop: 24 }}><h2>More picks for you</h2></div>
+          {recs.length === 0 ? (
+            <Empty icon="🍿">No fresh recommendations for this filter yet. Try a different group or type, or rate more titles.</Empty>
+          ) : (
+            <div className="grid">
+              {recs.map((r) => (
+                <TitleLink className="tile" key={keyOf(r.media_type, r.tmdb_id)} tmdbId={r.tmdb_id} media={r.media_type}>
+                  <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
+                  <div className="tile-title">{r.title}</div>
+                  <div className="tile-sub">{r.year || 'N/A'} · {r.media_type === 'tv' ? 'TV' : 'Movie'}</div>
+                </TitleLink>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   )

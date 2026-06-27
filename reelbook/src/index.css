@@ -190,6 +190,9 @@ input:focus, select:focus, textarea:focus {
 
 .tile { cursor: pointer; transition: transform .15s; }
 .tile:hover { transform: translateY(-3px); }
+.poster img { animation: imgfade .35s ease both; }
+@keyframes imgfade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .poster img { animation: none; } }
 .tile:hover .poster { border-color: var(--accent); box-shadow: 0 10px 26px rgba(0,0,0,.45); }
 
 .poster {
@@ -255,6 +258,11 @@ input:focus, select:focus, textarea:focus {
 .skel-line { height: 12px; border-radius: 6px; margin-top: 8px; }
 
 .spinner { padding: 44px; text-align: center; color: var(--text-faint-solid); }
+
+/* loading skeletons */
+.skeleton { background: linear-gradient(100deg, var(--bg-elev-2) 30%, var(--bg-hover) 50%, var(--bg-elev-2) 70%); background-size: 200% 100%; animation: shimmer 1.3s ease-in-out infinite; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
 
 /* section header */
 .section-head { display: flex; align-items: center; justify-content: space-between; margin: 0 0 12px; }
