@@ -109,10 +109,26 @@ export async function getTrending() {
     .filter((r) => r.title && r.poster_path)
 }
 
-// Rich detail for the title page: core fields + credits + external ids + providers.
+// Curated rows for the Discover home.
+export async function getPopular(mediaType) {
+  const data = await tmdb(`/${mediaType}/popular`)
+  return (data.results || []).map((r) => normalizeResult({ ...r, media_type: mediaType })).filter(Boolean).filter((r) => r.poster_path)
+}
+export async function getTopRated(mediaType) {
+  const data = await tmdb(`/${mediaType}/top_rated`)
+  return (data.results || []).map((r) => normalizeResult({ ...r, media_type: mediaType })).filter(Boolean).filter((r) => r.poster_path)
+}
+
+// "More like this" on the detail page.
+export async function getRecommendations(tmdbId, mediaType) {
+  const data = await tmdb(`/${mediaType}/${tmdbId}/recommendations`)
+  return (data.results || []).map((r) => normalizeResult({ ...r, media_type: mediaType })).filter(Boolean).filter((r) => r.poster_path).slice(0, 12)
+}
+
+// Rich detail for the title page: core fields + credits + external ids + providers + videos.
 export async function getFullDetail(tmdbId, mediaType) {
   const data = await tmdb(`/${mediaType}/${tmdbId}`, {
-    append_to_response: 'credits,external_ids,watch/providers',
+    append_to_response: 'credits,external_ids,watch/providers,videos',
   })
   const isMovie = mediaType === 'movie'
   const runtime = isMovie
@@ -164,7 +180,16 @@ export async function getFullDetail(tmdbId, mediaType) {
     seasons,
     number_of_seasons: data.number_of_seasons ?? seasons.length,
     providers: data['watch/providers']?.results || {},
+    trailer_key: pickTrailer(data.videos?.results),
   }
+}
+
+function pickTrailer(videos = []) {
+  const yt = videos.filter((v) => v.site === 'YouTube')
+  const t = yt.find((v) => v.type === 'Trailer' && v.official) ||
+            yt.find((v) => v.type === 'Trailer') ||
+            yt.find((v) => v.type === 'Teaser') || yt[0]
+  return t?.key || null
 }
 
 // Episodes for one season of a TV show.

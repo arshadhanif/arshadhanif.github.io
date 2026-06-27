@@ -9,6 +9,20 @@ export default function Diary() {
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(null)
+  const [sort, setSort] = useState('recent')   // recent | oldest | rating
+  const [typeF, setTypeF] = useState('all')     // all | movie | tv
+
+  const avgOf = (e) => {
+    const rs = (e.ratings || []).filter((r) => r.score != null)
+    return rs.length ? rs.reduce((a, b) => a + b.score, 0) / rs.length : -1
+  }
+  const view = entries
+    .filter((e) => typeF === 'all' || e.titles?.media_type === typeF)
+    .sort((a, b) => {
+      if (sort === 'rating') return avgOf(b) - avgOf(a)
+      if (sort === 'oldest') return (a.watched_on || '').localeCompare(b.watched_on || '')
+      return (b.watched_on || '').localeCompare(a.watched_on || '')
+    })
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -23,11 +37,28 @@ export default function Diary() {
       <h1>Diary</h1>
       <GroupChips groups={groups} value={groupId} onChange={setGroupId} />
 
+      {entries.length > 0 && (
+        <div className="row" style={{ gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+          <div className="seg">
+            {[['recent', 'Newest'], ['oldest', 'Oldest'], ['rating', 'Top rated']].map(([v, l]) => (
+              <button key={v} className={sort === v ? 'on' : ''} onClick={() => setSort(v)}>{l}</button>
+            ))}
+          </div>
+          <div className="seg">
+            {[['all', 'All'], ['movie', 'Movies'], ['tv', 'TV']].map(([v, l]) => (
+              <button key={v} className={typeF === v ? 'on' : ''} onClick={() => setTypeF(v)}>{l}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {loading ? <Spinner /> : entries.length === 0 ? (
         <Empty>No watches logged yet. Mark something watched from <strong>Discover</strong> or your <strong>Watchlist</strong>.</Empty>
+      ) : view.length === 0 ? (
+        <Empty icon="🔎">No {typeF === 'tv' ? 'TV shows' : 'movies'} in this view.</Empty>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {entries.map((e) => {
+          {view.map((e) => {
             const t = e.titles
             return (
               <div key={e.id} className="card row" style={{ alignItems: 'flex-start', gap: 14 }}>

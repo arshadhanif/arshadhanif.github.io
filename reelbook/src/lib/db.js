@@ -164,6 +164,31 @@ export async function markSeason({ titleId, groupId, season, episodes, watchedOn
   if (error) throw error
 }
 
+// Shows with episodes ticked off but not yet complete — for "Continue watching".
+export async function listInProgressShows() {
+  const { data, error } = await supabase
+    .from('episode_watches')
+    .select('title_id, season_number, episode_number, watched_on, titles(*)')
+  if (error) throw error
+  const byTitle = new Map()
+  for (const row of data || []) {
+    const t = row.titles
+    if (!t || t.media_type !== 'tv') continue
+    if (!byTitle.has(row.title_id)) byTitle.set(row.title_id, { title: t, eps: new Set(), last: row.watched_on })
+    const e = byTitle.get(row.title_id)
+    e.eps.add(`${row.season_number}-${row.episode_number}`)
+    if (row.watched_on && (!e.last || row.watched_on > e.last)) e.last = row.watched_on
+  }
+  const out = []
+  for (const { title, eps, last } of byTitle.values()) {
+    const total = title.total_episodes || 0
+    const watched = eps.size
+    if (total && watched >= total) continue // finished
+    out.push({ title, watched, total, last })
+  }
+  return out.sort((a, b) => (b.last || '').localeCompare(a.last || ''))
+}
+
 export async function getTitle(id) {
   const { data, error } = await supabase
     .from('titles')
