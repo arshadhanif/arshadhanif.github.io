@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { listTrackedShows, setTitleTotalEpisodes } from '../lib/db'
 import { getTvStatus } from '../lib/tmdb'
-import { initBaselines, buildNotifications, dismiss, markAllRead } from '../lib/notify'
+import { initBaselines, buildNotifications, dismiss, markAllRead, syncNotifState } from '../lib/notify'
 import { Poster, Spinner, Empty, TitleLink } from '../components/ui'
 
 export default function Notifications() {
@@ -13,6 +13,7 @@ export default function Notifications() {
   useEffect(() => {
     let alive = true
     ;(async () => {
+      await syncNotifState().catch(() => {})
       const tracked = (await listTrackedShows()).slice(0, 60)
       const out = await Promise.allSettled(tracked.map(async (s) => {
         const st = await getTvStatus(s.title.tmdb_id)

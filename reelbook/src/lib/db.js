@@ -533,3 +533,47 @@ export async function setRating(watchId, profileId, score) {
   if (error) throw error
   return data.id
 }
+
+// ---------- Notification sync (cross-device) ----------
+// Per-user state so baselines, dismissals and read-status follow you across
+// phones/laptops instead of living only in this browser's localStorage.
+
+export async function loadNotifState() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+  const { data, error } = await supabase
+    .from('notif_state')
+    .select('title_id, baseline_aired, dismissed')
+    .eq('user_id', user.id)
+  if (error) throw error
+  return data || []
+}
+
+// Upsert one title's state. baseline/dismissed are optional (only set what changed).
+export async function saveNotifState({ titleId, baselineAired, dismissed }) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  const row = { user_id: user.id, title_id: titleId, updated_at: new Date().toISOString() }
+  if (baselineAired != null) row.baseline_aired = baselineAired
+  if (dismissed != null) row.dismissed = dismissed
+  const { error } = await supabase
+    .from('notif_state')
+    .upsert(row, { onConflict: 'user_id,title_id' })
+  if (error) throw error
+}
+
+// Bulk upsert many baselines at once (used when seeding new shows).
+export async function saveNotifBaselines(map) {
+  const entries = Object.entries(map || {})
+  if (!entries.length) return
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  const now = new Date().toISOString()
+  const rows = entries.map(([titleId, baseline]) => ({
+    user_id: user.id, title_id: titleId, baseline_aired: baseline, updated_at: now,
+  }))
+  const { error } = await supabase
+    .from('notif_state')
+    .upsert(rows, { onConflict: 'user_id,title_id', ignoreDuplicates: false })
+  if (error) throw error
+}

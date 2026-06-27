@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { listTrackedShows } from '../lib/db'
-import { initBaselines, buildNotifications, getUnread } from '../lib/notify'
+import { initBaselines, buildNotifications, getUnread, syncNotifState } from '../lib/notify'
 import { initials } from './ui'
 
 const TABS = [
@@ -23,13 +23,17 @@ export default function Layout() {
   const location = useLocation()
 
   // Seed the badge from cached episode counts vs. what's been acknowledged.
+  // Hydrate per-user state from the server first so the badge is consistent
+  // across devices, then compute against locally-tracked shows.
   useEffect(() => {
-    listTrackedShows().then((tracked) => {
+    ;(async () => {
+      await syncNotifState().catch(() => {})
+      const tracked = await listTrackedShows().catch(() => [])
       const objs = tracked.map((s) => ({ id: s.title.id, watched: s.watched, aired: s.cachedTotal || null, next: null }))
       initBaselines(objs)
       buildNotifications(objs)
       setNotifCount(getUnread())
-    }).catch(() => {})
+    })()
   }, [])
 
   // Re-read the badge whenever the route changes (e.g. after "Mark all read").
