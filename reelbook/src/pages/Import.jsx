@@ -142,6 +142,8 @@ export default function Import() {
   const [progress, setProgress] = useState({ done: 0, total: 0, ok: 0, skipped: 0 })
   const [running, setRunning] = useState(false)
   const [tvFiles, setTvFiles] = useState([])
+  const [skippedTitles, setSkippedTitles] = useState([])
+  const [showSkipped, setShowSkipped] = useState(false)
 
   const cfg = MODES[mode]
 
@@ -161,7 +163,7 @@ export default function Import() {
   }
 
   function pickMode(m) {
-    setMode(m); setItems([]); setFilename(''); setStatus(null); setTvFiles([])
+    setMode(m); setItems([]); setFilename(''); setStatus(null); setTvFiles([]); setSkippedTitles([])
     setProgress({ done: 0, total: 0, ok: 0, skipped: 0 })
   }
 
@@ -215,6 +217,12 @@ export default function Import() {
         if (!seed) seed = await findByTitle(r.title, r.year, 'movie')
         return { r, seed }
       }, 12, tick)
+
+      setSkippedTitles([
+        ...epR.filter((x) => !x.seed).map((x) => x.s.title),
+        ...wlR.filter((x) => !x.seed).map((x) => x.r.title),
+        ...mvR.filter((x) => !x.seed).map((x) => x.r.title),
+      ].filter(Boolean))
 
       // 2) Upsert every title once.
       const map = await ensureTitlesBulk([...epR, ...wlR, ...mvR].map((x) => x.seed).filter(Boolean))
@@ -270,6 +278,7 @@ export default function Import() {
 
     const matched = resolved.filter(Boolean)
     const skipped = items.length - matched.length
+    setSkippedTitles(items.filter((_, i) => !resolved[i]).map((it) => it.title || it.imdbId))
     try {
       // 2) Upsert all titles in a few queries.
       const map = await ensureTitlesBulk(matched.map((m) => m.seed))
@@ -342,6 +351,23 @@ export default function Import() {
       </div>
 
       {status && <div className={`banner ${status.type === 'error' ? 'error' : ''}`}>{status.text}</div>}
+
+      {skippedTitles.length > 0 && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <button className="spread" style={{ width: '100%', background: 'none' }} onClick={() => setShowSkipped((s) => !s)}>
+            <strong>{skippedTitles.length} skipped (not found on TMDB)</strong>
+            <span className="faint">{showSkipped ? 'hide ▾' : 'show ▸'}</span>
+          </button>
+          {showSkipped && (
+            <div className="faint" style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 260, overflowY: 'auto' }}>
+              {skippedTitles.map((t, i) => <div key={i}>• {t}</div>)}
+            </div>
+          )}
+          <div className="faint" style={{ marginTop: 10 }}>
+            These are usually stand-up specials, sports/wrestling events, “Video” releases or other items not in TMDB’s film/TV catalogue. You can add any of them manually from Discover if TMDB has them under a different name.
+          </div>
+        </div>
+      )}
 
       {cfg.multi && (
         <>
