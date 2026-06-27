@@ -596,6 +596,24 @@ export async function saveNotifBaselines(map) {
   if (error) throw error
 }
 
+// ---------- Backup / export ----------
+// Gather everything the household can see into one plain object for download.
+export async function exportAllData() {
+  const [profiles, groups, diary, episodes, watchlist] = await Promise.all([
+    listProfiles(),
+    listGroups(),
+    listDiary({ limit: 100000 }),
+    listEpisodeDiary({ limit: 100000 }),
+    listWatchlist(),
+  ])
+  return {
+    app: 'ReelBook',
+    schema: 1,
+    counts: { profiles: profiles.length, groups: groups.length, diary: diary.length, episodes: episodes.length, watchlist: watchlist.length },
+    profiles, groups, diary, episodes, watchlist,
+  }
+}
+
 // ---------- Push subscriptions (Web Push) ----------
 
 export async function savePushSubscription(sub) {
