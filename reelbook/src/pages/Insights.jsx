@@ -1,21 +1,28 @@
 import { useEffect, useMemo, useState } from 'react'
-import { listDiary } from '../lib/db'
+import { listDiary, listEpisodeDiary } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { Spinner, Empty, GroupChips, Poster, TitleLink, DualScore, Modal } from '../components/ui'
-import { formatWatched } from '../lib/dates'
+import { formatWatched, fmtDate } from '../lib/dates'
 
 export default function Insights() {
   const { profiles, groups } = useAppData()
   const [entries, setEntries] = useState([])
+  const [eps, setEps] = useState([])
   const [loading, setLoading] = useState(true)
   const [groupId, setGroupId] = useState(null)
   const [mediaType, setMediaType] = useState('all')
   const [decade, setDecade] = useState('all')
-  const [drill, setDrill] = useState(null) // { title, entries }
+  const [drill, setDrill] = useState(null)     // { title, entries }
+  const [epDrill, setEpDrill] = useState(null)  // { title, eps }
 
   useEffect(() => {
-    listDiary({ limit: 4000 }).then(setEntries).finally(() => setLoading(false))
+    Promise.all([listDiary({ limit: 4000 }), listEpisodeDiary({ limit: 6000 })])
+      .then(([d, e]) => { setEntries(d); setEps(e) })
+      .finally(() => setLoading(false))
   }, [])
+
+  const epData = useMemo(() => eps.filter((e) => !groupId || e.group_id === groupId), [eps, groupId])
+  const es = useMemo(() => computeEpisodes(epData), [epData])
 
   const decades = useMemo(() => {
     const set = new Set()
@@ -115,6 +122,39 @@ export default function Insights() {
             </Section>
           )}
 
+          {mediaType !== 'movie' && es.total > 0 && (
+            <Section title="📺 Episode activity">
+              <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px,1fr))', marginBottom: 14 }}>
+                <Stat v={es.total} l="Episodes watched" />
+                <Stat v={es.hours} l="Hours of TV" s="approx" />
+                <Stat v={es.showCount} l="Shows" />
+                <Stat v={es.busiest ? es.busiest.count : 0} l="Best day" s={es.busiest ? fmtDate(es.busiest.day) : 'episodes in a day'} />
+              </div>
+
+              {es.months.some((m) => m.count > 0) && (
+                <div className="card" style={{ marginBottom: 14 }}>
+                  <div className="faint" style={{ marginBottom: 8 }}>Episodes per month (last 12)</div>
+                  <div className="cols">
+                    {es.months.map((m) => (
+                      <button className="col" key={m.key} title={`${m.label}: ${m.count}`}
+                        onClick={() => m.eps.length && setEpDrill({ title: `Episodes in ${m.fullLabel}`, eps: m.eps })}>
+                        <div className="fill" style={{ height: `${es.monthMax ? (m.count / es.monthMax) * 100 : 0}%` }} />
+                        <span className="cl">{m.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Section title="Most-watched shows">
+                <div className="card"><Bars items={es.topShows} accent="var(--accent)"
+                  onPick={({ entries }) => setEpDrill({ title: entries[0]?.titles?.title || 'Show', eps: entries })} /></div>
+              </Section>
+
+              <YearHeatmap days={es.heatmap} year={es.hmYear} onPick={(day, list) => list.length && setEpDrill({ title: `Episodes on ${fmtDate(day)}`, eps: list })} />
+            </Section>
+          )}
+
           <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(280px,1fr))' }}>
             {s.genres.length > 0 && <Section title="Top genres"><div className="card"><Bars items={s.genres} onPick={setDrill} /></div></Section>}
             {s.services.length > 0 && <Section title="By streaming service"><div className="card"><Bars items={s.services} accent="var(--accent-2)" onPick={setDrill} /></div></Section>}
@@ -158,6 +198,52 @@ export default function Insights() {
           </div>
         </Modal>
       )}
+
+      {epDrill && (
+        <Modal title={epDrill.title} onClose={() => setEpDrill(null)}>
+          <div className="faint" style={{ marginBottom: 12 }}>{epDrill.eps.length} episode{epDrill.eps.length === 1 ? '' : 's'}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {epDrill.eps.slice(0, 200).map((e) => (
+              <TitleLink className="card row" key={e.id} tmdbId={e.titles?.tmdb_id} media="tv" style={{ gap: 12, alignItems: 'center' }}>
+                <div style={{ width: 38, flexShrink: 0 }}>
+                  <Poster title={e.titles?.title} mediaType="tv" posterPath={e.titles?.poster_path} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <strong style={{ fontSize: 14 }}>{e.titles?.title} <span className="faint">S{e.season_number}·E{e.episode_number}</span></strong>
+                  <div className="faint">{e.watched_on ? fmtDate(e.watched_on) : 'Date not set'}{e.groups && <> · <span style={{ color: e.groups.color }}>{e.groups.name}</span></>}</div>
+                </div>
+                {e.rating != null && <span className="score" style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>★ {e.rating}</span>}
+              </TitleLink>
+            ))}
+          </div>
+        </Modal>
+      )}
+    </div>
+  )
+}
+
+// GitHub-style watch calendar for the most recent 12 months of episode activity.
+function YearHeatmap({ days, year, onPick }) {
+  if (!days || !days.size) return null
+  const max = Math.max(1, ...days.values())
+  // Build a grid of weeks (columns) x 7 weekdays for the last 53 weeks.
+  const end = new Date()
+  const start = new Date(end); start.setDate(start.getDate() - 7 * 52 - end.getDay())
+  const cells = []
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    cells.push({ key, count: days.get(key)?.length || 0, list: days.get(key) || [] })
+  }
+  const lvl = (c) => c === 0 ? 0 : c >= max * 0.75 ? 4 : c >= max * 0.5 ? 3 : c >= max * 0.25 ? 2 : 1
+  return (
+    <div className="card" style={{ marginTop: 14, overflowX: 'auto' }}>
+      <div className="faint" style={{ marginBottom: 8 }}>Watch calendar · last 12 months</div>
+      <div className="heat">
+        {cells.map((c) => (
+          <button key={c.key} className={`heat-cell l${lvl(c.count)}`} title={`${fmtDate(c.key)}: ${c.count} episode${c.count === 1 ? '' : 's'}`}
+            onClick={() => onPick(c.key, c.list)} />
+        ))}
+      </div>
     </div>
   )
 }
@@ -199,6 +285,45 @@ function Distribution({ dist, color, onPick }) {
       ))}
     </div>
   )
+}
+
+function computeEpisodes(eps) {
+  const now = new Date()
+  let minutes = 0
+  for (const e of eps) minutes += e.titles?.runtime || 40
+  const hours = Math.round(minutes / 60)
+
+  // last 12 months
+  const months = []
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    months.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      label: d.toLocaleDateString(undefined, { month: 'short' }),
+      fullLabel: d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }), count: 0, eps: [] })
+  }
+  const mIndex = Object.fromEntries(months.map((m, i) => [m.key, i]))
+
+  const byShow = new Map()        // title_id -> { entries }
+  const byDay = new Map()         // yyyy-mm-dd -> [eps]
+  for (const e of eps) {
+    const tid = e.titles?.id
+    if (tid) { if (!byShow.has(tid)) byShow.set(tid, []); byShow.get(tid).push(e) }
+    if (e.watched_on) {
+      const mk = String(e.watched_on).slice(0, 7)
+      if (mk in mIndex) { months[mIndex[mk]].count++; months[mIndex[mk]].eps.push(e) }
+      const dk = String(e.watched_on).slice(0, 10)
+      if (!byDay.has(dk)) byDay.set(dk, []); byDay.get(dk).push(e)
+    }
+  }
+  const monthMax = Math.max(0, ...months.map((m) => m.count))
+
+  const topShows = [...byShow.values()].map((list) => ({ label: list[0]?.titles?.title || '—', value: list.length, entries: list }))
+    .sort((a, b) => b.value - a.value).slice(0, 8)
+
+  let busiest = null
+  for (const [day, list] of byDay) if (!busiest || list.length > busiest.count) busiest = { day, count: list.length }
+
+  return { total: eps.length, hours, showCount: byShow.size, months, monthMax, topShows, heatmap: byDay, hmYear: now.getFullYear(), busiest }
 }
 
 function avgOfEntry(e) {

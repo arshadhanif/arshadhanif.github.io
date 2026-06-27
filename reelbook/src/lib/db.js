@@ -506,8 +506,8 @@ export async function listDiary({ groupId = null, limit = 200 } = {}) {
 export async function listEpisodeDiary({ groupId = null, limit = 400 } = {}) {
   let q = supabase
     .from('episode_watches')
-    .select('id, season_number, episode_number, watched_on, rating, created_at, ' +
-      'titles(id, tmdb_id, title, media_type, poster_path, year), groups(id, name, color)')
+    .select('id, season_number, episode_number, watched_on, rating, created_at, group_id, ' +
+      'titles(id, tmdb_id, title, media_type, poster_path, year, runtime), groups(id, name, color)')
     .order('watched_on', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
     .limit(limit)
