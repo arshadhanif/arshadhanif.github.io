@@ -15,6 +15,7 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
   const [note, setNote] = useState('')
   const [episodes, setEpisodes] = useState(0)
   const [ratings, setRatings] = useState({}) // {profileId: score}
+  const [visibility, setVisibility] = useState('private')
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState(null)
 
@@ -33,6 +34,7 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
         episodesWatched: isTv ? Number(episodes) || 0 : 0,
         createdBy: user.id,
         ratings,
+        visibility,
       })
       onSaved?.()
       onClose()
@@ -91,6 +93,15 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
       <div className="field">
         <label>Note (optional)</label>
         <textarea rows="3" value={note} onChange={(e) => setNote(e.target.value)} placeholder="What did you think?" />
+      </div>
+
+      <div className="field">
+        <label>Visibility</label>
+        <select value={visibility} onChange={(e) => setVisibility(e.target.value)}>
+          <option value="private">Private — just your household</option>
+          <option value="friends">Friends — visible to your friends</option>
+          <option value="public">Public — any ReelBook user</option>
+        </select>
       </div>
 
       <button className="btn primary block" disabled={saving || !groupId} onClick={save}>
