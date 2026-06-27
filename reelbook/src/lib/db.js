@@ -600,6 +600,19 @@ export async function saveNotifBaselines(map) {
   if (error) throw error
 }
 
+// Set of TMDB ids the household has logged (watched or watchlisted) — used to
+// badge titles you've seen on person / discovery pages.
+export async function getLoggedTmdbIds() {
+  const [{ data: w }, { data: wl }] = await Promise.all([
+    supabase.from('watches').select('titles(tmdb_id)'),
+    supabase.from('watchlist').select('titles(tmdb_id)'),
+  ])
+  const set = new Set()
+  for (const r of w || []) if (r.titles?.tmdb_id) set.add(r.titles.tmdb_id)
+  for (const r of wl || []) if (r.titles?.tmdb_id) set.add(r.titles.tmdb_id)
+  return set
+}
+
 // ---------- Backup / export ----------
 // Gather everything the household can see into one plain object for download.
 export async function exportAllData() {

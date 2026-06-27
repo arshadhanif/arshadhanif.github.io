@@ -361,6 +361,15 @@ input:focus, select:focus, textarea:focus {
 .ep2-facts dt { font-size: 11px; color: var(--text-faint-solid); text-transform: uppercase; letter-spacing: .4px; }
 .ep2-facts dd { margin: 1px 0 0; font-size: 13px; font-weight: 600; }
 
+/* person / filmography page */
+.person-head { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
+.person-photo { width: 140px; flex-shrink: 0; border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-elev-2); aspect-ratio: 2/3; }
+.person-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.person-photo .cast-ph { width: 100%; height: 100%; display: grid; place-items: center; }
+.linklike { color: var(--accent-2); font-weight: 600; background: none; border: 0; padding: 0; cursor: pointer; }
+.linklike:hover { text-decoration: underline; }
+@media (max-width: 560px) { .person-photo { width: 104px; } }
+
 /* achievements / badges */
 .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
 .badge { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px 14px; text-align: center; opacity: .62; transition: transform .12s, border-color .15s; }

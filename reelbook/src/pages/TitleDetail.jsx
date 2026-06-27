@@ -112,7 +112,14 @@ export default function TitleDetail() {
 
         {full.crew.length > 0 && (
           <Block title={isTv ? 'Created by' : 'Director'}>
-            <div className="muted">{full.crew.map((c) => c.name).join(', ')}</div>
+            <div className="muted">
+              {full.crew.map((c, i) => (
+                <span key={`${c.id}-${i}`}>
+                  {i > 0 && ', '}
+                  {c.id ? <span className="linklike" onClick={() => navigate(`/person/${c.id}`)}>{c.name}</span> : c.name}
+                </span>
+              ))}
+            </div>
           </Block>
         )}
 
@@ -122,7 +129,7 @@ export default function TitleDetail() {
           <Block title="Cast">
             <div className="scroll-x cast-row">
               {full.cast.map((c) => (
-                <div className="cast" key={c.id}>
+                <div className="cast" key={c.id} onClick={() => navigate(`/person/${c.id}`)} style={{ cursor: 'pointer' }}>
                   <div className="cast-photo">
                     {IMG.profile(c.profile_path)
                       ? <img src={IMG.profile(c.profile_path)} alt={c.name} loading="lazy" />
