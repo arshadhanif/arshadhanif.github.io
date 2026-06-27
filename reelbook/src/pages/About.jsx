@@ -25,9 +25,9 @@ export default function About() {
       <div className="card">
         <h2 style={{ fontSize: 16, marginTop: 0 }}>More</h2>
         <p className="muted" style={{ marginBottom: 8 }}>
-          Insights (per-person averages, trends, decade breakdowns) are coming soon.
+          See your per-person averages, agreement, trends over time, top genres and decades.
         </p>
-        <Link className="btn sm" to="/insights">Preview Insights →</Link>
+        <Link className="btn sm" to="/insights">Open Insights →</Link>
       </div>
     </div>
   )

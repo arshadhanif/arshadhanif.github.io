@@ -94,6 +94,15 @@ export async function findByTitle(query, year, mediaHint) {
   return pool[0]
 }
 
+// Trending this week (movies + TV) — shown on the Discover screen before searching.
+export async function getTrending() {
+  const data = await tmdb('/trending/all/week')
+  return (data.results || [])
+    .map(normalizeResult)
+    .filter(Boolean)
+    .filter((r) => r.title && r.poster_path)
+}
+
 // Full detail for a single title (used when adding/caching).
 export async function getDetail(tmdbId, mediaType) {
   const data = await tmdb(`/${mediaType}/${tmdbId}`)

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { searchMulti } from '../lib/tmdb'
+import { searchMulti, getTrending } from '../lib/tmdb'
 import { addToWatchlist } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
-import { Poster, Spinner, Empty, Modal } from '../components/ui'
+import { Poster, Empty, Modal, SkeletonGrid } from '../components/ui'
 import MarkWatchedModal from '../components/MarkWatchedModal'
 
 export default function Discover() {
@@ -11,6 +11,7 @@ export default function Discover() {
   const { user } = useAuth()
   const [q, setQ] = useState('')
   const [results, setResults] = useState([])
+  const [trending, setTrending] = useState([])
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState(null)
   const [active, setActive] = useState(null)     // seed for the action sheet
@@ -18,10 +19,15 @@ export default function Discover() {
   const debounce = useRef()
 
   useEffect(() => {
+    getTrending().then(setTrending).catch(() => {})
+  }, [])
+
+  useEffect(() => {
     clearTimeout(debounce.current)
-    if (!q.trim()) { setResults([]); setErr(null); return }
+    if (!q.trim()) { setResults([]); setErr(null); setLoading(false); return }
+    setLoading(true)
     debounce.current = setTimeout(async () => {
-      setLoading(true); setErr(null)
+      setErr(null)
       try {
         setResults(await searchMulti(q))
       } catch (e) {
@@ -32,6 +38,9 @@ export default function Discover() {
     }, 350)
     return () => clearTimeout(debounce.current)
   }, [q])
+
+  const searching = !!q.trim()
+  const shown = searching ? results : trending
 
   return (
     <div className="page">
@@ -45,24 +54,31 @@ export default function Discover() {
       />
 
       {err && <div className="banner error">{err}</div>}
-      {loading && <Spinner label="Searching TMDB…" />}
 
-      {!loading && !q.trim() && (
-        <Empty>Search for a movie or show to add it to a watchlist or your diary.</Empty>
-      )}
-      {!loading && q.trim() && results.length === 0 && !err && (
-        <Empty>No results for “{q}”.</Empty>
+      {!searching && trending.length > 0 && (
+        <div className="section-head"><h2>🔥 Trending this week</h2></div>
       )}
 
-      <div className="grid">
-        {results.map((r) => (
-          <div key={`${r.media_type}-${r.tmdb_id}`} role="button" onClick={() => setActive(r)}>
-            <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
-            <div className="tile-title">{r.title}</div>
-            <div className="tile-sub">{r.year || '—'} · {r.media_type === 'tv' ? 'TV' : 'Movie'}</div>
-          </div>
-        ))}
-      </div>
+      {loading && <SkeletonGrid count={12} />}
+
+      {!loading && searching && results.length === 0 && !err && (
+        <Empty icon="🔍">No results for “{q}”.</Empty>
+      )}
+      {!loading && !searching && trending.length === 0 && (
+        <Empty icon="🍿">Search for a movie or show to add it to a watchlist or your diary.</Empty>
+      )}
+
+      {!loading && (
+        <div className="grid">
+          {shown.map((r) => (
+            <div className="tile" key={`${r.media_type}-${r.tmdb_id}`} role="button" onClick={() => setActive(r)}>
+              <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
+              <div className="tile-title">{r.title}</div>
+              <div className="tile-sub">{r.year || '—'} · {r.media_type === 'tv' ? 'TV' : 'Movie'}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {active && (
         <Modal title={active.title} onClose={() => setActive(null)}>

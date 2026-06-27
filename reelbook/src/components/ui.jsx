@@ -130,6 +130,26 @@ export function Spinner({ label = 'Loading…' }) {
   return <div className="spinner">{label}</div>
 }
 
-export function Empty({ children }) {
-  return <div className="empty">{children}</div>
+export function Empty({ icon = '🎬', children }) {
+  return (
+    <div className="empty">
+      <div className="big">{icon}</div>
+      <div>{children}</div>
+    </div>
+  )
+}
+
+// Shimmer placeholder grid while posters load.
+export function SkeletonGrid({ count = 12 }) {
+  return (
+    <div className="grid">
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i}>
+          <div className="skel" style={{ aspectRatio: '2/3', borderRadius: 'var(--radius-sm)' }} />
+          <div className="skel skel-line" style={{ width: '80%' }} />
+          <div className="skel skel-line" style={{ width: '50%' }} />
+        </div>
+      ))}
+    </div>
+  )
 }
