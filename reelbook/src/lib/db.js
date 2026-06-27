@@ -285,6 +285,32 @@ export async function removeFromWatchlist(id) {
   if (error) throw error
 }
 
+// ---------- Friends / social ----------
+
+export async function sendFriendRequest(email) {
+  const { data, error } = await supabase.rpc('send_friend_request', { target_email: email })
+  if (error) throw error
+  return data // 'ok' | 'not_found' | 'self' | 'no_household'
+}
+export async function listFriends() {
+  const { data, error } = await supabase.rpc('my_friends')
+  if (error) throw error
+  return data || []
+}
+export async function acceptFriend(friendshipId) {
+  const { error } = await supabase.from('friendships').update({ status: 'accepted' }).eq('id', friendshipId)
+  if (error) throw error
+}
+export async function removeFriend(friendshipId) {
+  const { error } = await supabase.from('friendships').delete().eq('id', friendshipId)
+  if (error) throw error
+}
+export async function friendFeed() {
+  const { data, error } = await supabase.rpc('friend_feed', { limit_n: 60 })
+  if (error) throw error
+  return data || []
+}
+
 // ---------- Watches + Ratings (the "Mark as Watched" + dual-rating core) ----------
 
 // Create a watch and its ratings in one go.
@@ -298,6 +324,7 @@ export async function markWatched({
   episodesWatched = 0,
   createdBy,
   ratings = {},
+  visibility = 'private',
 }) {
   const tId = titleId || (await ensureTitle(seed))
   const { data: watch, error } = await supabase
@@ -309,6 +336,7 @@ export async function markWatched({
       note: note || null,
       episodes_watched: episodesWatched || 0,
       created_by: createdBy,
+      visibility,
     })
     .select('id')
     .single()

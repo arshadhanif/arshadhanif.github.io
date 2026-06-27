@@ -21,6 +21,7 @@ const TitleDetail = lazy(() => import('./pages/TitleDetail'))
 const ForYou = lazy(() => import('./pages/ForYou'))
 const Settings = lazy(() => import('./pages/Settings'))
 const Landing = lazy(() => import('./pages/Landing'))
+const Friends = lazy(() => import('./pages/Friends'))
 
 // Register the service worker so ReelBook is installable on phones.
 if ('serviceWorker' in navigator) {
@@ -59,6 +60,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 <Route path="groups" element={<Groups />} />
                 <Route path="insights" element={<Insights />} />
                 <Route path="foryou" element={<ForYou />} />
+                <Route path="friends" element={<Friends />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="about" element={<About />} />
               </Route>
