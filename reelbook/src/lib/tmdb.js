@@ -84,6 +84,13 @@ export async function findByImdbId(imdbId) {
   return normalizeResult(hit)
 }
 
+// Look up a TMDB title from a TheTVDB id (TV Time uses these for series).
+export async function findByTvdbId(tvdbId) {
+  const data = await tmdb(`/find/${tvdbId}`, { external_source: 'tvdb_id' })
+  const hit = (data.tv_results || [])[0] || (data.movie_results || [])[0]
+  return hit ? normalizeResult(hit) : null
+}
+
 // Best-effort title search returning the top match (importer fallback).
 export async function findByTitle(query, year, mediaHint) {
   const results = await searchMulti(query)

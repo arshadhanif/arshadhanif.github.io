@@ -159,6 +159,21 @@ export async function unmarkAllEpisodes({ titleId, groupId }) {
   if (error) throw error
 }
 
+// Bulk upsert episode watches, each with its own watched date (for imports).
+export async function markEpisodesBulk({ titleId, groupId, episodes, createdBy }) {
+  const rows = episodes.map((e) => ({
+    title_id: titleId, group_id: groupId,
+    season_number: e.season, episode_number: e.episode,
+    watched_on: e.watchedOn || null, created_by: createdBy,
+  }))
+  for (let i = 0; i < rows.length; i += 500) {
+    const { error } = await supabase
+      .from('episode_watches')
+      .upsert(rows.slice(i, i + 500), { onConflict: 'title_id,group_id,season_number,episode_number' })
+    if (error) throw error
+  }
+}
+
 export async function markSeason({ titleId, groupId, season, episodes, watchedOn, createdBy }) {
   const rows = episodes.map((ep) => ({
     title_id: titleId, group_id: groupId, season_number: season,
