@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { listDiary, deleteWatch, setRating, updateWatch } from '../lib/db'
 import { useAppData } from '../context/AppData'
-import { Poster, Spinner, Empty, GroupChips, DualScore, Modal, StarRating } from '../components/ui'
+import { Poster, Spinner, Empty, GroupChips, DualScore, Modal, StarRating, TitleLink } from '../components/ui'
 
 export default function Diary() {
   const { groups, profiles } = useAppData()
@@ -31,9 +31,11 @@ export default function Diary() {
             const t = e.titles
             return (
               <div key={e.id} className="card row" style={{ alignItems: 'flex-start', gap: 14 }}>
-                <div style={{ width: 64, flexShrink: 0 }}>
-                  <Poster title={t?.title} mediaType={t?.media_type} posterPath={t?.poster_path} />
-                </div>
+                <TitleLink className="tile" tmdbId={t?.tmdb_id} media={t?.media_type} style={{ width: 64, flexShrink: 0 }}>
+                  <div style={{ width: 64 }}>
+                    <Poster title={t?.title} mediaType={t?.media_type} posterPath={t?.poster_path} />
+                  </div>
+                </TitleLink>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="spread">
                     <strong style={{ fontSize: 16 }}>{t?.title} <span className="faint">{t?.year || ''}</span></strong>

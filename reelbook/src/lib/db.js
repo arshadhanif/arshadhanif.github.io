@@ -69,6 +69,101 @@ export async function ensureTitle(seed) {
   return inserted.id
 }
 
+// Upsert a title from a full TMDB detail object, caching the extra fields.
+// Returns the local title row id.
+export async function ensureTitleFromFull(full) {
+  const { tmdb_id, media_type } = full
+  const fields = {
+    tmdb_id, media_type,
+    title: full.title,
+    year: full.year ?? null,
+    poster_path: full.poster_path ?? null,
+    overview: full.overview ?? null,
+    genre: full.genre ?? null,
+    total_episodes: full.total_episodes ?? null,
+    backdrop_path: full.backdrop_path ?? null,
+    runtime: full.runtime ?? null,
+    tagline: full.tagline ?? null,
+    vote_average: full.vote_average ?? null,
+    imdb_id: full.imdb_id ?? null,
+  }
+  const { data: existing, error: selErr } = await supabase
+    .from('titles')
+    .select('id')
+    .eq('tmdb_id', tmdb_id)
+    .eq('media_type', media_type)
+    .maybeSingle()
+  if (selErr) throw selErr
+  if (existing) {
+    const { error } = await supabase.from('titles').update(fields).eq('id', existing.id)
+    if (error) throw error
+    return existing.id
+  }
+  const { data, error } = await supabase.from('titles').insert(fields).select('id').single()
+  if (error) throw error
+  return data.id
+}
+
+// All logged watches for a title (with group + ratings), newest first.
+export async function getWatchesForTitle(titleId) {
+  const { data, error } = await supabase
+    .from('watches')
+    .select('id, watched_on, note, episodes_watched, group_id, groups(id, name, color), ratings(id, profile_id, score)')
+    .eq('title_id', titleId)
+    .order('watched_on', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+// ---------- Episode tracking (per-episode, per-group) ----------
+
+export async function listEpisodeWatches(titleId, groupId) {
+  let q = supabase
+    .from('episode_watches')
+    .select('id, season_number, episode_number, watched_on')
+    .eq('title_id', titleId)
+  q = groupId ? q.eq('group_id', groupId) : q.is('group_id', null)
+  const { data, error } = await q
+  if (error) throw error
+  return data
+}
+
+export async function markEpisode({ titleId, groupId, season, episode, watchedOn, createdBy }) {
+  const { error } = await supabase.from('episode_watches').upsert(
+    {
+      title_id: titleId, group_id: groupId,
+      season_number: season, episode_number: episode,
+      watched_on: watchedOn || undefined, created_by: createdBy,
+    },
+    { onConflict: 'title_id,group_id,season_number,episode_number' }
+  )
+  if (error) throw error
+}
+
+export async function unmarkEpisode({ titleId, groupId, season, episode }) {
+  let q = supabase
+    .from('episode_watches')
+    .delete()
+    .eq('title_id', titleId)
+    .eq('season_number', season)
+    .eq('episode_number', episode)
+  q = groupId ? q.eq('group_id', groupId) : q.is('group_id', null)
+  const { error } = await q
+  if (error) throw error
+}
+
+export async function markSeason({ titleId, groupId, season, episodes, watchedOn, createdBy }) {
+  const rows = episodes.map((ep) => ({
+    title_id: titleId, group_id: groupId, season_number: season,
+    episode_number: ep, watched_on: watchedOn || undefined, created_by: createdBy,
+  }))
+  if (!rows.length) return
+  const { error } = await supabase
+    .from('episode_watches')
+    .upsert(rows, { onConflict: 'title_id,group_id,season_number,episode_number' })
+  if (error) throw error
+}
+
 export async function getTitle(id) {
   const { data, error } = await supabase
     .from('titles')

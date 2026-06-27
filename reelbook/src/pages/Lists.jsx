@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { listDiary, listWatchlist } from '../lib/db'
 import { useAppData } from '../context/AppData'
-import { Poster, Spinner, Empty, GroupChips, DualScore } from '../components/ui'
+import { Poster, Spinner, Empty, GroupChips, DualScore, TitleLink } from '../components/ui'
 
 export default function Lists() {
   const { groups, profiles } = useAppData()
@@ -113,12 +113,14 @@ function Section({ title, count, children }) {
 function PosterTile({ t, group, footer }) {
   return (
     <div>
-      <Poster title={t?.title} mediaType={t?.media_type} posterPath={t?.poster_path} />
-      <div className="tile-title">{t?.title}</div>
-      <div className="tile-sub">
-        {t?.year || '—'}
-        {group && <> · <span style={{ color: group.color }}>{group.name}</span></>}
-      </div>
+      <TitleLink className="tile" tmdbId={t?.tmdb_id} media={t?.media_type}>
+        <Poster title={t?.title} mediaType={t?.media_type} posterPath={t?.poster_path} />
+        <div className="tile-title">{t?.title}</div>
+        <div className="tile-sub">
+          {t?.year || '—'}
+          {group && <> · <span style={{ color: group.color }}>{group.name}</span></>}
+        </div>
+      </TitleLink>
       {footer && <div style={{ marginTop: 4 }}>{footer}</div>}
     </div>
   )

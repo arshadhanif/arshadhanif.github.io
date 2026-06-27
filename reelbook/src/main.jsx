@@ -15,6 +15,7 @@ import Import from './pages/Import'
 import Groups from './pages/Groups'
 import About from './pages/About'
 import Insights from './pages/Insights'
+import TitleDetail from './pages/TitleDetail'
 
 function Protected() {
   const { session, loading } = useAuth()
@@ -45,6 +46,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="watchlist" element={<Watchlist />} />
             <Route path="diary" element={<Diary />} />
             <Route path="lists" element={<Lists />} />
+            <Route path="title/:media/:id" element={<TitleDetail />} />
             <Route path="import" element={<Import />} />
             <Route path="groups" element={<Groups />} />
             <Route path="insights" element={<Insights />} />

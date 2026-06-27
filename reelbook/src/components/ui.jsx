@@ -1,5 +1,12 @@
 import { useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { IMG } from '../lib/tmdb'
+
+// Wraps content in a link to the title detail page (/title/:media/:tmdbId).
+export function TitleLink({ tmdbId, media, className, style, children }) {
+  if (!tmdbId || !media) return <div className={className} style={style}>{children}</div>
+  return <Link to={`/title/${media}/${tmdbId}`} className={className} style={style}>{children}</Link>
+}
 
 // ---------- Modal ----------
 export function Modal({ title, onClose, children }) {
