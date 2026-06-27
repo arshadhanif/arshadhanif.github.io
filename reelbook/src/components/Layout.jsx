@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { listTrackedShows } from '../lib/db'
 import { initBaselines, buildNotifications, getUnread, syncNotifState } from '../lib/notify'
 import { initials } from './ui'
+import Onboarding, { needsOnboarding } from './Onboarding'
 
 const TABS = [
   { to: '/', label: 'Discover', ico: '🔍', end: true },
@@ -18,6 +19,7 @@ export default function Layout() {
   const { profile, signOut } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const [notifCount, setNotifCount] = useState(getUnread())
+  const [showOnb, setShowOnb] = useState(needsOnboarding())
   const menuRef = useRef(null)
   const navigate = useNavigate()
   const location = useLocation()
@@ -92,6 +94,8 @@ export default function Layout() {
       <main className="container">
         <Outlet />
       </main>
+
+      {showOnb && <Onboarding onClose={() => setShowOnb(false)} />}
 
       <nav className="tabbar">
         {TABS.map((t) => (

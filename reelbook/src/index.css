@@ -369,6 +369,18 @@ input:focus, select:focus, textarea:focus {
 .ep2-facts dt { font-size: 11px; color: var(--text-faint-solid); text-transform: uppercase; letter-spacing: .4px; }
 .ep2-facts dd { margin: 1px 0 0; font-size: 13px; font-weight: 600; }
 
+/* onboarding */
+.onb-overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgba(6,8,12,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: fade .2s ease; }
+.onb-card { position: relative; width: 100%; max-width: 420px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 30px 26px 24px; text-align: center; box-shadow: var(--shadow); animation: pop .18s ease-out; }
+.onb-skip { position: absolute; top: 12px; right: 14px; color: var(--text-faint-solid); font-size: 13px; font-weight: 700; }
+.onb-icon { font-size: 52px; line-height: 1; }
+.onb-title { margin: 14px 0 6px; font-size: 22px; }
+.onb-body { color: var(--text-dim); line-height: 1.6; margin: 0 0 18px; }
+.onb-dots { display: flex; justify-content: center; gap: 7px; margin-bottom: 18px; }
+.onb-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: background .2s, width .2s; }
+.onb-dots span.on { background: var(--accent); width: 20px; border-radius: 999px; }
+.onb-cta { display: flex; flex-direction: column; gap: 8px; }
+
 /* profile favourites */
 .fav-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .fav-item, .fav-edit { position: relative; }
