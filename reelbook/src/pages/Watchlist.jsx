@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { listWatchlist, removeFromWatchlist } from '../lib/db'
 import { useAppData } from '../context/AppData'
-import { Poster, Spinner, Empty, GroupChips } from '../components/ui'
+import { Poster, Spinner, Empty, GroupChips, TitleLink } from '../components/ui'
 import MarkWatchedModal from '../components/MarkWatchedModal'
 
 export default function Watchlist() {
@@ -37,12 +37,14 @@ export default function Watchlist() {
             const t = it.titles
             return (
               <div key={it.id}>
-                <Poster title={t?.title} mediaType={t?.media_type} posterPath={t?.poster_path} />
-                <div className="tile-title">{t?.title}</div>
-                <div className="tile-sub">
-                  {t?.year || '—'}
-                  {it.groups && <> · <span style={{ color: it.groups.color }}>{it.groups.name}</span></>}
-                </div>
+                <TitleLink className="tile" tmdbId={t?.tmdb_id} media={t?.media_type}>
+                  <Poster title={t?.title} mediaType={t?.media_type} posterPath={t?.poster_path} />
+                  <div className="tile-title">{t?.title}</div>
+                  <div className="tile-sub">
+                    {t?.year || '—'}
+                    {it.groups && <> · <span style={{ color: it.groups.color }}>{it.groups.name}</span></>}
+                  </div>
+                </TitleLink>
                 <div className="row" style={{ marginTop: 6, gap: 6 }}>
                   <button className="btn sm primary" style={{ flex: 1 }}
                     onClick={() => setWatchItem({

@@ -10,7 +10,13 @@ const BASE = 'https://api.themoviedb.org/3'
 export const IMG = {
   poster: (path, size = 'w342') =>
     path ? `https://image.tmdb.org/t/p/${size}${path}` : null,
-  backdrop: (path, size = 'w780') =>
+  backdrop: (path, size = 'w1280') =>
+    path ? `https://image.tmdb.org/t/p/${size}${path}` : null,
+  profile: (path, size = 'w185') =>
+    path ? `https://image.tmdb.org/t/p/${size}${path}` : null,
+  still: (path, size = 'w300') =>
+    path ? `https://image.tmdb.org/t/p/${size}${path}` : null,
+  logo: (path, size = 'w92') =>
     path ? `https://image.tmdb.org/t/p/${size}${path}` : null,
 }
 
@@ -101,6 +107,82 @@ export async function getTrending() {
     .map(normalizeResult)
     .filter(Boolean)
     .filter((r) => r.title && r.poster_path)
+}
+
+// Rich detail for the title page: core fields + credits + external ids + providers.
+export async function getFullDetail(tmdbId, mediaType) {
+  const data = await tmdb(`/${mediaType}/${tmdbId}`, {
+    append_to_response: 'credits,external_ids,watch/providers',
+  })
+  const isMovie = mediaType === 'movie'
+  const runtime = isMovie
+    ? data.runtime ?? null
+    : (data.episode_run_time && data.episode_run_time[0]) ?? null
+
+  const cast = (data.credits?.cast || []).slice(0, 18).map((c) => ({
+    id: c.id, name: c.name, character: c.character, profile_path: c.profile_path,
+  }))
+  let crew = []
+  if (isMovie) {
+    const directors = (data.credits?.crew || []).filter((c) => c.job === 'Director')
+    crew = directors.map((d) => ({ role: 'Director', name: d.name }))
+  } else {
+    crew = (data.created_by || []).map((c) => ({ role: 'Creator', name: c.name }))
+  }
+
+  const seasons = !isMovie
+    ? (data.seasons || [])
+        .filter((s) => (s.episode_count || 0) > 0)
+        .map((s) => ({
+          season_number: s.season_number,
+          name: s.name,
+          episode_count: s.episode_count,
+          air_date: s.air_date,
+        }))
+    : []
+
+  return {
+    // fields we cache into `titles`
+    tmdb_id: data.id,
+    media_type: mediaType,
+    title: isMovie ? data.title : data.name,
+    year: yearOf(isMovie ? data.release_date : data.first_air_date),
+    poster_path: data.poster_path || null,
+    backdrop_path: data.backdrop_path || null,
+    overview: data.overview || null,
+    genre: (data.genres || []).map((g) => g.name).join(', ') || null,
+    total_episodes: isMovie ? null : data.number_of_episodes ?? null,
+    runtime,
+    tagline: data.tagline || null,
+    vote_average: data.vote_average ? Math.round(data.vote_average * 10) / 10 : null,
+    imdb_id: data.external_ids?.imdb_id || data.imdb_id || null,
+    // display-only extras
+    vote_count: data.vote_count || 0,
+    genres: (data.genres || []).map((g) => g.name),
+    cast,
+    crew,
+    seasons,
+    number_of_seasons: data.number_of_seasons ?? seasons.length,
+    providers: data['watch/providers']?.results || {},
+  }
+}
+
+// Episodes for one season of a TV show.
+export async function getSeason(tmdbId, seasonNumber) {
+  const data = await tmdb(`/tv/${tmdbId}/season/${seasonNumber}`)
+  return (data.episodes || []).map((e) => ({
+    episode_number: e.episode_number,
+    name: e.name,
+    air_date: e.air_date,
+    overview: e.overview,
+    still_path: e.still_path,
+    runtime: e.runtime,
+  }))
+}
+
+// Country codes that have provider data (for the in-app region switcher).
+export function providerRegions(providers) {
+  return Object.keys(providers || {}).sort()
 }
 
 // Full detail for a single title (used when adding/caching).

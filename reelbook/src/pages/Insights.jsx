@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { listDiary } from '../lib/db'
 import { useAppData } from '../context/AppData'
-import { Spinner, Empty, GroupChips, Poster } from '../components/ui'
+import { Spinner, Empty, GroupChips, Poster, TitleLink } from '../components/ui'
 
 export default function Insights() {
   const { profiles, groups } = useAppData()
@@ -135,11 +135,11 @@ export default function Insights() {
             <Section title="Highest rated">
               <div className="grid">
                 {stats.topRated.map((t) => (
-                  <div key={t.id}>
+                  <TitleLink className="tile" key={t.id} tmdbId={t.tmdb_id} media={t.media_type}>
                     <Poster title={t.title} mediaType={t.media_type} posterPath={t.poster_path} />
                     <div className="tile-title">{t.title}</div>
                     <div className="tile-sub" style={{ color: 'var(--accent)' }}>★ {t.avg} avg</div>
-                  </div>
+                  </TitleLink>
                 ))}
               </div>
             </Section>
@@ -297,7 +297,7 @@ function computeStats(entries, profiles, groups) {
       const rs = (e.ratings || []).filter((r) => r.score != null)
       if (!rs.length) return null
       const avg = +(rs.reduce((a, b) => a + b.score, 0) / rs.length).toFixed(1)
-      return { id: e.id, title: e.titles?.title, media_type: e.titles?.media_type, poster_path: e.titles?.poster_path, avg }
+      return { id: e.id, tmdb_id: e.titles?.tmdb_id, title: e.titles?.title, media_type: e.titles?.media_type, poster_path: e.titles?.poster_path, avg }
     })
     .filter(Boolean)
     .sort((a, b) => b.avg - a.avg)
