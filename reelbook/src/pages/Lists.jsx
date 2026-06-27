@@ -10,6 +10,14 @@ export default function Lists() {
   const [watchlist, setWatchlist] = useState([])
   const [diary, setDiary] = useState([])
   const [loading, setLoading] = useState(true)
+  const [typeF, setTypeF] = useState('all')
+  const [q, setQ] = useState('')
+
+  const matches = (t) =>
+    (typeF === 'all' || t?.media_type === typeF) &&
+    (!q.trim() || (t?.title || '').toLowerCase().includes(q.trim().toLowerCase()))
+  const wlView = watchlist.filter((it) => matches(it.titles))
+  const diaryView = diary.filter((e) => matches(e.titles))
 
   useEffect(() => {
     let alive = true
@@ -47,24 +55,34 @@ export default function Lists() {
       </div>
 
       {view === 'group' && (
-        <GroupChips groups={groups} value={groupId} onChange={setGroupId} />
+        <>
+          <GroupChips groups={groups} value={groupId} onChange={setGroupId} />
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+            <input placeholder="Search title…" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: '1 1 160px' }} />
+            <div className="seg">
+              {[['all', 'All'], ['movie', 'Movies'], ['tv', 'TV']].map(([v, l]) => (
+                <button key={v} className={typeF === v ? 'on' : ''} onClick={() => setTypeF(v)}>{l}</button>
+              ))}
+            </div>
+          </div>
+        </>
       )}
 
       {loading ? <Spinner /> : view === 'group' ? (
         <>
-          <Section title="Want to watch" count={watchlist.length}>
-            {watchlist.length === 0 ? <Empty>Empty</Empty> : (
+          <Section title="Want to watch" count={wlView.length}>
+            {wlView.length === 0 ? <Empty>Empty</Empty> : (
               <div className="grid">
-                {watchlist.map((it) => (
+                {wlView.map((it) => (
                   <PosterTile key={it.id} t={it.titles} group={it.groups} />
                 ))}
               </div>
             )}
           </Section>
-          <Section title="Watched" count={diary.length}>
-            {diary.length === 0 ? <Empty>Nothing watched yet</Empty> : (
+          <Section title="Watched" count={diaryView.length}>
+            {diaryView.length === 0 ? <Empty>Nothing watched yet</Empty> : (
               <div className="grid">
-                {diary.map((e) => (
+                {diaryView.map((e) => (
                   <PosterTile key={e.id} t={e.titles} group={e.groups}
                     footer={<DualScore profiles={profiles} ratings={e.ratings} />} />
                 ))}

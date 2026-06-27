@@ -12,6 +12,10 @@ export default function Diary() {
   const [editing, setEditing] = useState(null)
   const [sort, setSort] = useState('recent')   // recent | oldest | rating
   const [typeF, setTypeF] = useState('all')     // all | movie | tv
+  const [q, setQ] = useState('')
+  const [genreF, setGenreF] = useState('all')
+
+  const allGenres = [...new Set(entries.flatMap((e) => (e.titles?.genre || '').split(',').map((g) => g.trim()).filter(Boolean)))].sort()
 
   const avgOf = (e) => {
     const rs = (e.ratings || []).filter((r) => r.score != null)
@@ -19,6 +23,8 @@ export default function Diary() {
   }
   const view = entries
     .filter((e) => typeF === 'all' || e.titles?.media_type === typeF)
+    .filter((e) => !q.trim() || (e.titles?.title || '').toLowerCase().includes(q.trim().toLowerCase()))
+    .filter((e) => genreF === 'all' || (e.titles?.genre || '').split(',').map((g) => g.trim()).includes(genreF))
     .sort((a, b) => {
       if (sort === 'rating') return avgOf(b) - avgOf(a)
       if (sort === 'oldest') return (a.watched_on || '').localeCompare(b.watched_on || '')
@@ -40,6 +46,7 @@ export default function Diary() {
 
       {entries.length > 0 && (
         <div className="row" style={{ gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+          <input placeholder="Search title…" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: '1 1 150px' }} />
           <div className="seg">
             {[['recent', 'Newest'], ['oldest', 'Oldest'], ['rating', 'Top rated']].map(([v, l]) => (
               <button key={v} className={sort === v ? 'on' : ''} onClick={() => setSort(v)}>{l}</button>
@@ -50,6 +57,12 @@ export default function Diary() {
               <button key={v} className={typeF === v ? 'on' : ''} onClick={() => setTypeF(v)}>{l}</button>
             ))}
           </div>
+          {allGenres.length > 0 && (
+            <select value={genreF} onChange={(e) => setGenreF(e.target.value)} style={{ width: 'auto' }}>
+              <option value="all">All genres</option>
+              {allGenres.map((g) => <option key={g} value={g}>{g}</option>)}
+            </select>
+          )}
         </div>
       )}
 
