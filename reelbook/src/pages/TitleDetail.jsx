@@ -159,7 +159,7 @@ export default function TitleDetail() {
               {watches.map((w) => (
                 <div className="card spread" key={w.id}>
                   <div>
-                    <div className="faint">{fmt(w.watched_on)}{w.groups && <> · <span style={{ color: w.groups.color }}>{w.groups.name}</span></>}</div>
+                    <div className="faint">{fmt(w.watched_on)}{w.groups && <> · <span style={{ color: w.groups.color }}>{w.groups.name}</span></>}{w.service && <> · 📺 {w.service}</>}{w.where_watched && <> · {w.where_watched}</>}</div>
                     {w.note && <div className="muted" style={{ fontSize: 14, marginTop: 4 }}>“{w.note}”</div>}
                   </div>
                   <DualScore profiles={profiles} ratings={w.ratings} />
@@ -208,7 +208,7 @@ function Block({ title, children }) {
 }
 
 function fmt(d) {
-  if (!d) return ''
+  if (!d) return 'Date not set'
   return new Date(d + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
 

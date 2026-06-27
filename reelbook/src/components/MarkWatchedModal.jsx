@@ -4,6 +4,9 @@ import { markWatched } from '../lib/db'
 import { useAuth } from '../context/AuthContext'
 import { getPref } from '../lib/prefs'
 
+const WHERE_OPTIONS = ['Cinema / Theatre', 'TV', 'Laptop', 'Computer', 'Mobile', 'Tablet', 'Projector', 'Other']
+const SERVICE_OPTIONS = ['Netflix', 'OSN', 'Prime Video', 'Disney+', 'Apple TV+', 'Shahid', 'StarzPlay', 'Max', 'Hulu', 'YouTube', 'Cinema', 'Other']
+
 // item: { seed?, titleId?, title, media_type, total_episodes? }
 export default function MarkWatchedModal({ item, groups, profiles, onClose, onSaved }) {
   const { user } = useAuth()
@@ -11,11 +14,14 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
   const prefGroup = getPref('defaultGroupId', '')
   const initialGroup = (prefGroup && groups.some((g) => g.id === prefGroup)) ? prefGroup : (groups[0]?.id || null)
   const [groupId, setGroupId] = useState(initialGroup)
+  const [dateMode, setDateMode] = useState('today') // today | pick | unknown
   const [watchedOn, setWatchedOn] = useState(today)
   const [note, setNote] = useState('')
   const [episodes, setEpisodes] = useState(0)
   const [ratings, setRatings] = useState({}) // {profileId: score}
   const [visibility, setVisibility] = useState('private')
+  const [whereWatched, setWhereWatched] = useState('')
+  const [service, setService] = useState('')
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState(null)
 
@@ -29,12 +35,15 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
         seed: item.seed,
         titleId: item.titleId,
         groupId,
-        watchedOn,
+        watchedOn: dateMode === 'today' ? today : watchedOn,
+        noDate: dateMode === 'unknown',
         note,
         episodesWatched: isTv ? Number(episodes) || 0 : 0,
         createdBy: user.id,
         ratings,
         visibility,
+        whereWatched: whereWatched || null,
+        service: service.trim() || null,
       })
       onSaved?.()
       onClose()
@@ -59,27 +68,46 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
       </div>
 
       <div className="field">
-        <label>Date watched</label>
-        <input type="date" value={watchedOn} max={today} onChange={(e) => setWatchedOn(e.target.value)} />
+        <label>When?</label>
+        <div className="seg" style={{ marginBottom: 10 }}>
+          {[['today', 'Today'], ['pick', 'Pick a date'], ['unknown', "Don't remember"]].map(([v, l]) => (
+            <button key={v} type="button" className={dateMode === v ? 'on' : ''} onClick={() => setDateMode(v)}>{l}</button>
+          ))}
+        </div>
+        {dateMode === 'pick' && (
+          <input type="date" value={watchedOn} max={today} onChange={(e) => setWatchedOn(e.target.value)} />
+        )}
       </div>
 
       {isTv && (
         <div className="field">
           <label>Episodes watched{item.total_episodes ? ` (of ${item.total_episodes})` : ''}</label>
-          <input
-            type="number" min="0" value={episodes}
-            onChange={(e) => setEpisodes(e.target.value)}
-          />
+          <input type="number" min="0" value={episodes} onChange={(e) => setEpisodes(e.target.value)} />
         </div>
       )}
+
+      <div className="row" style={{ gap: 12, alignItems: 'flex-start' }}>
+        <div className="field" style={{ flex: 1 }}>
+          <label>Where?</label>
+          <select value={whereWatched} onChange={(e) => setWhereWatched(e.target.value)}>
+            <option value="">—</option>
+            {WHERE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ flex: 1 }}>
+          <label>Streaming service</label>
+          <input list="service-list" value={service} onChange={(e) => setService(e.target.value)} placeholder="e.g. Netflix" />
+          <datalist id="service-list">
+            {SERVICE_OPTIONS.map((o) => <option key={o} value={o} />)}
+          </datalist>
+        </div>
+      </div>
 
       <div className="field">
         <label>Ratings (out of 10)</label>
         {profiles.map((p) => (
           <div key={p.id} style={{ marginBottom: 8 }}>
-            <div className="faint" style={{ marginBottom: 2, color: p.color, fontWeight: 700 }}>
-              {p.name}
-            </div>
+            <div className="faint" style={{ marginBottom: 2, color: p.color, fontWeight: 700 }}>{p.name}</div>
             <StarRating
               value={ratings[p.id] || 0}
               color={p.color}
