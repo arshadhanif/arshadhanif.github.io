@@ -1,9 +1,27 @@
 import { useState } from 'react'
 import { findByImdbId, findByTitle, findByTvdbId } from '../lib/tmdb'
-import { ensureTitle, markWatched, addToWatchlist, markEpisodesBulk } from '../lib/db'
+import {
+  ensureTitlesBulk, insertWatchesBulk, insertRatingsBulk, insertWatchlistBulk, markEpisodesBulk,
+} from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
 import { Empty } from '../components/ui'
+
+// Run async fn over items with bounded concurrency; calls onTick after each.
+async function pool(items, fn, concurrency, onTick) {
+  const results = new Array(items.length)
+  let next = 0
+  async function worker() {
+    while (next < items.length) {
+      const i = next++
+      try { results[i] = await fn(items[i], i) } catch { results[i] = null }
+      onTick && onTick()
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker))
+  return results
+}
+const keyOf = (s) => `${s.media_type}-${s.tmdb_id}`
 
 // Identify which TV Time export file this is, from its header row.
 function detectTvType(headers) {
@@ -168,115 +186,120 @@ export default function Import() {
     const seriesRows = (tvFiles.find((f) => f.type === 'series')?.objs) || []
     const movieRows = (tvFiles.find((f) => f.type === 'movies')?.objs) || []
 
+    // Series with at least one watched episode → episode tracking + diary entry.
     const epBySeries = {}
-    for (const r of (ep?.objs || [])) { (epBySeries[r.series_tvdb_id] ||= []).push(r) }
-    const epIds = Object.keys(epBySeries)
-    const total = epIds.length + seriesRows.length + movieRows.length
+    for (const r of (ep?.objs || [])) (epBySeries[r.series_tvdb_id] ||= []).push(r)
+    const epSeries = Object.entries(epBySeries).map(([tvdb, rows]) => {
+      const watched = rows.filter((r) => truthy(r.is_watched) && !truthy(r.special))
+        .map((r) => ({ season: Number(r.season), episode: Number(r.episode), watchedOn: normDate(r.watched_at) }))
+        .filter((e) => Number.isFinite(e.season) && Number.isFinite(e.episode))
+      return { tvdb, title: rows[0]?.title, watched }
+    }).filter((s) => s.watched.length)
+    const handled = new Set(epSeries.map((s) => String(s.tvdb)))
+    const wlSeries = seriesRows.filter((r) => !handled.has(String(r.tvdb_id)))
+
+    const total = epSeries.length + wlSeries.length + movieRows.length
     if (!total) { setStatus({ type: 'error', text: 'No recognised TV Time files.' }); return }
 
     setRunning(true)
+    let done = 0
     setProgress({ done: 0, total, ok: 0, skipped: 0 })
-    let done = 0, ok = 0, skipped = 0
-    const bump = (good) => { done++; good ? ok++ : skipped++; setProgress({ done, total, ok, skipped }) }
-    const handled = new Set()
+    const tick = () => { done++; setProgress((p) => ({ ...p, done })) }
 
-    // 1) per-episode history → episode tracking + a diary entry per show
-    for (const tvdbId of epIds) {
-      const rows = epBySeries[tvdbId]
-      try {
-        const watched = rows.filter((r) => truthy(r.is_watched) && !truthy(r.special))
-          .map((r) => ({ season: Number(r.season), episode: Number(r.episode), watchedOn: normDate(r.watched_at) }))
-          .filter((e) => Number.isFinite(e.season) && Number.isFinite(e.episode))
-        // No watched episodes here — leave it for the series pass (watchlist / following).
-        if (!watched.length) { bump(true); continue }
-        let seed = await findByTvdbId(tvdbId)
-        if (!seed) seed = await findByTitle(rows[0]?.title, null, 'tv')
-        if (!seed) { bump(false); continue }
-        const titleId = await ensureTitle(seed)
-        await markEpisodesBulk({ titleId, groupId, episodes: watched, createdBy: user.id })
-        const dates = watched.map((e) => e.watchedOn).filter(Boolean).sort()
-        const last = dates[dates.length - 1]
-        await markWatched({ titleId, groupId, watchedOn: last || undefined, noDate: !last, datePrecision: 'day', episodesWatched: watched.length, createdBy: user.id, visibility: 'private' })
-        handled.add(String(tvdbId))
-        bump(true)
-      } catch (e) { console.warn('tvtime episodes', tvdbId, e); bump(false) }
-    }
-
-    // 2) followed series: not-started → watchlist (skip ones already handled by episodes)
-    for (const r of seriesRows) {
-      try {
-        if (handled.has(String(r.tvdb_id))) { bump(true); continue }
-        let seed = await findByTvdbId(r.tvdb_id)
-        if (!seed && r.imdb_id) seed = await findByImdbId(r.imdb_id)
-        if (!seed) seed = await findByTitle(r.title, null, 'tv')
-        if (!seed) { bump(false); continue }
-        const titleId = await ensureTitle(seed)
-        if ((r.status || '').toLowerCase() === 'not_started_yet') await addToWatchlist({ titleId, groupId, addedBy: user.id })
-        else await markWatched({ titleId, groupId, noDate: true, createdBy: user.id, visibility: 'private' })
-        bump(true)
-      } catch (e) { console.warn('tvtime series', r, e); bump(false) }
-    }
-
-    // 3) movies: watched → diary; not watched → watchlist
-    for (const r of movieRows) {
-      try {
+    try {
+      // 1) Resolve all TMDB matches in parallel.
+      const epR = await pool(epSeries, async (s) => ({ s, seed: (await findByTvdbId(s.tvdb)) || (await findByTitle(s.title, null, 'tv')) }), 12, tick)
+      const wlR = await pool(wlSeries, async (r) => ({ r, seed: (await findByTvdbId(r.tvdb_id)) || (r.imdb_id ? await findByImdbId(r.imdb_id) : null) || (await findByTitle(r.title, null, 'tv')) }), 12, tick)
+      const mvR = await pool(movieRows, async (r) => {
         let seed = r.imdb_id ? await findByImdbId(r.imdb_id) : null
         if (!seed) seed = await findByTitle(r.title, r.year, 'movie')
-        if (!seed) { bump(false); continue }
-        const titleId = await ensureTitle(seed)
+        return { r, seed }
+      }, 12, tick)
+
+      // 2) Upsert every title once.
+      const map = await ensureTitlesBulk([...epR, ...wlR, ...mvR].map((x) => x.seed).filter(Boolean))
+
+      // 3) Episodes + per-show diary entry.
+      const watchRows = [], wlRows = []
+      for (const { s, seed } of epR) {
+        const tid = seed && map.get(keyOf(seed)); if (!tid) continue
+        await markEpisodesBulk({ titleId: tid, groupId, episodes: s.watched, createdBy: user.id })
+        const dates = s.watched.map((e) => e.watchedOn).filter(Boolean).sort()
+        const last = dates[dates.length - 1]
+        watchRows.push({ title_id: tid, group_id: groupId, watched_on: last || null, date_precision: last ? 'day' : null, episodes_watched: s.watched.length, created_by: user.id, visibility: 'private' })
+      }
+      // 4) Movies.
+      for (const { r, seed } of mvR) {
+        const tid = seed && map.get(keyOf(seed)); if (!tid) continue
         if (truthy(r.is_watched)) {
           const wd = normDate(r.watched_at) || normDate(r.created_at)
-          await markWatched({ titleId, groupId, watchedOn: wd || undefined, noDate: !wd, datePrecision: 'day', createdBy: user.id, visibility: 'private' })
-        } else {
-          await addToWatchlist({ titleId, groupId, addedBy: user.id })
-        }
-        bump(true)
-      } catch (e) { console.warn('tvtime movie', r, e); bump(false) }
-    }
+          watchRows.push({ title_id: tid, group_id: groupId, watched_on: wd || null, date_precision: wd ? 'day' : null, created_by: user.id, visibility: 'private' })
+        } else wlRows.push({ title_id: tid, group_id: groupId, added_by: user.id })
+      }
+      // 5) Other followed series.
+      for (const { r, seed } of wlR) {
+        const tid = seed && map.get(keyOf(seed)); if (!tid) continue
+        if ((r.status || '').toLowerCase() === 'not_started_yet') wlRows.push({ title_id: tid, group_id: groupId, added_by: user.id })
+        else watchRows.push({ title_id: tid, group_id: groupId, watched_on: null, date_precision: null, created_by: user.id, visibility: 'private' })
+      }
 
-    setRunning(false)
-    setStatus({ type: 'ok', text: `Done — ${ok} processed, ${skipped} skipped.` })
+      await insertWatchesBulk(watchRows)
+      await insertWatchlistBulk(wlRows)
+      setProgress({ done: total, total, ok: watchRows.length + wlRows.length, skipped: 0 })
+      setStatus({ type: 'ok', text: `Done — ${watchRows.length} watched, ${wlRows.length} on watchlist.` })
+    } catch (e) {
+      console.error('tvtime import', e)
+      setStatus({ type: 'error', text: `Import error: ${e.message}` })
+    } finally {
+      setRunning(false)
+    }
   }
 
   async function runImport() {
     if (!groupId) { setStatus({ type: 'error', text: 'Pick a group first.' }); return }
     setRunning(true)
+    let done = 0
     setProgress({ done: 0, total: items.length, ok: 0, skipped: 0 })
-    let ok = 0, skipped = 0
-    for (let i = 0; i < items.length; i++) {
-      const it = items[i]
-      try {
-        let seed = null
-        if (it.imdbId) seed = await findByImdbId(it.imdbId)
-        if (!seed) seed = await findByTitle(it.title, it.year, it.mediaHint)
-        if (!seed) { skipped++; setProgress((p) => ({ ...p, done: i + 1, skipped })); continue }
 
-        const titleId = await ensureTitle(seed)
-        if (cfg.target === 'watchlist') {
-          await addToWatchlist({ titleId, groupId, addedBy: user.id })
-        } else {
-          const score = it.score ? Math.max(1, Math.min(10, Math.round(Number(it.score)))) : null
-          const wd = normDate(it.date)
-          await markWatched({
-            titleId,
-            groupId,
-            watchedOn: wd || undefined,
-            noDate: !wd,
-            datePrecision: 'day',
-            createdBy: user.id,
-            ratings: score && profileId ? { [profileId]: score } : {},
-          })
+    // 1) Resolve TMDB matches in parallel (the slow part).
+    const resolved = await pool(items, async (it) => {
+      let seed = it.imdbId ? await findByImdbId(it.imdbId) : null
+      if (!seed) seed = await findByTitle(it.title, it.year, it.mediaHint)
+      return seed ? { seed, it } : null
+    }, 12, () => { done++; setProgress((p) => ({ ...p, done })) })
+
+    const matched = resolved.filter(Boolean)
+    const skipped = items.length - matched.length
+    try {
+      // 2) Upsert all titles in a few queries.
+      const map = await ensureTitlesBulk(matched.map((m) => m.seed))
+
+      if (cfg.target === 'watchlist') {
+        const rows = matched.map((m) => ({ title_id: map.get(keyOf(m.seed)), group_id: groupId, added_by: user.id })).filter((r) => r.title_id)
+        await insertWatchlistBulk(rows)
+      } else {
+        // 3) Bulk-insert watches, then attach ratings.
+        const watchRows = [], scores = []
+        for (const m of matched) {
+          const tid = map.get(keyOf(m.seed)); if (!tid) continue
+          const wd = normDate(m.it.date)
+          watchRows.push({ title_id: tid, group_id: groupId, watched_on: wd || null, date_precision: wd ? 'day' : null, created_by: user.id, visibility: 'private' })
+          const s = m.it.score ? Math.max(1, Math.min(10, Math.round(Number(m.it.score)))) : null
+          scores.push(profileId ? s : null)
         }
-        ok++
-      } catch (e) {
-        console.warn('import row failed', it, e)
-        skipped++
+        const ids = await insertWatchesBulk(watchRows)
+        const ratingRows = []
+        ids.forEach((wid, i) => { if (wid && scores[i]) ratingRows.push({ watch_id: wid, profile_id: profileId, score: scores[i] }) })
+        if (ratingRows.length) await insertRatingsBulk(ratingRows)
       }
-      setProgress((p) => ({ ...p, done: i + 1, ok, skipped }))
+      setProgress({ done: items.length, total: items.length, ok: matched.length, skipped })
+      setStatus({ type: 'ok', text: `Done — ${matched.length} ${cfg.target === 'watchlist' ? 'added to watchlist' : 'logged'}, ${skipped} unmatched.` })
+    } catch (e) {
+      console.error('import write', e)
+      setStatus({ type: 'error', text: `Import error: ${e.message}` })
+    } finally {
+      setRunning(false)
     }
-    setRunning(false)
-    const dest = cfg.target === 'watchlist' ? 'added to watchlist' : 'logged'
-    setStatus({ type: 'ok', text: `Done — ${ok} ${dest}, ${skipped} skipped.` })
   }
 
   return (

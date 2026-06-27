@@ -104,6 +104,59 @@ export async function ensureTitleFromFull(full) {
   return data.id
 }
 
+// ---------- Fast bulk import helpers ----------
+
+// Upsert many titles at once (no per-title detail fetch); returns Map "media-tmdbId" -> title id.
+// Preserves already-enriched rows (ignoreDuplicates), then fetches all ids.
+export async function ensureTitlesBulk(seeds) {
+  const uniq = new Map()
+  for (const s of seeds) if (s?.tmdb_id) uniq.set(`${s.media_type}-${s.tmdb_id}`, s)
+  const list = [...uniq.values()]
+  const rows = list.map((s) => ({
+    tmdb_id: s.tmdb_id, media_type: s.media_type, title: s.title,
+    year: s.year ?? null, poster_path: s.poster_path ?? null, overview: s.overview ?? null,
+  }))
+  for (let i = 0; i < rows.length; i += 500) {
+    const { error } = await supabase.from('titles')
+      .upsert(rows.slice(i, i + 500), { onConflict: 'tmdb_id,media_type', ignoreDuplicates: true })
+    if (error) throw error
+  }
+  const map = new Map()
+  const tmdbIds = [...new Set(list.map((s) => s.tmdb_id))]
+  for (let i = 0; i < tmdbIds.length; i += 500) {
+    const { data, error } = await supabase.from('titles')
+      .select('id, tmdb_id, media_type').in('tmdb_id', tmdbIds.slice(i, i + 500))
+    if (error) throw error
+    for (const r of data) map.set(`${r.media_type}-${r.tmdb_id}`, r.id)
+  }
+  return map
+}
+
+// Insert many watches; returns the new ids in input order (for attaching ratings).
+export async function insertWatchesBulk(rows) {
+  const ids = []
+  for (let i = 0; i < rows.length; i += 400) {
+    const { data, error } = await supabase.from('watches').insert(rows.slice(i, i + 400)).select('id')
+    if (error) throw error
+    for (const r of data) ids.push(r.id)
+  }
+  return ids
+}
+
+export async function insertRatingsBulk(rows) {
+  for (let i = 0; i < rows.length; i += 500) {
+    const { error } = await supabase.from('ratings').insert(rows.slice(i, i + 500))
+    if (error) throw error
+  }
+}
+
+export async function insertWatchlistBulk(rows) {
+  for (let i = 0; i < rows.length; i += 500) {
+    const { error } = await supabase.from('watchlist').insert(rows.slice(i, i + 500))
+    if (error) throw error
+  }
+}
+
 // All logged watches for a title (with group + ratings), newest first.
 export async function getWatchesForTitle(titleId) {
   const { data, error } = await supabase
