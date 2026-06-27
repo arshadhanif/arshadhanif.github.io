@@ -10,6 +10,9 @@ export default function Watchlist() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [watchItem, setWatchItem] = useState(null)
+  const [typeF, setTypeF] = useState('all')
+  const [sort, setSort] = useState('recent')
+  const [q, setQ] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -24,16 +27,40 @@ export default function Watchlist() {
     setItems((xs) => xs.filter((x) => x.id !== id))
   }
 
+  const view = items
+    .filter((it) => typeF === 'all' || it.titles?.media_type === typeF)
+    .filter((it) => !q.trim() || (it.titles?.title || '').toLowerCase().includes(q.trim().toLowerCase()))
+    .sort((a, b) => {
+      if (sort === 'title') return (a.titles?.title || '').localeCompare(b.titles?.title || '')
+      if (sort === 'year') return (b.titles?.year || 0) - (a.titles?.year || 0)
+      return (b.created_at || '').localeCompare(a.created_at || '')
+    })
+
   return (
     <div className="page">
       <h1>Watchlist</h1>
       <GroupChips groups={groups} value={groupId} onChange={setGroupId} />
+      <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+        <input placeholder="Search title…" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: '1 1 160px' }} />
+        <div className="seg">
+          {[['all', 'All'], ['movie', 'Movies'], ['tv', 'TV']].map(([v, l]) => (
+            <button key={v} className={typeF === v ? 'on' : ''} onClick={() => setTypeF(v)}>{l}</button>
+          ))}
+        </div>
+        <select value={sort} onChange={(e) => setSort(e.target.value)} style={{ width: 'auto' }}>
+          <option value="recent">Recently added</option>
+          <option value="title">Title A–Z</option>
+          <option value="year">Year (newest)</option>
+        </select>
+      </div>
 
       {loading ? <Spinner /> : items.length === 0 ? (
         <Empty>Nothing here yet. Add titles from <strong>Discover</strong>.</Empty>
+      ) : view.length === 0 ? (
+        <Empty icon="🔎">No items match these filters.</Empty>
       ) : (
         <div className="grid">
-          {items.map((it) => {
+          {view.map((it) => {
             const t = it.titles
             return (
               <div key={it.id}>

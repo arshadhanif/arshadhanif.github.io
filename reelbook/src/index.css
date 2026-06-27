@@ -267,6 +267,9 @@ input:focus, select:focus, textarea:focus {
 .stat .l { color: var(--text-dim); font-size: 13px; margin-top: 7px; font-weight: 600; }
 .stat .s { color: var(--text-faint-solid); font-size: 11px; margin-top: 2px; }
 
+.stat.clickable { cursor: pointer; transition: border-color .15s, transform .12s; }
+.stat.clickable:hover { border-color: var(--accent); transform: translateY(-2px); }
+
 /* horizontal bar chart */
 .bars { display: flex; flex-direction: column; gap: 11px; }
 .bar-row { display: grid; grid-template-columns: 96px 1fr 42px; gap: 10px; align-items: center; font-size: 13px; }
@@ -274,12 +277,17 @@ input:focus, select:focus, textarea:focus {
 .bar-track { background: var(--bg-elev-2); border-radius: 999px; height: 12px; overflow: hidden; }
 .bar-fill { height: 100%; border-radius: 999px; background: var(--accent); transition: width .5s ease; min-width: 3px; }
 .bar-val { text-align: right; color: var(--text-faint-solid); font-weight: 700; font-variant-numeric: tabular-nums; }
+.bar-click { width: 100%; text-align: left; padding: 3px 0; }
+.bar-click:hover .bar-label { color: var(--text); }
+.bar-click:hover .bar-fill { filter: brightness(1.12); }
 
 /* monthly column chart */
 .cols { display: flex; align-items: flex-end; gap: 5px; height: 130px; padding-top: 8px; }
 .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
 .col .fill { width: 100%; max-width: 26px; background: linear-gradient(180deg, var(--accent), #b8842a); border-radius: 6px 6px 0 0; min-height: 3px; transition: height .5s ease; }
 .col .cl { font-size: 9.5px; color: var(--text-faint-solid); font-weight: 700; }
+.col:hover .fill { filter: brightness(1.18); }
+.dist .d:hover { filter: brightness(1.25); }
 
 /* rating distribution mini */
 .dist { display: flex; align-items: flex-end; gap: 3px; height: 56px; }
