@@ -119,9 +119,13 @@ function ContinueRail({ shows }) {
       <div className="scroll-x rail">
         {shows.map(({ title, watched, total }) => {
           const pct = total ? Math.round((watched / total) * 100) : 0
+          const toGo = total ? total - watched : 0
           return (
             <TitleLink className="rail-item tile" key={title.id} tmdbId={title.tmdb_id} media={title.media_type}>
-              <Poster title={title.title} mediaType="tv" posterPath={title.poster_path} />
+              <div style={{ position: 'relative' }}>
+                <Poster title={title.title} mediaType="tv" posterPath={title.poster_path} />
+                {toGo > 0 && <span className="ep-badge">{toGo} to go</span>}
+              </div>
               <div className="progress-track"><div className="progress-fill" style={{ width: `${pct}%` }} /></div>
               <div className="tile-title">{title.title}</div>
               <div className="tile-sub">{watched}{total ? `/${total}` : ''} eps</div>
