@@ -360,6 +360,15 @@ input:focus, select:focus, textarea:focus {
 .ep2-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px 16px; margin: 6px 0 10px; }
 .ep2-facts dt { font-size: 11px; color: var(--text-faint-solid); text-transform: uppercase; letter-spacing: .4px; }
 .ep2-facts dd { margin: 1px 0 0; font-size: 13px; font-weight: 600; }
+
+/* episode watch calendar heatmap */
+.heat { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 1fr); gap: 3px; }
+.heat-cell { width: 12px; height: 12px; border-radius: 3px; background: var(--bg-elev-2); border: 0; padding: 0; cursor: pointer; transition: transform .1s; }
+.heat-cell:hover { transform: scale(1.35); outline: 1px solid var(--text-faint-solid); }
+.heat-cell.l1 { background: #2c4a32; }
+.heat-cell.l2 { background: #3f7a4e; }
+.heat-cell.l3 { background: #57b06a; }
+.heat-cell.l4 { background: var(--green); }
 @media (max-width: 560px) { .ep2-thumb { width: 84px; } }
 
 /* ---------- rails ---------- */
