@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { searchMulti, getTrending, getPopular, getTopRated, getTvStatus, IMG } from '../lib/tmdb'
+import { searchMulti, getTrending, getPopular, getTopRated, getTvStatus, getAnime, IMG } from '../lib/tmdb'
 import { listInProgressShows, setTitleTotalEpisodes } from '../lib/db'
 import { Poster, Empty, SkeletonGrid, TitleLink } from '../components/ui'
 
@@ -16,10 +16,10 @@ export default function Discover() {
 
   useEffect(() => {
     Promise.allSettled([
-      getTrending(), getPopular('movie'), getPopular('tv'), getTopRated('movie'),
-    ]).then(([tr, pm, ptv, trm]) => {
+      getTrending(), getPopular('movie'), getPopular('tv'), getTopRated('movie'), getAnime('tv'), getAnime('movie'),
+    ]).then(([tr, pm, ptv, trm, an, anm]) => {
       setRails({
-        trending: val(tr), popMovies: val(pm), popTv: val(ptv), topMovies: val(trm),
+        trending: val(tr), popMovies: val(pm), popTv: val(ptv), topMovies: val(trm), anime: val(an), animeMovies: val(anm),
       })
     })
     listInProgressShows().then(async (shows) => {
@@ -104,7 +104,9 @@ export default function Discover() {
           <Rail title="🔥 Trending this week" items={rails.trending} />
           <Rail title="Popular movies" items={rails.popMovies} />
           <Rail title="Popular TV" items={rails.popTv} />
+          <Rail title="🍙 Popular anime" items={rails.anime} />
           <Rail title="Top rated movies" items={rails.topMovies} />
+          <Rail title="🎴 Anime movies" items={rails.animeMovies} />
           {!rails.trending && <SkeletonGrid count={6} />}
         </>
       )}
