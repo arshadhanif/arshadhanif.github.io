@@ -1,95 +1,98 @@
 import { useEffect, useState } from 'react'
 import { listTrackedShows, setTitleTotalEpisodes } from '../lib/db'
 import { getTvStatus } from '../lib/tmdb'
+import { initBaselines, buildNotifications, dismiss, markAllRead } from '../lib/notify'
 import { Poster, Spinner, Empty, TitleLink } from '../components/ui'
 
 export default function Notifications() {
-  const [items, setItems] = useState([])
+  const [shows, setShows] = useState([])
+  const [notif, setNotif] = useState({ newItems: [], comingItems: [], catchItems: [], unread: 0 })
   const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState('new')
 
   useEffect(() => {
     let alive = true
     ;(async () => {
-      const shows = (await listTrackedShows()).slice(0, 40)
-      const results = await Promise.allSettled(
-        shows.map(async (s) => {
-          const status = await getTvStatus(s.title.tmdb_id)
-          const aired = status.aired_episodes ?? status.number_of_episodes ?? s.cachedTotal
-          // Cache the AIRED count so "caught up" is judged correctly everywhere.
-          if (aired && aired !== s.cachedTotal) setTitleTotalEpisodes(s.title.id, aired).catch(() => {})
-          return {
-            title: s.title,
-            unwatched: Math.max(0, aired - s.watched),
-            next: status.next_episode,
-          }
-        })
-      )
+      const tracked = (await listTrackedShows()).slice(0, 60)
+      const out = await Promise.allSettled(tracked.map(async (s) => {
+        const st = await getTvStatus(s.title.tmdb_id)
+        const aired = st.aired_episodes ?? st.number_of_episodes ?? s.cachedTotal
+        if (aired && aired !== s.cachedTotal) setTitleTotalEpisodes(s.title.id, aired).catch(() => {})
+        return { id: s.title.id, title: s.title, tmdb_id: s.title.tmdb_id, media_type: 'tv', poster_path: s.title.poster_path, watched: s.watched, aired, next: st.next_episode }
+      }))
+      const objs = out.filter((r) => r.status === 'fulfilled').map((r) => r.value)
       if (!alive) return
-      setItems(results.filter((r) => r.status === 'fulfilled').map((r) => r.value))
+      setShows(objs)
+      initBaselines(objs)
+      const n = buildNotifications(objs)
+      setNotif(n)
+      setTab(n.newItems.length ? 'new' : n.comingItems.length ? 'coming' : 'catch')
       setLoading(false)
     })()
     return () => { alive = false }
   }, [])
 
-  if (loading) return <div className="page"><Spinner label="Checking for new episodes…" /></div>
+  function refresh() { setNotif(buildNotifications(shows)) }
+  function onDismiss(key) { dismiss(key); refresh() }
+  function onMarkRead() { markAllRead(shows); refresh() }
 
-  const catchUp = items.filter((i) => i.unwatched > 0).sort((a, b) => b.unwatched - a.unwatched)
-  const upcoming = items.filter((i) => i.next?.air_date)
+  if (loading) return <div className="page"><Spinner label="Checking your shows…" /></div>
 
-  const nothing = catchUp.length === 0 && upcoming.length === 0
+  const TABS = [
+    ['new', 'New', notif.newItems.length],
+    ['coming', 'Coming up', notif.comingItems.length],
+    ['catch', 'Catch up', notif.catchItems.length],
+  ]
+  const list = tab === 'new' ? notif.newItems : tab === 'coming' ? notif.comingItems : notif.catchItems
 
   return (
     <div className="page">
-      <h1>Notifications</h1>
-      <p className="sub">New episodes and catch-ups for the shows you’re tracking.</p>
+      <div className="page-head">
+        <h1>Notifications</h1>
+        {notif.unread > 0 && <button className="btn sm" onClick={onMarkRead}>Mark all read</button>}
+      </div>
+      <p className="sub">New episodes get flagged here. Your ongoing backlog lives under “Catch up.”</p>
 
-      {nothing ? (
-        <Empty icon="🔔">You’re all caught up! Track a show’s episodes and new releases will show up here.</Empty>
+      <div className="seg" style={{ marginBottom: 16 }}>
+        {TABS.map(([v, l, c]) => (
+          <button key={v} className={tab === v ? 'on' : ''} onClick={() => setTab(v)}>
+            {l}{c > 0 ? ` (${c})` : ''}
+          </button>
+        ))}
+      </div>
+
+      {list.length === 0 ? (
+        <Empty icon={tab === 'new' ? '🔔' : tab === 'coming' ? '📅' : '🍿'}>
+          {tab === 'new' ? 'No new episodes — you’re all caught up on new releases.'
+            : tab === 'coming' ? 'Nothing airing in the next few weeks.'
+            : 'No shows to catch up on.'}
+        </Empty>
       ) : (
-        <>
-          {catchUp.length > 0 && (
-            <Section title="Catch up">
-              {catchUp.map((i) => (
-                <Row key={i.title.id} t={i.title} primary={`${i.unwatched} episode${i.unwatched > 1 ? 's' : ''} to watch`} />
-              ))}
-            </Section>
-          )}
-          {upcoming.length > 0 && (
-            <Section title="Coming up">
-              {upcoming.map((i) => (
-                <Row key={i.title.id} t={i.title}
-                  primary={`Next: S${i.next.season}·E${i.next.episode} on ${fmt(i.next.air_date)}`} />
-              ))}
-            </Section>
-          )}
-        </>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {list.map((s) => (
+            <div className="card row" key={s.key || s.id} style={{ gap: 12, alignItems: 'center' }}>
+              <TitleLink className="tile" tmdbId={s.tmdb_id} media="tv" style={{ width: 46, flexShrink: 0 }}>
+                <Poster title={s.title.title} mediaType="tv" posterPath={s.poster_path} />
+              </TitleLink>
+              <TitleLink className="" tmdbId={s.tmdb_id} media="tv" style={{ flex: 1, minWidth: 0 }}>
+                <strong>{s.title.title}</strong>
+                <div className="faint" style={{ marginTop: 3 }}>
+                  {tab === 'new' && `🆕 ${s.count} new episode${s.count > 1 ? 's' : ''} aired`}
+                  {tab === 'coming' && `📅 Next: S${s.next.season}·E${s.next.episode} on ${fmt(s.next.air_date)}`}
+                  {tab === 'catch' && `${s.unwatched} episode${s.unwatched > 1 ? 's' : ''} to watch`}
+                </div>
+              </TitleLink>
+              {tab !== 'catch' && (
+                <button className="btn sm ghost" title="Dismiss" onClick={() => onDismiss(s.key)}>✕</button>
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )
 }
 
-function Section({ title, children }) {
-  return (
-    <div style={{ marginBottom: 22 }}>
-      <div className="section-head"><h2>{title}</h2></div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>{children}</div>
-    </div>
-  )
-}
-function Row({ t, primary }) {
-  return (
-    <TitleLink className="card row" tmdbId={t.tmdb_id} media="tv" style={{ gap: 12, alignItems: 'center' }}>
-      <div style={{ width: 46, flexShrink: 0 }}>
-        <Poster title={t.title} mediaType="tv" posterPath={t.poster_path} />
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <strong>{t.title}</strong>
-        <div className="faint" style={{ marginTop: 3 }}>{primary}</div>
-      </div>
-      <span className="faint">›</span>
-    </TitleLink>
-  )
-}
 function fmt(d) {
   return new Date(d + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
