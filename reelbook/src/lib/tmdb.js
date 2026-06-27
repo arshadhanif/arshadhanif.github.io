@@ -150,6 +150,22 @@ export async function getTopRated(mediaType) {
   return (data.results || []).map((r) => normalizeResult({ ...r, media_type: mediaType })).filter(Boolean).filter((r) => r.poster_path)
 }
 
+// Anime = Japanese-origin Animation. TMDB has no "anime" type, so we filter
+// the Animation genre (16) down to Japanese originals.
+export async function getAnime(mediaType = 'tv') {
+  const data = await tmdb(`/discover/${mediaType}`, {
+    with_genres: 16,
+    with_original_language: 'ja',
+    sort_by: 'popularity.desc',
+    'vote_count.gte': 100,
+    include_adult: 'false',
+  })
+  return (data.results || [])
+    .map((r) => normalizeResult({ ...r, media_type: mediaType }))
+    .filter(Boolean)
+    .filter((r) => r.poster_path)
+}
+
 // "More like this" on the detail page.
 export async function getRecommendations(tmdbId, mediaType) {
   const data = await tmdb(`/${mediaType}/${tmdbId}/recommendations`)
