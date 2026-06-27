@@ -29,7 +29,7 @@ export default function Settings() {
     setPushBusy(true)
     try {
       if (push === 'on') { await disablePush(); setPush('off'); toast('Push notifications turned off') }
-      else { const st = await enablePush(); setPush(st); toast('Push notifications on — try “Send a test”') }
+      else { const st = await enablePush(); setPush(st); toast('Push notifications on. Try “Send a test”') }
     } catch (e) { toast(e.message || 'Could not change push setting', 'err') }
     finally { setPushBusy(false) }
   }
@@ -37,7 +37,7 @@ export default function Settings() {
     setPushBusy(true)
     try {
       const r = await sendTestPush()
-      toast(r?.sent ? 'Test sent — check your notifications' : 'No devices registered yet', r?.sent ? 'ok' : 'err')
+      toast(r?.sent ? 'Test sent. Check your notifications' : 'No devices registered yet', r?.sent ? 'ok' : 'err')
     } catch (e) { toast(e.message || 'Could not send test', 'err') }
     finally { setPushBusy(false) }
   }
@@ -88,7 +88,7 @@ export default function Settings() {
         <div className="field">
           <label>Default group when logging a watch</label>
           <select value={defaultGroup} onChange={(e) => { setDefaultGroup(e.target.value); setPref('defaultGroupId', e.target.value); toast('Default group set') }}>
-            <option value="">— none (pick each time) —</option>
+            <option value="">None (pick each time)</option>
             {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
         </div>
@@ -97,7 +97,7 @@ export default function Settings() {
       <div className="card" style={{ marginBottom: 18 }}>
         <strong>Push notifications</strong>
         <p className="faint" style={{ margin: '8px 0 14px' }}>
-          Get a notification on this device when a new episode airs for a show you’re tracking — even
+          Get a notification on this device when a new episode airs for a show you’re tracking, even
           when ReelBook is closed. Read-state stays in sync across your devices.
         </p>
         {push === 'unsupported' ? (

@@ -147,7 +147,7 @@ export default function TitleDetail() {
                 <TitleLink className="rail-item tile" key={`${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
                   <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
                   <div className="tile-title">{r.title}</div>
-                  <div className="tile-sub">{r.year || '—'}</div>
+                  <div className="tile-sub">{r.year || 'N/A'}</div>
                 </TitleLink>
               ))}
             </div>
@@ -176,7 +176,7 @@ export default function TitleDetail() {
       </div>
 
       {showTrailer && full.trailer_key && (
-        <Modal title={`${full.title} — Trailer`} onClose={() => setShowTrailer(false)}>
+        <Modal title={`${full.title}: Trailer`} onClose={() => setShowTrailer(false)}>
           <div className="trailer-frame">
             <iframe
               src={`https://www.youtube-nocookie.com/embed/${full.trailer_key}?autoplay=1`}
@@ -381,7 +381,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
             {desc ? 'Newest ↑' : 'Oldest ↓'}
           </button>
           <select value={trackGroupId} onChange={(e) => setTrackGroupId(e.target.value)} style={{ width: 'auto' }}>
-            {groups.length === 0 && <option value="">— create a group —</option>}
+            {groups.length === 0 && <option value="">Create a group first</option>}
             {groups.map((g) => <option key={g.id} value={g.id}>track: {g.name}</option>)}
           </select>
         </div>
@@ -444,9 +444,9 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
                               {isExp && (
                                 <div onClick={(ev) => ev.stopPropagation()} style={{ marginTop: 8 }}>
                                   <dl className="ep2-facts">
-                                    <div><dt>Released</dt><dd>{e.air_date ? fmtDate(e.air_date) : '—'}</dd></div>
+                                    <div><dt>Released</dt><dd>{e.air_date ? fmtDate(e.air_date) : 'N/A'}</dd></div>
                                     <div><dt>Watched</dt><dd>{on ? (epDates[key] ? fmtDate(epDates[key]) : 'date not set') : 'Not yet'}</dd></div>
-                                    <div><dt>List / watched by</dt><dd>{trackGroup ? trackGroup.name : '—'}</dd></div>
+                                    <div><dt>List / watched by</dt><dd>{trackGroup ? trackGroup.name : 'N/A'}</dd></div>
                                   </dl>
                                   <div className="faint" style={{ margin: '4px 0' }}>Your rating</div>
                                   <StarRating value={rt || 0} color="var(--accent)" onChange={(sc) => rate(s.season_number, e.episode_number, sc)} />

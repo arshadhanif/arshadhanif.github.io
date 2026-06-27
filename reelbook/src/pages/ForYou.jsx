@@ -46,7 +46,7 @@ export default function ForYou() {
     return () => { alive = false }
   }, [seedEntries, exclude, type, loadingData])
 
-  // "Tonight's pick" — favour the watchlist (things you mean to watch), else a top rec.
+  // "Tonight's pick": favour the watchlist (things you mean to watch), else a top rec.
   const wlPool = useMemo(() => {
     let pool = watchlist
     if (groupId) pool = pool.filter((w) => w.group_id === groupId)
@@ -70,7 +70,7 @@ export default function ForYou() {
   return (
     <div className="page">
       <h1>For You</h1>
-      <p className="sub">Picks based on what you’ve rated highly — and your watchlist for tonight.</p>
+      <p className="sub">Picks based on what you’ve rated highly, and your watchlist for tonight.</p>
 
       <div className="row" style={{ gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
         <div className="seg">
@@ -114,14 +114,14 @@ export default function ForYou() {
       ) : loadingRecs ? (
         <Spinner label="Finding picks…" />
       ) : recs.length === 0 ? (
-        <Empty icon="🍿">No fresh recommendations for this filter yet — try a different group or type, or rate more titles.</Empty>
+        <Empty icon="🍿">No fresh recommendations for this filter yet. Try a different group or type, or rate more titles.</Empty>
       ) : (
         <div className="grid">
           {recs.map((r) => (
             <TitleLink className="tile" key={keyOf(r.media_type, r.tmdb_id)} tmdbId={r.tmdb_id} media={r.media_type}>
               <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
               <div className="tile-title">{r.title}</div>
-              <div className="tile-sub">{r.year || '—'} · {r.media_type === 'tv' ? 'TV' : 'Movie'}</div>
+              <div className="tile-sub">{r.year || 'N/A'} · {r.media_type === 'tv' ? 'TV' : 'Movie'}</div>
             </TitleLink>
           ))}
         </div>

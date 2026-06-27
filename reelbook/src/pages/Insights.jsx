@@ -74,7 +74,7 @@ export default function Insights() {
             {s.episodes > 0 && <Stat v={s.episodes} l="Episodes" />}
             <Stat v={s.thisYear} l={`Watched in ${s.year}`} />
             {s.people.filter((p) => p.count > 0).map((p) => (
-              <Stat key={p.id} v={p.avg ?? '—'} l={`${p.name}'s avg`} s={`${p.count} rated · tap`} color={p.color}
+              <Stat key={p.id} v={p.avg ?? 'N/A'} l={`${p.name}'s avg`} s={`${p.count} rated · tap`} color={p.color}
                 onClick={p.count ? () => setDrill({ title: `${p.name}'s ratings`, entries: p.entries }) : undefined} />
             ))}
           </div>
@@ -359,7 +359,7 @@ function computeEpisodes(eps) {
   }
   const monthMax = Math.max(0, ...months.map((m) => m.count))
 
-  const topShows = [...byShow.values()].map((list) => ({ label: list[0]?.titles?.title || '—', value: list.length, entries: list }))
+  const topShows = [...byShow.values()].map((list) => ({ label: list[0]?.titles?.title || 'N/A', value: list.length, entries: list }))
     .sort((a, b) => b.value - a.value).slice(0, 8)
 
   let busiest = null
@@ -395,7 +395,7 @@ function compute(entries, profiles, groups) {
     const scores = rated.map((e) => (e.ratings.find((x) => x.profile_id === p.id) || {}).score).filter((x) => x != null)
     const avg = scores.length ? +(scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : null
     const counts = dist.map((d) => d.count)
-    const mode = scores.length ? counts.indexOf(Math.max(...counts)) + 1 : '—'
+    const mode = scores.length ? counts.indexOf(Math.max(...counts)) + 1 : 'N/A'
     return { ...p, count: scores.length, avg, dist, mode, entries: rated.sort((a, b) => (avgOfEntry(b) || 0) - (avgOfEntry(a) || 0)) }
   })
 

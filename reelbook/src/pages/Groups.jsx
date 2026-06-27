@@ -18,7 +18,7 @@ export default function Groups() {
 
       <h2 style={{ fontSize: 18 }}>Your groups</h2>
       <p className="faint" style={{ marginTop: 0 }}>
-        A group is <em>who watched</em> — e.g. “Arshad &amp; Muneeza”, “Just Arshad”, “Family”. Members can include
+        A group is <em>who watched</em>: e.g. “Arshad &amp; Muneeza”, “Just Arshad”, “Family”. Members can include
         people without a login (just a name).
       </p>
 

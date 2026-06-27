@@ -71,7 +71,7 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
       <div className="field">
         <label>Who watched it? (group)</label>
         <select value={groupId || ''} onChange={(e) => setGroupId(e.target.value || null)}>
-          {groups.length === 0 && <option value="">— create a group first —</option>}
+          {groups.length === 0 && <option value="">Create a group first</option>}
           {groups.map((g) => (
             <option key={g.id} value={g.id}>{g.name}</option>
           ))}
@@ -116,7 +116,7 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
         <div className="field" style={{ flex: 1 }}>
           <label>Where?</label>
           <select value={whereWatched} onChange={(e) => setWhereWatched(e.target.value)}>
-            <option value="">—</option>
+            <option value="">None</option>
             {WHERE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
         </div>
@@ -152,9 +152,9 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
       <div className="field">
         <label>Visibility</label>
         <select value={visibility} onChange={(e) => setVisibility(e.target.value)}>
-          <option value="private">Private — just your household</option>
-          <option value="friends">Friends — visible to your friends</option>
-          <option value="public">Public — any ReelBook user</option>
+          <option value="private">Private (just your household)</option>
+          <option value="friends">Friends (visible to your friends)</option>
+          <option value="public">Public (any ReelBook user)</option>
         </select>
       </div>
 

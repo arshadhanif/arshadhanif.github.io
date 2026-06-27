@@ -91,7 +91,7 @@ export default function Discover() {
               <TitleLink className="tile" key={`${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
                 <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
                 <div className="tile-title">{r.title}</div>
-                <div className="tile-sub">{r.year || '—'} · {r.media_type === 'tv' ? 'TV' : 'Movie'}</div>
+                <div className="tile-sub">{r.year || 'N/A'} · {r.media_type === 'tv' ? 'TV' : 'Movie'}</div>
               </TitleLink>
             ))}
           </div>
@@ -124,7 +124,7 @@ function Rail({ title, items }) {
           <TitleLink className="rail-item tile" key={`${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
             <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
             <div className="tile-title">{r.title}</div>
-            <div className="tile-sub">{r.year || '—'}</div>
+            <div className="tile-sub">{r.year || 'N/A'}</div>
           </TitleLink>
         ))}
       </div>

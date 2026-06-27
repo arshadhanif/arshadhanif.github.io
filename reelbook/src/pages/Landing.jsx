@@ -2,12 +2,12 @@ import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const FEATURES = [
-  { icon: '👥', title: 'Tag who watched', body: 'Every watch is logged to a group — “Just us”, “Family”, “The crew”. Your lists are filtered views, never duplicates.' },
+  { icon: '👥', title: 'Tag who watched', body: 'Every watch is logged to a group: “Just us”, “Family”, “The crew”. Your lists are filtered views, never duplicates.' },
   { icon: '⭐', title: 'Two ratings, one title', body: 'Each of you rates out of 10. See your averages and exactly where your tastes collide.' },
   { icon: '📺', title: 'Track every episode', body: 'Tick off episodes with dates, pick up where you left off, and never lose your place in a series.' },
   { icon: '✨', title: 'What to watch tonight', body: 'Smart picks from your highest-rated history, plus a one-tap shuffle from your watchlist.' },
-  { icon: '🎬', title: 'Rich title pages', body: 'Trailers, cast, “where to watch”, and a link straight to IMDb — powered by TMDB.' },
-  { icon: '📊', title: 'Your year in data', body: 'Averages, agreement, trends over time, top genres and decades — your shared taste, visualised.' },
+  { icon: '🎬', title: 'Rich title pages', body: 'Trailers, cast, “where to watch”, and a link straight to IMDb, powered by TMDB.' },
+  { icon: '📊', title: 'Your year in data', body: 'Averages, agreement, trends over time, top genres and decades. Your shared taste, visualised.' },
 ]
 
 export default function Landing() {
@@ -25,10 +25,10 @@ export default function Landing() {
         <div className="landing-hero-grad" />
         <div className="landing-hero-inner">
           <h1>The movie &amp; TV diary<br />you keep <span>together</span>.</h1>
-          <p>ReelBook blends the best of Letterboxd, TV&nbsp;Time and Simkl — and adds the two things they miss:
+          <p>ReelBook blends the best of Letterboxd, TV&nbsp;Time and Simkl, and adds the two things they miss:
             <strong> who watched it</strong> and <strong>how you each rated it</strong>.</p>
           <div className="row" style={{ gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link className="btn primary" to="/login">Get started — it’s free</Link>
+            <Link className="btn primary" to="/login">Get started, it’s free</Link>
             <a className="btn" href="#features">See features</a>
           </div>
         </div>

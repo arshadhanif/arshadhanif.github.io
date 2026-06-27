@@ -44,7 +44,7 @@ const MODES = {
   },
   tvtime: {
     label: 'TV Time', icon: '📺', target: 'diary', needsPerson: false, multi: true,
-    help: 'Upload your TV Time CSV export files together (movies, series-episodes, series). Watched movies & shows go to the diary, your per-episode history powers episode tracking, and not-started shows go to your watchlist — all for the chosen group.',
+    help: 'Upload your TV Time CSV export files together (movies, series-episodes, series). Watched movies & shows go to the diary, your per-episode history powers episode tracking, and not-started shows go to your watchlist. All for the chosen group.',
   },
 }
 
@@ -254,7 +254,7 @@ export default function Import() {
       await insertWatchesBulk(watchRows)
       await insertWatchlistBulk(wlRows)
       setProgress({ done: total, total, ok: watchRows.length + wlRows.length, skipped: 0 })
-      setStatus({ type: 'ok', text: `Done — ${watchRows.length} watched, ${wlRows.length} on watchlist.` })
+      setStatus({ type: 'ok', text: `Done. ${watchRows.length} watched, ${wlRows.length} on watchlist.` })
     } catch (e) {
       console.error('tvtime import', e)
       setStatus({ type: 'error', text: `Import error: ${e.message}` })
@@ -302,7 +302,7 @@ export default function Import() {
         if (ratingRows.length) await insertRatingsBulk(ratingRows)
       }
       setProgress({ done: items.length, total: items.length, ok: matched.length, skipped })
-      setStatus({ type: 'ok', text: `Done — ${matched.length} ${cfg.target === 'watchlist' ? 'added to watchlist' : 'logged'}, ${skipped} unmatched.` })
+      setStatus({ type: 'ok', text: `Done. ${matched.length} ${cfg.target === 'watchlist' ? 'added to watchlist' : 'logged'}, ${skipped} unmatched.` })
     } catch (e) {
       console.error('import write', e)
       setStatus({ type: 'error', text: `Import error: ${e.message}` })
@@ -330,7 +330,7 @@ export default function Import() {
         <div className="field">
           <label>{cfg.target === 'watchlist' ? 'Add to watchlist for group' : 'Log into group'}</label>
           <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
-            {groups.length === 0 && <option value="">— create a group first —</option>}
+            {groups.length === 0 && <option value="">Create a group first</option>}
             {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
         </div>
@@ -398,7 +398,7 @@ export default function Import() {
               {running ? 'Importing…' : 'Import TV Time export'}
             </button>
           ) : tvFiles.length === 0 && !status ? (
-            <Empty icon="📺">Select your TV Time CSV files above — you can choose several at once (movies, series-episodes, series).</Empty>
+            <Empty icon="📺">Select your TV Time CSV files above. You can choose several at once (movies, series-episodes, series).</Empty>
           ) : null}
         </>
       )}
