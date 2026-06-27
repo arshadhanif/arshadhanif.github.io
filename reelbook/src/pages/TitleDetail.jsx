@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { getFullDetail, getSeason, IMG, providerRegions } from '../lib/tmdb'
+import { getFullDetail, getSeason, getRecommendations, IMG, providerRegions } from '../lib/tmdb'
 import {
   ensureTitleFromFull, getWatchesForTitle, addToWatchlist,
   listEpisodeWatches, markEpisode, unmarkEpisode, markSeason,
 } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
-import { Poster, Spinner, DualScore } from '../components/ui'
+import { useToast } from '../context/Toast'
+import { Poster, Spinner, DualScore, Modal, TitleLink } from '../components/ui'
 import MarkWatchedModal from '../components/MarkWatchedModal'
 
 const PREFERRED_REGION = 'SA'
@@ -17,6 +18,7 @@ export default function TitleDetail() {
   const navigate = useNavigate()
   const { groups, profiles } = useAppData()
   const { user } = useAuth()
+  const toast = useToast()
 
   const [full, setFull] = useState(null)
   const [titleId, setTitleId] = useState(null)
@@ -25,6 +27,8 @@ export default function TitleDetail() {
   const [err, setErr] = useState(null)
   const [watchModal, setWatchModal] = useState(false)
   const [region, setRegion] = useState(PREFERRED_REGION)
+  const [recs, setRecs] = useState([])
+  const [showTrailer, setShowTrailer] = useState(false)
 
   const loadWatches = useCallback(async (tid) => {
     try { setWatches(await getWatchesForTitle(tid)) } catch (e) { console.warn(e) }
@@ -48,6 +52,7 @@ export default function TitleDetail() {
       })
       .catch((e) => alive && setErr(e.message))
       .finally(() => alive && setLoading(false))
+    getRecommendations(Number(id), media).then((r) => alive && setRecs(r)).catch(() => {})
     return () => { alive = false }
   }, [id, media, loadWatches])
 
@@ -86,6 +91,9 @@ export default function TitleDetail() {
             <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
               <button className="btn primary" onClick={() => setWatchModal(true)}>✓ Mark watched</button>
               <AddWatchlist titleId={titleId} groups={groups} userId={user.id} />
+              {full.trailer_key && (
+                <button className="btn" onClick={() => setShowTrailer(true)}>▶ Trailer</button>
+              )}
               {full.imdb_id && (
                 <a className="btn" href={`https://www.imdb.com/title/${full.imdb_id}`} target="_blank" rel="noreferrer">
                   IMDb ↗
@@ -131,6 +139,20 @@ export default function TitleDetail() {
           <Episodes tmdbId={Number(id)} titleId={titleId} seasons={full.seasons} groups={groups} userId={user.id} />
         )}
 
+        {recs.length > 0 && (
+          <Block title="More like this">
+            <div className="scroll-x rail">
+              {recs.map((r) => (
+                <TitleLink className="rail-item tile" key={`${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
+                  <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
+                  <div className="tile-title">{r.title}</div>
+                  <div className="tile-sub">{r.year || '—'}</div>
+                </TitleLink>
+              ))}
+            </div>
+          </Block>
+        )}
+
         {watches.length > 0 && (
           <Block title="Your history">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -152,13 +174,24 @@ export default function TitleDetail() {
         </p>
       </div>
 
+      {showTrailer && full.trailer_key && (
+        <Modal title={`${full.title} — Trailer`} onClose={() => setShowTrailer(false)}>
+          <div className="trailer-frame">
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${full.trailer_key}?autoplay=1`}
+              title="Trailer" allow="autoplay; encrypted-media; fullscreen" allowFullScreen
+            />
+          </div>
+        </Modal>
+      )}
+
       {watchModal && (
         <MarkWatchedModal
           item={{ titleId, title: full.title, media_type: full.media_type, total_episodes: full.total_episodes }}
           groups={groups}
           profiles={profiles}
           onClose={() => setWatchModal(false)}
-          onSaved={() => loadWatches(titleId)}
+          onSaved={() => { loadWatches(titleId); toast('Saved to your diary') }}
         />
       )}
     </div>
@@ -180,6 +213,7 @@ function fmt(d) {
 }
 
 function AddWatchlist({ titleId, groups, userId }) {
+  const toast = useToast()
   const [open, setOpen] = useState(false)
   const [groupId, setGroupId] = useState(groups[0]?.id || '')
   const [done, setDone] = useState(false)
@@ -187,7 +221,10 @@ function AddWatchlist({ titleId, groups, userId }) {
   if (!titleId) return null
   async function add() {
     setBusy(true)
-    try { await addToWatchlist({ titleId, groupId, addedBy: userId }); setDone(true); setTimeout(() => setOpen(false), 800) }
+    try {
+      await addToWatchlist({ titleId, groupId, addedBy: userId })
+      setDone(true); toast('Added to watchlist'); setTimeout(() => setOpen(false), 800)
+    } catch (e) { toast(e.message || 'Could not add', 'err') }
     finally { setBusy(false) }
   }
   if (!open) return <button className="btn" onClick={() => setOpen(true)}>🔖 Add to watchlist</button>
@@ -253,6 +290,7 @@ function regionName(code) {
 }
 
 function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
+  const toast = useToast()
   const [trackGroupId, setTrackGroupId] = useState(groups[0]?.id || '')
   const [watched, setWatched] = useState(new Set()) // "s-e"
   const [openSeason, setOpenSeason] = useState(seasons[0]?.season_number ?? null)
@@ -291,6 +329,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
   async function markWholeSeason(season, eps) {
     await markSeason({ titleId, groupId: trackGroupId, season, episodes: eps.map((e) => e.episode_number), watchedOn: today, createdBy: userId })
     reloadWatched()
+    toast(`Marked ${eps.length} episodes watched`)
   }
 
   return (
