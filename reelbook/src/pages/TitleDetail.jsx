@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/Toast'
 import { Poster, Spinner, DualScore, Modal, TitleLink, StarRating } from '../components/ui'
 import MarkWatchedModal from '../components/MarkWatchedModal'
+import AddToCollectionModal from '../components/AddToCollectionModal'
 import { getPref, DEFAULT_REGION } from '../lib/prefs'
 import { formatWatched, fmtDate } from '../lib/dates'
 
@@ -26,6 +27,7 @@ export default function TitleDetail() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState(null)
   const [watchModal, setWatchModal] = useState(false)
+  const [listModal, setListModal] = useState(false)
   const preferred = getPref('region', DEFAULT_REGION)
   const [region, setRegion] = useState(preferred)
   const [recs, setRecs] = useState([])
@@ -92,6 +94,7 @@ export default function TitleDetail() {
             <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
               <button className="btn primary" onClick={() => setWatchModal(true)}>✓ Mark watched</button>
               <AddWatchlist titleId={titleId} groups={groups} userId={user.id} />
+              <button className="btn" onClick={() => setListModal(true)}>📚 Add to list</button>
               {full.trailer_key && (
                 <button className="btn" onClick={() => setShowTrailer(true)}>▶ Trailer</button>
               )}
@@ -206,6 +209,10 @@ export default function TitleDetail() {
           onClose={() => setWatchModal(false)}
           onSaved={() => { loadWatches(titleId); toast('Saved to your diary') }}
         />
+      )}
+
+      {listModal && (
+        <AddToCollectionModal item={{ titleId, title: full.title }} onClose={() => setListModal(false)} />
       )}
     </div>
   )

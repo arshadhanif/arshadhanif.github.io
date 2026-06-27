@@ -12,7 +12,8 @@ const Login = lazy(() => import('./pages/Login'))
 const Discover = lazy(() => import('./pages/Discover'))
 const Watchlist = lazy(() => import('./pages/Watchlist'))
 const Diary = lazy(() => import('./pages/Diary'))
-const Lists = lazy(() => import('./pages/Lists'))
+const Collections = lazy(() => import('./pages/Collections'))
+const CollectionDetail = lazy(() => import('./pages/CollectionDetail'))
 const Import = lazy(() => import('./pages/Import'))
 const Groups = lazy(() => import('./pages/Groups'))
 const About = lazy(() => import('./pages/About'))
@@ -60,7 +61,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 <Route index element={<Discover />} />
                 <Route path="watchlist" element={<Watchlist />} />
                 <Route path="diary" element={<Diary />} />
-                <Route path="lists" element={<Lists />} />
+                <Route path="lists" element={<Collections />} />
+                <Route path="lists/:id" element={<CollectionDetail />} />
                 <Route path="title/:media/:id" element={<TitleDetail />} />
                 <Route path="person/:id" element={<Person />} />
                 <Route path="import" element={<Import />} />

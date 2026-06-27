@@ -361,6 +361,12 @@ input:focus, select:focus, textarea:focus {
 .ep2-facts dt { font-size: 11px; color: var(--text-faint-solid); text-transform: uppercase; letter-spacing: .4px; }
 .ep2-facts dd { margin: 1px 0 0; font-size: 13px; font-weight: 600; }
 
+/* custom lists (collections) */
+.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.collection-card { display: flex; gap: 14px; align-items: flex-start; text-align: left; }
+.collection-emoji { font-size: 30px; line-height: 1; flex-shrink: 0; }
+.rank-num { width: 26px; flex-shrink: 0; text-align: center; font-weight: 900; font-size: 18px; color: var(--accent); font-variant-numeric: tabular-nums; }
+
 /* person / filmography page */
 .person-head { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
 .person-photo { width: 140px; flex-shrink: 0; border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-elev-2); aspect-ratio: 2/3; }
