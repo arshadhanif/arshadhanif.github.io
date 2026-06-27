@@ -248,6 +248,14 @@ export async function getTvStatus(tmdbId) {
   }
 }
 
+// Release date + status for a movie (for the Coming Soon calendar).
+export async function getMovieRelease(tmdbId) {
+  try {
+    const d = await tmdb(`/movie/${tmdbId}`)
+    return { release_date: d.release_date || null, status: d.status || null }
+  } catch { return { release_date: null, status: null } }
+}
+
 // Episodes for one season of a TV show.
 export async function getSeason(tmdbId, seasonNumber) {
   const data = await tmdb(`/tv/${tmdbId}/season/${seasonNumber}`)

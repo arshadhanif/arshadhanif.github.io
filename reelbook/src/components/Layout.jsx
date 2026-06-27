@@ -72,6 +72,7 @@ export default function Layout() {
                 <div style={{ fontWeight: 700 }}>{profile?.name || 'You'}</div>
                 <div className="faint">Signed in</div>
               </div>
+              <button onClick={() => go('/coming')}>📅 Coming soon</button>
               <button onClick={() => go('/browse')}>🧭 Advanced browse</button>
               <button onClick={() => go('/friends')}>🤝 Friends</button>
               <button onClick={() => go('/settings')}>⚙️ Settings</button>
