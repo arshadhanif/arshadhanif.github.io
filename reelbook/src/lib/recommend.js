@@ -47,3 +47,47 @@ export async function recommendFromHistory({ entries, exclude = new Set(), type 
 
   return [...cand.values()].sort((a, b) => b.score - a.score).slice(0, max).map((x) => x.item)
 }
+
+// Netflix-style "Because you liked X" rails: one rail per highly-rated seed,
+// each with that title's top recommendations. Titles are de-duped across rails
+// (kept in their strongest rail) so you don't see the same poster twice.
+export async function recommendRails({ entries, exclude = new Set(), type = 'all', maxRails = 6, perRail = 12 }) {
+  const scored = entries
+    .map((e) => {
+      const rs = (e.ratings || []).filter((r) => r.score != null)
+      const avg = rs.length ? rs.reduce((a, b) => a + b.score, 0) / rs.length : 0
+      return { t: e.titles, avg }
+    })
+    .filter((x) => x.t && x.t.tmdb_id && x.avg >= 7)   // only seed from titles you genuinely liked
+    .sort((a, b) => b.avg - a.avg)
+
+  const seeds = []
+  const seen = new Set()
+  for (const { t } of scored) {
+    const k = keyOf(t.media_type, t.tmdb_id)
+    if (seen.has(k)) continue
+    seen.add(k)
+    if (type !== 'all' && t.media_type !== type) continue
+    seeds.push(t)
+    if (seeds.length >= maxRails) break
+  }
+  if (!seeds.length) return []
+
+  const lists = await Promise.allSettled(seeds.map((s) => getRecommendations(s.tmdb_id, s.media_type)))
+  const usedItems = new Set()
+  const rails = []
+  lists.forEach((res, i) => {
+    if (res.status !== 'fulfilled') return
+    const items = []
+    for (const r of res.value) {
+      if (type !== 'all' && r.media_type !== type) continue
+      const k = keyOf(r.media_type, r.tmdb_id)
+      if (exclude.has(k) || usedItems.has(k)) continue
+      usedItems.add(k)
+      items.push(r)
+      if (items.length >= perRail) break
+    }
+    if (items.length >= 3) rails.push({ seed: seeds[i], items })
+  })
+  return rails
+}

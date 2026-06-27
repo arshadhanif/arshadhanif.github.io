@@ -171,6 +171,37 @@ export function Spinner({ label = 'Loading…' }) {
   return <div className="spinner">{label}</div>
 }
 
+// Shimmering placeholder blocks shown while data loads.
+export function GridSkeleton({ count = 12 }) {
+  return (
+    <div className="grid">
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i}>
+          <div className="skeleton" style={{ aspectRatio: '2/3', borderRadius: 'var(--radius-sm)' }} />
+          <div className="skeleton" style={{ height: 12, width: '80%', margin: '8px 0 0', borderRadius: 4 }} />
+          <div className="skeleton" style={{ height: 10, width: '50%', margin: '6px 0 0', borderRadius: 4 }} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function RowsSkeleton({ count = 6 }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="card row" style={{ gap: 12, alignItems: 'center' }}>
+          <div className="skeleton" style={{ width: 46, aspectRatio: '2/3', borderRadius: 8, flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div className="skeleton" style={{ height: 13, width: '55%', borderRadius: 4 }} />
+            <div className="skeleton" style={{ height: 10, width: '30%', marginTop: 8, borderRadius: 4 }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function Empty({ icon = '🎬', children }) {
   return (
     <div className="empty">

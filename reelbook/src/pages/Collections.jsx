@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { listCollections, createCollection } from '../lib/db'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/Toast'
-import { Spinner, Empty, Modal } from '../components/ui'
+import { RowsSkeleton, Empty, Modal } from '../components/ui'
 
 const EMOJIS = ['🎬', '🍿', '👽', '😱', '😭', '❤️', '🔥', '🏆', '🎄', '🕵️', '🚀', '🎃', '👑', '🌍']
 
@@ -29,7 +29,7 @@ export default function Collections() {
       </div>
       <p className="sub">Curate your own collections, like “Best heist movies” or “Comfort rewatches”.</p>
 
-      {loading ? <Spinner /> : lists.length === 0 ? (
+      {loading ? <RowsSkeleton count={4} /> : lists.length === 0 ? (
         <Empty icon="📚">No lists yet. Create one, then add titles from any movie or show page.</Empty>
       ) : (
         <div className="grid-cards">
