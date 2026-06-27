@@ -1,9 +1,24 @@
 import { useState } from 'react'
 import { findByImdbId, findByTitle } from '../lib/tmdb'
-import { ensureTitle, markWatched } from '../lib/db'
+import { ensureTitle, markWatched, addToWatchlist } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
 import { Empty } from '../components/ui'
+
+const MODES = {
+  imdb_ratings: {
+    label: 'IMDb ratings', icon: '⭐', target: 'diary', needsPerson: true,
+    help: 'IMDb → Your Ratings → ⋯ → Export. Each rated title becomes a diary watch with the chosen person’s score and the date you rated it.',
+  },
+  imdb_watchlist: {
+    label: 'IMDb watchlist', icon: '🔖', target: 'watchlist', needsPerson: false,
+    help: 'IMDb → Watchlist → ⋯ → Export. Titles are added to your “want to watch” list for the chosen group (no rating, not logged as watched).',
+  },
+  tvtime: {
+    label: 'TV Time', icon: '📺', target: 'diary', needsPerson: true,
+    help: 'TV Time export (CSV or JSON). Shows & movies are matched to TMDB and added as watches for the chosen group.',
+  },
+}
 
 // Minimal CSV parser that handles quoted fields and commas inside quotes.
 function parseCSV(text) {
@@ -90,6 +105,7 @@ function normDate(d) {
 export default function Import() {
   const { groups, profiles } = useAppData()
   const { user } = useAuth()
+  const [mode, setMode] = useState('imdb_ratings')
   const [groupId, setGroupId] = useState(groups[0]?.id || '')
   const [profileId, setProfileId] = useState(profiles[0]?.id || '')
   const [items, setItems] = useState([])
@@ -98,11 +114,14 @@ export default function Import() {
   const [progress, setProgress] = useState({ done: 0, total: 0, ok: 0, skipped: 0 })
   const [running, setRunning] = useState(false)
 
+  const cfg = MODES[mode]
+
   function onFile(e) {
     const file = e.target.files?.[0]
     if (!file) return
     setFilename(file.name)
     setStatus(null)
+    setProgress({ done: 0, total: 0, ok: 0, skipped: 0 })
     const reader = new FileReader()
     reader.onload = () => {
       const parsed = extractItems(file.name, reader.result)
@@ -110,6 +129,11 @@ export default function Import() {
       setStatus(parsed.length ? null : { type: 'error', text: 'Could not find any titles in that file.' })
     }
     reader.readAsText(file)
+  }
+
+  function pickMode(m) {
+    setMode(m); setItems([]); setFilename(''); setStatus(null)
+    setProgress({ done: 0, total: 0, ok: 0, skipped: 0 })
   }
 
   async function runImport() {
@@ -126,14 +150,21 @@ export default function Import() {
         if (!seed) { skipped++; setProgress((p) => ({ ...p, done: i + 1, skipped })); continue }
 
         const titleId = await ensureTitle(seed)
-        const score = it.score ? Math.max(1, Math.min(10, Math.round(Number(it.score)))) : null
-        await markWatched({
-          titleId,
-          groupId,
-          watchedOn: normDate(it.date) || undefined,
-          createdBy: user.id,
-          ratings: score && profileId ? { [profileId]: score } : {},
-        })
+        if (cfg.target === 'watchlist') {
+          await addToWatchlist({ titleId, groupId, addedBy: user.id })
+        } else {
+          const score = it.score ? Math.max(1, Math.min(10, Math.round(Number(it.score)))) : null
+          const wd = normDate(it.date)
+          await markWatched({
+            titleId,
+            groupId,
+            watchedOn: wd || undefined,
+            noDate: !wd,
+            datePrecision: 'day',
+            createdBy: user.id,
+            ratings: score && profileId ? { [profileId]: score } : {},
+          })
+        }
         ok++
       } catch (e) {
         console.warn('import row failed', it, e)
@@ -142,32 +173,41 @@ export default function Import() {
       setProgress((p) => ({ ...p, done: i + 1, ok, skipped }))
     }
     setRunning(false)
-    setStatus({ type: 'ok', text: `Done — imported ${ok}, skipped ${skipped}.` })
+    const dest = cfg.target === 'watchlist' ? 'added to watchlist' : 'logged'
+    setStatus({ type: 'ok', text: `Done — ${ok} ${dest}, ${skipped} skipped.` })
   }
 
   return (
     <div className="page">
-      <h1>Import history</h1>
-      <div className="banner">
-        Upload your <strong>IMDb ratings CSV</strong> (Your Ratings → Export) or a <strong>TV Time</strong> CSV/JSON
-        export. Each title is matched against TMDB and added as a watch for the group below. IMDb “Your Rating”
-        becomes the selected person’s score.
+      <h1>Import</h1>
+      <p className="sub">Bring your history in from IMDb and TV Time. Pick what you’re importing:</p>
+
+      <div className="scroll-x" style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap' }}>
+        {Object.entries(MODES).map(([k, m]) => (
+          <button key={k} className={`chip ${mode === k ? 'active' : ''}`}
+            style={mode === k ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#0b0d12' } : undefined}
+            onClick={() => pickMode(k)}>{m.icon} {m.label}</button>
+        ))}
       </div>
+
+      <div className="banner">{cfg.help}</div>
 
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="field">
-          <label>Import into group</label>
+          <label>{cfg.target === 'watchlist' ? 'Add to watchlist for group' : 'Log into group'}</label>
           <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
             {groups.length === 0 && <option value="">— create a group first —</option>}
             {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
         </div>
-        <div className="field">
-          <label>Ratings belong to</label>
-          <select value={profileId} onChange={(e) => setProfileId(e.target.value)}>
-            {profiles.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-        </div>
+        {cfg.needsPerson && (
+          <div className="field">
+            <label>Ratings belong to</label>
+            <select value={profileId} onChange={(e) => setProfileId(e.target.value)}>
+              {profiles.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+        )}
         <div className="field">
           <label>File (.csv or .json)</label>
           <input type="file" accept=".csv,.json,text/csv,application/json" onChange={onFile} />
@@ -197,7 +237,9 @@ export default function Import() {
           ) : null}
 
           <button className="btn primary block" disabled={running || !groupId} onClick={runImport}>
-            {running ? 'Importing…' : `Import ${items.length} titles`}
+            {running ? 'Importing…' : cfg.target === 'watchlist'
+              ? `Add ${items.length} to watchlist`
+              : `Import ${items.length} as watched`}
           </button>
 
           <div style={{ marginTop: 16 }}>
