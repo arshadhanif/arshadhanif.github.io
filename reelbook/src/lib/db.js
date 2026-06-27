@@ -613,6 +613,67 @@ export async function getLoggedTmdbIds() {
   return set
 }
 
+// ---------- Profile favourites (Top 4) ----------
+
+export async function listFavorites(profileId = null) {
+  let q = supabase
+    .from('favorites')
+    .select('id, profile_id, position, titles(*)')
+    .order('position', { ascending: true })
+  if (profileId) q = q.eq('profile_id', profileId)
+  const { data, error } = await q
+  if (error) throw error
+  return data || []
+}
+
+export async function addFavorite({ profileId, seed, titleId }) {
+  const tId = titleId || (await ensureTitle(seed))
+  const { count } = await supabase.from('favorites').select('id', { count: 'exact', head: true }).eq('profile_id', profileId)
+  const { error } = await supabase.from('favorites')
+    .upsert({ profile_id: profileId, title_id: tId, position: count || 0 }, { onConflict: 'profile_id,title_id', ignoreDuplicates: true })
+  if (error) throw error
+}
+
+export async function removeFavorite(id) {
+  const { error } = await supabase.from('favorites').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function reorderFavorites(orderedIds) {
+  await Promise.all(orderedIds.map((id, i) => supabase.from('favorites').update({ position: i }).eq('id', id)))
+}
+
+// ---------- Subscriptions (cost tracker) ----------
+
+export async function listSubscriptions() {
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .select('id, name, cost, currency, cycle, active, owner_id, created_at')
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return data || []
+}
+
+export async function createSubscription({ name, cost, currency, cycle, ownerId }) {
+  const { data: hm } = await supabase
+    .from('household_members').select('household_id').eq('profile_id', ownerId).limit(1).maybeSingle()
+  const { error } = await supabase.from('subscriptions').insert({
+    name, cost: Number(cost) || 0, currency: currency || 'USD', cycle: cycle || 'monthly',
+    owner_id: ownerId, household_id: hm?.household_id || null,
+  })
+  if (error) throw error
+}
+
+export async function updateSubscription(id, fields) {
+  const { error } = await supabase.from('subscriptions').update(fields).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteSubscription(id) {
+  const { error } = await supabase.from('subscriptions').delete().eq('id', id)
+  if (error) throw error
+}
+
 // ---------- Custom lists (collections) ----------
 
 export async function listCollections() {

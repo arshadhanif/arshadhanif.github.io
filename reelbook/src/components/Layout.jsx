@@ -75,6 +75,7 @@ export default function Layout() {
               <button onClick={() => go('/coming')}>📅 Coming soon</button>
               <button onClick={() => go('/wrapped')}>🎁 Year in review</button>
               <button onClick={() => go('/achievements')}>🏅 Achievements</button>
+              <button onClick={() => go('/subscriptions')}>💳 Subscriptions</button>
               <button onClick={() => go('/browse')}>🧭 Advanced browse</button>
               <button onClick={() => go('/friends')}>🤝 Friends</button>
               <button onClick={() => go('/settings')}>⚙️ Settings</button>
