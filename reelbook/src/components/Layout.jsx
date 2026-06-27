@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { listInProgressShows } from '../lib/db'
 import { initials } from './ui'
 
 const TABS = [
@@ -15,8 +16,13 @@ const TABS = [
 export default function Layout() {
   const { profile, signOut } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [notifCount, setNotifCount] = useState(0)
   const menuRef = useRef(null)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    listInProgressShows().then((s) => setNotifCount(s.length)).catch(() => {})
+  }, [])
 
   useEffect(() => {
     const onClick = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false) }
@@ -35,6 +41,10 @@ export default function Layout() {
         <nav className="nav-links">
           {TABS.map((t) => <NavLink key={t.to} to={t.to} end={t.end}>{t.label}</NavLink>)}
         </nav>
+        <div className="row" style={{ gap: 6 }}>
+        <button className="bell" onClick={() => navigate('/notifications')} aria-label="Notifications">
+          🔔{notifCount > 0 && <span className="bell-badge">{notifCount > 9 ? '9+' : notifCount}</span>}
+        </button>
         <div className="menu-wrap" ref={menuRef}>
           <button onClick={() => setMenuOpen((o) => !o)} aria-label="Menu">
             <div className="avatar" style={{ background: profile?.color || 'var(--accent-2)' }}>
@@ -55,6 +65,7 @@ export default function Layout() {
               <button onClick={() => { setMenuOpen(false); signOut() }}>⏻ Sign out</button>
             </div>
           )}
+        </div>
         </div>
       </header>
 

@@ -192,6 +192,17 @@ function pickTrailer(videos = []) {
   return t?.key || null
 }
 
+// Current episode status for a tracked show (for new-episode notifications).
+export async function getTvStatus(tmdbId) {
+  const data = await tmdb(`/tv/${tmdbId}`)
+  const n = data.next_episode_to_air
+  return {
+    number_of_episodes: data.number_of_episodes ?? null,
+    status: data.status || null,
+    next_episode: n ? { air_date: n.air_date, name: n.name, season: n.season_number, episode: n.episode_number } : null,
+  }
+}
+
 // Episodes for one season of a TV show.
 export async function getSeason(tmdbId, seasonNumber) {
   const data = await tmdb(`/tv/${tmdbId}/season/${seasonNumber}`)
