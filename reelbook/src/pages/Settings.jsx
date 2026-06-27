@@ -7,14 +7,21 @@ import { useToast } from '../context/Toast'
 import { getPref, setPref, REGIONS, regionName, DEFAULT_REGION } from '../lib/prefs'
 import { isPushSupported, getPushState, enablePush, disablePush, sendTestPush } from '../lib/push'
 import { downloadJsonBackup, downloadDiaryCsv, downloadEpisodesCsv } from '../lib/backup'
+import { listFavorites } from '../lib/db'
+import { FavoritesEditor, FavoritesStrip } from '../components/Favorites'
 import { initials } from '../components/ui'
 
 const COLORS = ['#5b9aff', '#ff6b9d', '#e8a838', '#4ecb71', '#b46bff', '#ff8c42', '#42d4d4']
 
 export default function Settings() {
   const { user, profile, refreshProfile, signOut } = useAuth()
-  const { groups, reload } = useAppData()
+  const { groups, profiles, reload } = useAppData()
   const toast = useToast()
+  const others = (profiles || []).filter((p) => p.id !== user?.id)
+  const [othersFavs, setOthersFavs] = useState({})
+  useEffect(() => {
+    others.forEach((p) => { if (!(p.id in othersFavs)) listFavorites(p.id).then((f) => setOthersFavs((m) => ({ ...m, [p.id]: f }))).catch(() => {}) })
+  }, [profiles])
 
   const [name, setName] = useState(profile?.name || '')
   const [color, setColor] = useState(profile?.color || COLORS[0])
@@ -87,6 +94,18 @@ export default function Settings() {
           </div>
         </div>
         <button className="btn primary" disabled={savingP} onClick={saveProfile}>{savingP ? 'Saving…' : 'Save profile'}</button>
+      </div>
+
+      <div className="card" style={{ marginBottom: 18 }}>
+        <strong>Your favourites</strong>
+        <p className="faint" style={{ margin: '8px 0 14px' }}>Pick up to four all-time favourites to show on your profile.</p>
+        <FavoritesEditor profileId={user.id} />
+        {others.map((p) => (othersFavs[p.id]?.length > 0 && (
+          <div key={p.id} style={{ marginTop: 16 }}>
+            <div className="faint" style={{ marginBottom: 8, color: p.color, fontWeight: 700 }}>{p.name}’s favourites</div>
+            <FavoritesStrip favorites={othersFavs[p.id]} />
+          </div>
+        )))}
       </div>
 
       <div className="card" style={{ marginBottom: 18 }}>

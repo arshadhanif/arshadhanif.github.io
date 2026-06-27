@@ -361,6 +361,16 @@ input:focus, select:focus, textarea:focus {
 .ep2-facts dt { font-size: 11px; color: var(--text-faint-solid); text-transform: uppercase; letter-spacing: .4px; }
 .ep2-facts dd { margin: 1px 0 0; font-size: 13px; font-weight: 600; }
 
+/* profile favourites */
+.fav-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.fav-item, .fav-edit { position: relative; }
+.fav-edit .fav-ctrls { display: flex; justify-content: center; gap: 2px; margin-top: 4px; }
+.fav-edit .fav-ctrls button { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 6px; font-size: 12px; padding: 2px 6px; color: var(--text-dim); }
+.fav-edit .fav-ctrls button:disabled { opacity: .35; }
+.fav-add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; aspect-ratio: 2/3; border: 2px dashed var(--border); border-radius: var(--radius-sm); color: var(--text-faint-solid); font-size: 28px; background: var(--bg-elev-2); }
+.fav-add span { font-size: 12px; font-weight: 700; }
+.fav-add:hover { border-color: var(--accent); color: var(--accent); }
+
 /* custom lists (collections) */
 .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
 .collection-card { display: flex; gap: 14px; align-items: flex-start; text-align: left; }
