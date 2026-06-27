@@ -141,7 +141,7 @@ export default function Browse() {
                   <TitleLink tmdbId={r.tmdb_id} media={r.media_type}>
                     <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
                     <div className="tile-title">{r.title}</div>
-                    <div className="tile-sub">{r.year || '—'}</div>
+                    <div className="tile-sub">{r.year || 'N/A'}</div>
                   </TitleLink>
                 </div>
               )

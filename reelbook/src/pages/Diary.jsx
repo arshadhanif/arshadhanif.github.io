@@ -210,7 +210,7 @@ function EditWatch({ entry, profiles, onClose, onChanged }) {
         <div className="field" style={{ flex: 1 }}>
           <label>Where?</label>
           <select value={whereWatched} onChange={(e) => setWhereWatched(e.target.value)}>
-            <option value="">—</option>
+            <option value="">None</option>
             {['Cinema / Theatre', 'TV', 'Laptop', 'Computer', 'Mobile', 'Tablet', 'Projector', 'Other'].map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
         </div>

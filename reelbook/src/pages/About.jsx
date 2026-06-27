@@ -7,7 +7,7 @@ export default function About() {
       <div className="card" style={{ marginBottom: 16 }}>
         <p style={{ marginTop: 0 }} className="muted">
           ReelBook is a private movie &amp; TV diary for Arshad &amp; Muneeza. Every watch is tagged with a
-          <strong> group</strong> (who watched it), and each title can be rated out of 10 separately by each person —
+          <strong> group</strong> (who watched it), and each title can be rated out of 10 separately by each person,
           so you can see your per-person averages and where your tastes disagree.
         </p>
       </div>

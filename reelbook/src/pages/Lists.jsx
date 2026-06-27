@@ -93,7 +93,7 @@ export default function Lists() {
       ) : (
         <Section title="Biggest rating gaps" count={disagreements.length}>
           {disagreements.length === 0 ? (
-            <Empty>No disagreements yet — rate the same titles to see where your tastes diverge.</Empty>
+            <Empty>No disagreements yet. Rate the same titles to see where your tastes diverge.</Empty>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {disagreements.map(({ entry, spread }) => (
@@ -135,7 +135,7 @@ function PosterTile({ t, group, footer }) {
         <Poster title={t?.title} mediaType={t?.media_type} posterPath={t?.poster_path} />
         <div className="tile-title">{t?.title}</div>
         <div className="tile-sub">
-          {t?.year || '—'}
+          {t?.year || 'N/A'}
           {group && <> · <span style={{ color: group.color }}>{group.name}</span></>}
         </div>
       </TitleLink>

@@ -65,7 +65,7 @@ export default function Notifications() {
 
       {list.length === 0 ? (
         <Empty icon={tab === 'new' ? '🔔' : tab === 'coming' ? '📅' : '🍿'}>
-          {tab === 'new' ? 'No new episodes — you’re all caught up on new releases.'
+          {tab === 'new' ? 'No new episodes. You’re all caught up on new releases.'
             : tab === 'coming' ? 'Nothing airing in the next few weeks.'
             : 'No shows to catch up on.'}
         </Empty>

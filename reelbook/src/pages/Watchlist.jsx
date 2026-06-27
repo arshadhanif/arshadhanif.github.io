@@ -49,7 +49,7 @@ export default function Watchlist() {
         </div>
         <select value={sort} onChange={(e) => setSort(e.target.value)} style={{ width: 'auto' }}>
           <option value="recent">Recently added</option>
-          <option value="title">Title A–Z</option>
+          <option value="title">Title A-Z</option>
           <option value="year">Year (newest)</option>
         </select>
       </div>
@@ -68,7 +68,7 @@ export default function Watchlist() {
                   <Poster title={t?.title} mediaType={t?.media_type} posterPath={t?.poster_path} />
                   <div className="tile-title">{t?.title}</div>
                   <div className="tile-sub">
-                    {t?.year || '—'}
+                    {t?.year || 'N/A'}
                     {it.groups && <> · <span style={{ color: it.groups.color }}>{it.groups.name}</span></>}
                   </div>
                 </TitleLink>
