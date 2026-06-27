@@ -211,9 +211,16 @@ export async function listGroups() {
 }
 
 export async function createGroup({ name, color, ownerId, memberNames = [] }) {
+  // Attach the group to the creator's household so the whole household sees it.
+  const { data: hm } = await supabase
+    .from('household_members')
+    .select('household_id')
+    .eq('profile_id', ownerId)
+    .limit(1)
+    .maybeSingle()
   const { data: group, error } = await supabase
     .from('groups')
-    .insert({ name, color: color || undefined, owner_id: ownerId })
+    .insert({ name, color: color || undefined, owner_id: ownerId, household_id: hm?.household_id || null })
     .select('id')
     .single()
   if (error) throw error

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
@@ -32,9 +32,9 @@ export default function Login() {
   return (
     <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 20 }}>
       <div style={{ width: '100%', maxWidth: 380 }}>
-        <div className="brand" style={{ fontSize: 34, textAlign: 'center', marginBottom: 6 }}>
+        <Link to="/welcome" className="brand" style={{ fontSize: 34, textAlign: 'center', marginBottom: 6, display: 'block' }}>
           Reel<span>Book</span>
-        </div>
+        </Link>
         <p className="muted" style={{ textAlign: 'center', marginTop: 0, marginBottom: 28 }}>
           Your shared movie &amp; TV diary
         </p>

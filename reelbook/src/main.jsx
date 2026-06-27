@@ -20,6 +20,7 @@ const Insights = lazy(() => import('./pages/Insights'))
 const TitleDetail = lazy(() => import('./pages/TitleDetail'))
 const ForYou = lazy(() => import('./pages/ForYou'))
 const Settings = lazy(() => import('./pages/Settings'))
+const Landing = lazy(() => import('./pages/Landing'))
 
 // Register the service worker so ReelBook is installable on phones.
 if ('serviceWorker' in navigator) {
@@ -46,6 +47,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <ToastProvider>
           <Suspense fallback={<Spinner label="Loading…" />}>
             <Routes>
+              <Route path="/welcome" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route element={<Protected />}>
                 <Route index element={<Discover />} />
