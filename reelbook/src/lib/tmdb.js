@@ -172,9 +172,9 @@ export async function getFullDetail(tmdbId, mediaType) {
   let crew = []
   if (isMovie) {
     const directors = (data.credits?.crew || []).filter((c) => c.job === 'Director')
-    crew = directors.map((d) => ({ role: 'Director', name: d.name }))
+    crew = directors.map((d) => ({ role: 'Director', name: d.name, id: d.id }))
   } else {
-    crew = (data.created_by || []).map((c) => ({ role: 'Creator', name: c.name }))
+    crew = (data.created_by || []).map((c) => ({ role: 'Creator', name: c.name, id: c.id }))
   }
 
   const seasons = !isMovie
@@ -245,6 +245,40 @@ export async function getTvStatus(tmdbId) {
     aired_episodes: airedEpisodes(data),
     status: data.status || null,
     next_episode: n ? { air_date: n.air_date, name: n.name, season: n.season_number, episode: n.episode_number } : null,
+  }
+}
+
+// A person (actor / director / crew) with their full filmography.
+export async function getPerson(id) {
+  const d = await tmdb(`/person/${id}`, { append_to_response: 'combined_credits,external_ids' })
+  const map = (c) => ({
+    tmdb_id: c.id,
+    media_type: c.media_type,
+    title: c.media_type === 'movie' ? c.title : c.name,
+    year: yearOf(c.media_type === 'movie' ? c.release_date : c.first_air_date),
+    date: (c.media_type === 'movie' ? c.release_date : c.first_air_date) || null,
+    poster_path: c.poster_path || null,
+    character: c.character || null,
+    job: c.job || null,
+    department: c.department || null,
+    episode_count: c.episode_count || null,
+    popularity: c.popularity || 0,
+    vote_average: c.vote_average || 0,
+  })
+  const keep = (c) => c.media_type === 'movie' || c.media_type === 'tv'
+  return {
+    id: d.id,
+    name: d.name,
+    biography: d.biography || '',
+    birthday: d.birthday || null,
+    deathday: d.deathday || null,
+    place: d.place_of_birth || null,
+    profile_path: d.profile_path || null,
+    known_for_department: d.known_for_department || null,
+    imdb_id: d.external_ids?.imdb_id || null,
+    homepage: d.homepage || null,
+    cast: (d.combined_credits?.cast || []).filter(keep).map(map),
+    crew: (d.combined_credits?.crew || []).filter(keep).map(map),
   }
 }
 
