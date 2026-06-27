@@ -189,6 +189,31 @@ export async function listInProgressShows() {
   return out.sort((a, b) => (b.last || '').localeCompare(a.last || ''))
 }
 
+// All TV shows you've ticked episodes for (watched count + cached total).
+export async function listTrackedShows() {
+  const { data, error } = await supabase
+    .from('episode_watches')
+    .select('title_id, season_number, episode_number, watched_on, titles(*)')
+  if (error) throw error
+  const byTitle = new Map()
+  for (const row of data || []) {
+    const t = row.titles
+    if (!t || t.media_type !== 'tv') continue
+    if (!byTitle.has(row.title_id)) byTitle.set(row.title_id, { title: t, eps: new Set(), last: row.watched_on })
+    const e = byTitle.get(row.title_id)
+    e.eps.add(`${row.season_number}-${row.episode_number}`)
+    if (row.watched_on && (!e.last || row.watched_on > e.last)) e.last = row.watched_on
+  }
+  return [...byTitle.values()].map(({ title, eps, last }) => ({
+    title, watched: eps.size, cachedTotal: title.total_episodes || 0, last,
+  }))
+}
+
+export async function setTitleTotalEpisodes(titleId, total) {
+  const { error } = await supabase.from('titles').update({ total_episodes: total }).eq('id', titleId)
+  if (error) throw error
+}
+
 export async function getTitle(id) {
   const { data, error } = await supabase
     .from('titles')
