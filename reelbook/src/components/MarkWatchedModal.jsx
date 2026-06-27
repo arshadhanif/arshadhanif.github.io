@@ -2,12 +2,15 @@ import { useState } from 'react'
 import { Modal, StarRating } from './ui'
 import { markWatched } from '../lib/db'
 import { useAuth } from '../context/AuthContext'
+import { getPref } from '../lib/prefs'
 
 // item: { seed?, titleId?, title, media_type, total_episodes? }
 export default function MarkWatchedModal({ item, groups, profiles, onClose, onSaved }) {
   const { user } = useAuth()
   const today = new Date().toISOString().slice(0, 10)
-  const [groupId, setGroupId] = useState(groups[0]?.id || null)
+  const prefGroup = getPref('defaultGroupId', '')
+  const initialGroup = (prefGroup && groups.some((g) => g.id === prefGroup)) ? prefGroup : (groups[0]?.id || null)
+  const [groupId, setGroupId] = useState(initialGroup)
   const [watchedOn, setWatchedOn] = useState(today)
   const [note, setNote] = useState('')
   const [episodes, setEpisodes] = useState(0)

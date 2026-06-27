@@ -10,8 +10,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/Toast'
 import { Poster, Spinner, DualScore, Modal, TitleLink } from '../components/ui'
 import MarkWatchedModal from '../components/MarkWatchedModal'
-
-const PREFERRED_REGION = 'SA'
+import { getPref, DEFAULT_REGION } from '../lib/prefs'
 
 export default function TitleDetail() {
   const { media, id } = useParams()
@@ -26,7 +25,8 @@ export default function TitleDetail() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState(null)
   const [watchModal, setWatchModal] = useState(false)
-  const [region, setRegion] = useState(PREFERRED_REGION)
+  const preferred = getPref('region', DEFAULT_REGION)
+  const [region, setRegion] = useState(preferred)
   const [recs, setRecs] = useState([])
   const [showTrailer, setShowTrailer] = useState(false)
 
@@ -42,7 +42,7 @@ export default function TitleDetail() {
         if (!alive) return
         setFull(f)
         const regions = providerRegions(f.providers)
-        setRegion(regions.includes(PREFERRED_REGION) ? PREFERRED_REGION : regions.includes('US') ? 'US' : regions[0] || PREFERRED_REGION)
+        setRegion(regions.includes(preferred) ? preferred : regions.includes('US') ? 'US' : regions[0] || preferred)
         try {
           const tid = await ensureTitleFromFull(f)
           if (!alive) return

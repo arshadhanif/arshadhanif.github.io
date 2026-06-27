@@ -5,6 +5,7 @@ import { initials } from './ui'
 
 const TABS = [
   { to: '/', label: 'Discover', ico: '🔍', end: true },
+  { to: '/foryou', label: 'For You', ico: '✨' },
   { to: '/watchlist', label: 'Watchlist', ico: '🔖' },
   { to: '/diary', label: 'Diary', ico: '📖' },
   { to: '/lists', label: 'Lists', ico: '📚' },
@@ -46,6 +47,7 @@ export default function Layout() {
                 <div style={{ fontWeight: 700 }}>{profile?.name || 'You'}</div>
                 <div className="faint">Signed in</div>
               </div>
+              <button onClick={() => go('/settings')}>⚙️ Settings</button>
               <button onClick={() => go('/groups')}>👥 Groups &amp; profile</button>
               <button onClick={() => go('/import')}>⬆️ Import history</button>
               <button onClick={() => go('/about')}>ℹ️ About</button>
