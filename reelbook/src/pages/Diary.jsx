@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { listDiary, listEpisodeDiary, deleteWatch, setRating, updateWatch } from '../lib/db'
 import { useAppData } from '../context/AppData'
-import { Poster, Spinner, Empty, GroupChips, DualScore, Modal, StarRating, TitleLink } from '../components/ui'
+import { Poster, Spinner, Empty, GroupChips, DualScore, Modal, StarRating, TitleLink, TagInput } from '../components/ui'
 import { formatWatched, fmtDate } from '../lib/dates'
 
 export default function Diary() {
@@ -15,6 +15,9 @@ export default function Diary() {
   const [typeF, setTypeF] = useState('all')     // all | movie | tv | episodes
   const [q, setQ] = useState('')
   const [genreF, setGenreF] = useState('all')
+  const [tagF, setTagF] = useState('all')
+
+  const allTags = [...new Set(entries.flatMap((e) => e.tags || []))].sort()
 
   const allGenres = [...new Set(entries.flatMap((e) => (e.titles?.genre || '').split(',').map((g) => g.trim()).filter(Boolean)))].sort()
 
@@ -26,6 +29,7 @@ export default function Diary() {
     .filter((e) => typeF === 'all' || e.titles?.media_type === typeF)
     .filter((e) => !q.trim() || (e.titles?.title || '').toLowerCase().includes(q.trim().toLowerCase()))
     .filter((e) => genreF === 'all' || (e.titles?.genre || '').split(',').map((g) => g.trim()).includes(genreF))
+    .filter((e) => tagF === 'all' || (e.tags || []).includes(tagF))
     .sort((a, b) => {
       if (sort === 'rating') return avgOf(b) - avgOf(a)
       if (sort === 'oldest') return (a.watched_on || '').localeCompare(b.watched_on || '')
@@ -70,6 +74,12 @@ export default function Diary() {
             <select value={genreF} onChange={(e) => setGenreF(e.target.value)} style={{ width: 'auto' }}>
               <option value="all">All genres</option>
               {allGenres.map((g) => <option key={g} value={g}>{g}</option>)}
+            </select>
+          )}
+          {typeF !== 'episodes' && allTags.length > 0 && (
+            <select value={tagF} onChange={(e) => setTagF(e.target.value)} style={{ width: 'auto' }}>
+              <option value="all">All tags</option>
+              {allTags.map((t) => <option key={t} value={t}>#{t}</option>)}
             </select>
           )}
         </div>
@@ -117,7 +127,10 @@ export default function Diary() {
                 </TitleLink>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="spread">
-                    <strong style={{ fontSize: 16 }}>{t?.title} <span className="faint">{t?.year || ''}</span></strong>
+                    <strong style={{ fontSize: 16 }}>
+                      {t?.title} <span className="faint">{t?.year || ''}</span>
+                      {e.is_rewatch && <span className="rewatch-badge">↻ Rewatch</span>}
+                    </strong>
                     <button className="btn sm" onClick={() => setEditing(e)}>Edit</button>
                   </div>
                   <div className="faint" style={{ margin: '4px 0 8px' }}>
@@ -131,6 +144,13 @@ export default function Diary() {
                   </div>
                   <DualScore profiles={profiles} ratings={e.ratings} />
                   {e.note && <p className="muted" style={{ margin: '8px 0 0', fontSize: 14 }}>“{e.note}”</p>}
+                  {(e.tags || []).length > 0 && (
+                    <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                      {e.tags.map((tg) => (
+                        <button key={tg} className="chip" onClick={() => { setTypeF('all'); setTagF(tg) }}>#{tg}</button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )
@@ -158,6 +178,8 @@ function EditWatch({ entry, profiles, onClose, onChanged }) {
   const [note, setNote] = useState(entry.note || '')
   const [whereWatched, setWhereWatched] = useState(entry.where_watched || '')
   const [service, setService] = useState(entry.service || '')
+  const [tags, setTags] = useState(entry.tags || [])
+  const [isRewatch, setIsRewatch] = useState(!!entry.is_rewatch)
   const [busy, setBusy] = useState(false)
   const isTv = t?.media_type === 'tv'
 
@@ -169,6 +191,8 @@ function EditWatch({ entry, profiles, onClose, onChanged }) {
         episodes_watched: isTv ? Number(episodes) || 0 : 0,
         where_watched: whereWatched || null,
         service: service.trim() || null,
+        tags,
+        is_rewatch: isRewatch,
       })
       for (const p of profiles) {
         const score = ratings[p.id]
@@ -223,8 +247,18 @@ function EditWatch({ entry, profiles, onClose, onChanged }) {
         </div>
       </div>
       <div className="field">
-        <label>Note</label>
-        <textarea rows="3" value={note} onChange={(e) => setNote(e.target.value)} />
+        <label>Review / notes</label>
+        <textarea rows="4" value={note} onChange={(e) => setNote(e.target.value)} />
+      </div>
+      <div className="field">
+        <label>Tags</label>
+        <TagInput value={tags} onChange={setTags} />
+      </div>
+      <div className="field">
+        <label className="row" style={{ gap: 8, cursor: 'pointer' }}>
+          <input type="checkbox" style={{ width: 18, height: 18 }} checked={isRewatch} onChange={(e) => setIsRewatch(e.target.checked)} />
+          <span>This is a rewatch</span>
+        </label>
       </div>
       <div className="row">
         <button className="btn primary" style={{ flex: 1 }} disabled={busy} onClick={save}>

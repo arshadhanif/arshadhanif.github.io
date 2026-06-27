@@ -161,7 +161,7 @@ export async function insertWatchlistBulk(rows) {
 export async function getWatchesForTitle(titleId) {
   const { data, error } = await supabase
     .from('watches')
-    .select('id, watched_on, date_precision, note, episodes_watched, where_watched, service, group_id, groups(id, name, color), ratings(id, profile_id, score)')
+    .select('id, watched_on, date_precision, note, episodes_watched, where_watched, service, group_id, tags, is_rewatch, groups(id, name, color), ratings(id, profile_id, score)')
     .eq('title_id', titleId)
     .order('watched_on', { ascending: false })
   if (error) throw error
@@ -450,6 +450,8 @@ export async function markWatched({
   service = null,
   noDate = false,
   datePrecision = 'day',
+  tags = [],
+  isRewatch = false,
 }) {
   const tId = titleId || (await ensureTitle(seed))
   const { data: watch, error } = await supabase
@@ -466,6 +468,8 @@ export async function markWatched({
       visibility,
       where_watched: whereWatched || null,
       service: service || null,
+      tags: tags || [],
+      is_rewatch: !!isRewatch,
     })
     .select('id')
     .single()
@@ -490,7 +494,7 @@ export async function listDiary({ groupId = null, limit = 200 } = {}) {
   let q = supabase
     .from('watches')
     .select(
-      'id, watched_on, date_precision, note, episodes_watched, where_watched, service, group_id, created_by, created_at, ' +
+      'id, watched_on, date_precision, note, episodes_watched, where_watched, service, group_id, created_by, created_at, tags, is_rewatch, ' +
         'titles(*), groups(id, name, color), ratings(id, profile_id, score)'
     )
     .order('watched_on', { ascending: false })

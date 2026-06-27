@@ -32,14 +32,17 @@ export async function downloadJsonBackup() {
 // Human-readable diary spreadsheet.
 export async function downloadDiaryCsv() {
   const data = await exportAllData()
-  const head = ['Title', 'Year', 'Type', 'Watched', 'Group', 'Ratings', 'Episodes', 'Service', 'Where', 'Note']
+  const head = ['Title', 'Year', 'Type', 'Watched', 'Group', 'Ratings', 'Episodes', 'Service', 'Where', 'Rewatch', 'Tags', 'Review']
   const rows = data.diary.map((e) => [
     e.titles?.title, e.titles?.year, e.titles?.media_type,
     e.watched_on ? fmtDate(e.watched_on) : '',
     e.groups?.name,
     (e.ratings || []).map((r) => r.score).filter((s) => s != null).join(' / '),
     e.episodes_watched || '',
-    e.service, e.where_watched, e.note,
+    e.service, e.where_watched,
+    e.is_rewatch ? 'yes' : '',
+    (e.tags || []).join('; '),
+    e.note,
   ])
   download(`reelbook-diary-${todayStamp()}.csv`, csvRows([head, ...rows]), 'text/csv')
   return rows.length

@@ -159,9 +159,14 @@ export default function TitleDetail() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {watches.map((w) => (
                 <div className="card spread" key={w.id}>
-                  <div>
-                    <div className="faint">{formatWatched(w.watched_on, w.date_precision)}{w.groups && <> · <span style={{ color: w.groups.color }}>{w.groups.name}</span></>}{w.service && <> · 📺 {w.service}</>}{w.where_watched && <> · {w.where_watched}</>}</div>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="faint">{formatWatched(w.watched_on, w.date_precision)}{w.groups && <> · <span style={{ color: w.groups.color }}>{w.groups.name}</span></>}{w.service && <> · 📺 {w.service}</>}{w.where_watched && <> · {w.where_watched}</>}{w.is_rewatch && <span className="rewatch-badge">↻ Rewatch</span>}</div>
                     {w.note && <div className="muted" style={{ fontSize: 14, marginTop: 4 }}>“{w.note}”</div>}
+                    {(w.tags || []).length > 0 && (
+                      <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                        {w.tags.map((tg) => <span key={tg} className="chip">#{tg}</span>)}
+                      </div>
+                    )}
                   </div>
                   <DualScore profiles={profiles} ratings={w.ratings} />
                 </div>
@@ -188,7 +193,7 @@ export default function TitleDetail() {
 
       {watchModal && (
         <MarkWatchedModal
-          item={{ titleId, title: full.title, media_type: full.media_type, total_episodes: full.total_episodes }}
+          item={{ titleId, title: full.title, media_type: full.media_type, total_episodes: full.total_episodes, rewatchSuggested: watches.length > 0 }}
           groups={groups}
           profiles={profiles}
           onClose={() => setWatchModal(false)}
