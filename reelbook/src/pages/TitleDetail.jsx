@@ -399,6 +399,8 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
         </div>
       )}
 
+      <EpisodeRatingGraph epRatings={epRatings} />
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {seasons.map((s) => {
           const raw = episodesBySeason[s.season_number] || []
@@ -478,6 +480,42 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
         })}
       </div>
       {!trackGroupId && <div className="faint" style={{ marginTop: 8 }}>Pick a group above to start ticking off episodes.</div>}
+    </div>
+  )
+}
+
+// IMDb-style chart of the user's own episode ratings across the series.
+function EpisodeRatingGraph({ epRatings }) {
+  const points = Object.entries(epRatings || {})
+    .map(([k, rating]) => { const [s, e] = k.split('-').map(Number); return { s, e, rating } })
+    .sort((a, b) => a.s - b.s || a.e - b.e)
+  if (points.length < 3) return null
+
+  const avg = (points.reduce((a, p) => a + p.rating, 0) / points.length).toFixed(1)
+  const color = (r) => r >= 8 ? 'var(--green)' : r >= 6 ? 'var(--accent)' : r >= 4 ? 'var(--accent-2)' : 'var(--red)'
+  // Season boundaries for subtle dividers.
+  const seasons = [...new Set(points.map((p) => p.s))]
+
+  return (
+    <div className="card" style={{ marginBottom: 14 }}>
+      <div className="spread" style={{ marginBottom: 10 }}>
+        <strong style={{ fontSize: 14 }}>Your episode ratings</strong>
+        <span className="faint">{points.length} rated · avg ★ {avg}</span>
+      </div>
+      <div className="epchart">
+        {points.map((p, i) => {
+          const newSeason = i > 0 && p.s !== points[i - 1].s
+          return (
+            <div key={`${p.s}-${p.e}`} className="epchart-bar-wrap" title={`S${p.s}·E${p.e}: ${p.rating}/10`}
+              style={newSeason ? { borderLeft: '1px solid var(--border)', paddingLeft: 3, marginLeft: 1 } : undefined}>
+              <div className="epchart-bar" style={{ height: `${p.rating * 10}%`, background: color(p.rating) }} />
+            </div>
+          )
+        })}
+      </div>
+      <div className="faint" style={{ marginTop: 6, fontSize: 11 }}>
+        {seasons.length > 1 ? `Seasons ${seasons[0]}–${seasons[seasons.length - 1]} · oldest to newest` : 'oldest to newest'}
+      </div>
     </div>
   )
 }

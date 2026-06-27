@@ -361,6 +361,23 @@ input:focus, select:focus, textarea:focus {
 .ep2-facts dt { font-size: 11px; color: var(--text-faint-solid); text-transform: uppercase; letter-spacing: .4px; }
 .ep2-facts dd { margin: 1px 0 0; font-size: 13px; font-weight: 600; }
 
+/* achievements / badges */
+.badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.badge { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px 14px; text-align: center; opacity: .62; transition: transform .12s, border-color .15s; }
+.badge.earned { opacity: 1; border-color: var(--accent); background: linear-gradient(160deg, var(--accent-soft), var(--bg-elev) 60%); }
+.badge-ico { font-size: 30px; line-height: 1; filter: grayscale(1); }
+.badge.earned .badge-ico { filter: none; }
+.badge-name { font-weight: 800; font-size: 14px; margin-top: 8px; }
+.badge-desc { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.badge-done { margin-top: 8px; font-size: 12px; font-weight: 800; color: var(--accent); }
+.badge-prog { font-size: 11px; color: var(--text-faint-solid); margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+/* episode rating chart */
+.epchart { display: flex; align-items: flex-end; gap: 2px; height: 90px; }
+.epchart-bar-wrap { flex: 1; min-width: 3px; height: 100%; display: flex; align-items: flex-end; }
+.epchart-bar { width: 100%; border-radius: 2px 2px 0 0; min-height: 2px; transition: opacity .12s; }
+.epchart-bar-wrap:hover .epchart-bar { opacity: .7; }
+
 /* tags + rewatch */
 .tag-input { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; }
 .tag-input input { flex: 1; min-width: 90px; background: transparent; border: 0; padding: 4px 2px; width: auto; }
