@@ -261,6 +261,15 @@ export async function getSeason(tmdbId, seasonNumber) {
   }))
 }
 
+// IMDb id for a single episode (fetched lazily when a row is expanded —
+// the season endpoint doesn't carry per-episode external ids).
+export async function getEpisodeExternalIds(tmdbId, season, episode) {
+  try {
+    const data = await tmdb(`/tv/${tmdbId}/season/${season}/episode/${episode}/external_ids`)
+    return { imdb_id: data.imdb_id || null }
+  } catch { return { imdb_id: null } }
+}
+
 // Country codes that have provider data (for the in-app region switcher).
 export function providerRegions(providers) {
   return Object.keys(providers || {}).sort()

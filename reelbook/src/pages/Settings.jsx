@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { updateProfile } from '../lib/db'
 import { useAuth } from '../context/AuthContext'
 import { useAppData } from '../context/AppData'
 import { useToast } from '../context/Toast'
 import { getPref, setPref, REGIONS, regionName, DEFAULT_REGION } from '../lib/prefs'
+import { isPushSupported, getPushState, enablePush, disablePush, sendTestPush } from '../lib/push'
 import { initials } from '../components/ui'
 
 const COLORS = ['#5b9aff', '#ff6b9d', '#e8a838', '#4ecb71', '#b46bff', '#ff8c42', '#42d4d4']
@@ -19,6 +20,27 @@ export default function Settings() {
   const [savingP, setSavingP] = useState(false)
   const [region, setRegion] = useState(getPref('region', DEFAULT_REGION))
   const [defaultGroup, setDefaultGroup] = useState(getPref('defaultGroupId', '') || '')
+  const [push, setPush] = useState('off')   // unsupported | denied | on | off
+  const [pushBusy, setPushBusy] = useState(false)
+
+  useEffect(() => { getPushState().then(setPush).catch(() => {}) }, [])
+
+  async function togglePush() {
+    setPushBusy(true)
+    try {
+      if (push === 'on') { await disablePush(); setPush('off'); toast('Push notifications turned off') }
+      else { const st = await enablePush(); setPush(st); toast('Push notifications on — try “Send a test”') }
+    } catch (e) { toast(e.message || 'Could not change push setting', 'err') }
+    finally { setPushBusy(false) }
+  }
+  async function testPush() {
+    setPushBusy(true)
+    try {
+      const r = await sendTestPush()
+      toast(r?.sent ? 'Test sent — check your notifications' : 'No devices registered yet', r?.sent ? 'ok' : 'err')
+    } catch (e) { toast(e.message || 'Could not send test', 'err') }
+    finally { setPushBusy(false) }
+  }
 
   async function saveProfile() {
     setSavingP(true)
@@ -70,6 +92,26 @@ export default function Settings() {
             {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
         </div>
+      </div>
+
+      <div className="card" style={{ marginBottom: 18 }}>
+        <strong>Push notifications</strong>
+        <p className="faint" style={{ margin: '8px 0 14px' }}>
+          Get a notification on this device when a new episode airs for a show you’re tracking — even
+          when ReelBook is closed. Read-state stays in sync across your devices.
+        </p>
+        {push === 'unsupported' ? (
+          <div className="muted">This browser doesn’t support push notifications. On iPhone, add ReelBook to your Home Screen first.</div>
+        ) : push === 'denied' ? (
+          <div className="muted">Notifications are blocked in your browser settings. Re-enable them for this site, then reload.</div>
+        ) : (
+          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <button className={`btn ${push === 'on' ? '' : 'primary'}`} disabled={pushBusy} onClick={togglePush}>
+              {push === 'on' ? '🔕 Turn off on this device' : '🔔 Turn on for this device'}
+            </button>
+            {push === 'on' && <button className="btn" disabled={pushBusy} onClick={testPush}>Send a test</button>}
+          </div>
+        )}
       </div>
 
       <div className="card" style={{ marginBottom: 18 }}>

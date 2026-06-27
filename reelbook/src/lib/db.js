@@ -577,3 +577,34 @@ export async function saveNotifBaselines(map) {
     .upsert(rows, { onConflict: 'user_id,title_id', ignoreDuplicates: false })
   if (error) throw error
 }
+
+// ---------- Push subscriptions (Web Push) ----------
+
+export async function savePushSubscription(sub) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not signed in')
+  const j = sub.toJSON ? sub.toJSON() : sub
+  const row = {
+    user_id: user.id,
+    endpoint: j.endpoint,
+    p256dh: j.keys?.p256dh,
+    auth: j.keys?.auth,
+    user_agent: navigator.userAgent?.slice(0, 300) || null,
+  }
+  const { error } = await supabase
+    .from('push_subscriptions')
+    .upsert(row, { onConflict: 'endpoint' })
+  if (error) throw error
+}
+
+export async function deletePushSubscription(endpoint) {
+  const { error } = await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint)
+  if (error) throw error
+}
+
+// Ask the server to send a test push to this user's devices.
+export async function sendTestPush() {
+  const { data, error } = await supabase.functions.invoke('push-episodes', { body: { action: 'test' } })
+  if (error) throw error
+  return data
+}

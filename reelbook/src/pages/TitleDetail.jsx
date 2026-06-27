@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { getFullDetail, getSeason, getRecommendations, IMG, providerRegions } from '../lib/tmdb'
+import { getFullDetail, getSeason, getRecommendations, getEpisodeExternalIds, IMG, providerRegions } from '../lib/tmdb'
 import {
   ensureTitleFromFull, getWatchesForTitle, addToWatchlist,
   listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, unmarkAllEpisodes, setEpisodeRating,
@@ -294,9 +294,22 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
   const [openSeason, setOpenSeason] = useState(seasons[0]?.season_number ?? null)
   const [episodesBySeason, setEpisodesBySeason] = useState({})
   const [expanded, setExpanded] = useState(null)       // "s-e"
+  const [epImdb, setEpImdb] = useState({})             // "s-e" -> imdb_id | null (fetched lazily)
   const [desc, setDesc] = useState(false)              // newest episode first
   const [bulkBusy, setBulkBusy] = useState(false)
   const today = new Date().toISOString().slice(0, 10)
+
+  // Expand a row; fetch its IMDb id the first time it's opened.
+  function openRow(season, ep, key) {
+    const next = expanded === key ? null : key
+    setExpanded(next)
+    if (next && epImdb[key] === undefined) {
+      setEpImdb((m) => ({ ...m, [key]: null }))   // mark in-flight
+      getEpisodeExternalIds(tmdbId, season, ep)
+        .then((x) => setEpImdb((m) => ({ ...m, [key]: x.imdb_id })))
+        .catch(() => {})
+    }
+  }
 
   const reload = useCallback(async () => {
     if (!trackGroupId) { setWatched(new Set()); setEpRatings({}); return }
@@ -408,7 +421,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
                             <div className="ep2-thumb">
                               {IMG.still(e.still_path) ? <img src={IMG.still(e.still_path)} alt="" loading="lazy" /> : <span className="ep2-num">{e.episode_number}</span>}
                             </div>
-                            <div className="ep2-body" onClick={() => setExpanded(isExp ? null : key)}>
+                            <div className="ep2-body" onClick={() => openRow(s.season_number, e.episode_number, key)}>
                               <div className="ep2-title">
                                 <strong>{e.episode_number}. {e.name}</strong>
                                 {rt ? <span className="ep2-rt">★ {rt}</span> : null}
@@ -419,9 +432,14 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
                                 <div onClick={(ev) => ev.stopPropagation()} style={{ marginTop: 8 }}>
                                   <div className="faint" style={{ marginBottom: 4 }}>Your rating</div>
                                   <StarRating value={rt || 0} color="var(--accent)" onChange={(sc) => rate(s.season_number, e.episode_number, sc)} />
-                                  <a className="faint" style={{ display: 'inline-block', marginTop: 8, color: 'var(--accent-2)' }}
-                                    href={`https://www.themoviedb.org/tv/${tmdbId}/season/${s.season_number}/episode/${e.episode_number}`}
-                                    target="_blank" rel="noreferrer" onClick={(ev) => ev.stopPropagation()}>View on TMDB ↗</a>
+                                  <div className="row" style={{ gap: 14, marginTop: 8, flexWrap: 'wrap' }}>
+                                    {epImdb[key] && (
+                                      <a className="ep2-link imdb" href={`https://www.imdb.com/title/${epImdb[key]}/`}
+                                        target="_blank" rel="noreferrer" onClick={(ev) => ev.stopPropagation()}>IMDb ↗</a>
+                                    )}
+                                    <a className="ep2-link" href={`https://www.themoviedb.org/tv/${tmdbId}/season/${s.season_number}/episode/${e.episode_number}`}
+                                      target="_blank" rel="noreferrer" onClick={(ev) => ev.stopPropagation()}>TMDB ↗</a>
+                                  </div>
                                 </div>
                               )}
                             </div>

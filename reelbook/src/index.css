@@ -354,6 +354,8 @@ input:focus, select:focus, textarea:focus {
 .ep2-rt { color: var(--accent); font-weight: 800; font-size: 13px; white-space: nowrap; }
 .ep2-meta { font-size: 12px; margin-top: 3px; }
 .ep2-ov { font-size: 13px; color: var(--text-dim); margin: 8px 0 0; line-height: 1.5; }
+.ep2-link { font-size: 12.5px; font-weight: 800; color: var(--accent-2); }
+.ep2-link.imdb { color: #0b0d12; background: #f5c518; padding: 3px 9px; border-radius: 6px; }
 @media (max-width: 560px) { .ep2-thumb { width: 84px; } }
 
 /* ---------- rails ---------- */
