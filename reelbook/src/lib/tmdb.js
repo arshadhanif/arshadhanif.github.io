@@ -100,6 +100,30 @@ export async function findByTitle(query, year, mediaHint) {
   return pool[0]
 }
 
+// Genre list for the advanced filters.
+export async function getGenres(mediaType) {
+  const data = await tmdb(`/genre/${mediaType}/list`)
+  return data.genres || []
+}
+
+// Advanced filtered browse via TMDB Discover.
+export async function discoverTitles(mediaType, opts = {}) {
+  const { genres = [], yearMin, yearMax, ratingMin, sortBy = 'popularity.desc', page = 1 } = opts
+  const params = { sort_by: sortBy, page, include_adult: 'false' }
+  if (genres.length) params.with_genres = genres.join(',')
+  if (ratingMin) { params['vote_average.gte'] = ratingMin; params['vote_count.gte'] = 50 }
+  const dateField = mediaType === 'movie' ? 'primary_release_date' : 'first_air_date'
+  if (yearMin) params[`${dateField}.gte`] = `${yearMin}-01-01`
+  if (yearMax) params[`${dateField}.lte`] = `${yearMax}-12-31`
+  const data = await tmdb(`/discover/${mediaType}`, params)
+  return {
+    page: data.page,
+    totalPages: data.total_pages,
+    totalResults: data.total_results,
+    results: (data.results || []).map((r) => normalizeResult({ ...r, media_type: mediaType })).filter(Boolean).filter((r) => r.poster_path),
+  }
+}
+
 // Trending this week (movies + TV) — shown on the Discover screen before searching.
 export async function getTrending() {
   const data = await tmdb('/trending/all/week')

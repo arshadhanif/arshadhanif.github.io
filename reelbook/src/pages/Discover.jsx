@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { searchMulti, getTrending, getPopular, getTopRated, IMG } from '../lib/tmdb'
 import { listInProgressShows } from '../lib/db'
 import { Poster, Empty, SkeletonGrid, TitleLink } from '../components/ui'
@@ -42,7 +43,10 @@ export default function Discover() {
 
   return (
     <div className="page">
-      <h1>Discover</h1>
+      <div className="page-head">
+        <h1>Discover</h1>
+        <Link className="btn sm" to="/browse">🧭 Advanced filters</Link>
+      </div>
       <input
         placeholder="Search movies & TV…"
         value={q}

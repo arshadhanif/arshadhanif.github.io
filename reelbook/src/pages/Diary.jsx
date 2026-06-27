@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { listDiary, deleteWatch, setRating, updateWatch } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { Poster, Spinner, Empty, GroupChips, DualScore, Modal, StarRating, TitleLink } from '../components/ui'
+import { formatWatched } from '../lib/dates'
 
 export default function Diary() {
   const { groups, profiles } = useAppData()
@@ -73,7 +74,7 @@ export default function Diary() {
                     <button className="btn sm" onClick={() => setEditing(e)}>Edit</button>
                   </div>
                   <div className="faint" style={{ margin: '4px 0 8px' }}>
-                    {fmtDate(e.watched_on)}
+                    {formatWatched(e.watched_on, e.date_precision)}
                     {e.groups && <> · <span style={{ color: e.groups.color }}>{e.groups.name}</span></>}
                     {t?.media_type === 'tv' && e.episodes_watched > 0 && (
                       <> · {e.episodes_watched}{t.total_episodes ? `/${t.total_episodes}` : ''} eps</>
@@ -188,9 +189,3 @@ function EditWatch({ entry, profiles, onClose, onChanged }) {
   )
 }
 
-function fmtDate(d) {
-  if (!d) return 'Date not set'
-  return new Date(d + 'T00:00:00').toLocaleDateString(undefined, {
-    year: 'numeric', month: 'short', day: 'numeric',
-  })
-}
