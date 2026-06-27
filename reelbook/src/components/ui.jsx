@@ -1,6 +1,40 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { IMG } from '../lib/tmdb'
+
+const TAG_SUGGESTIONS = ['comfort watch', 'date night', 'with friends', 'masterpiece', 'made me cry', 'background', 'rewatch material', 'guilty pleasure', 'so bad it’s good']
+
+// Chip-style tag editor. value: string[], onChange: (string[]) => void
+export function TagInput({ value = [], onChange, suggestions = TAG_SUGGESTIONS }) {
+  const [text, setText] = useState('')
+  const add = (raw) => {
+    const t = raw.trim().toLowerCase()
+    if (t && !value.includes(t)) onChange([...value, t])
+    setText('')
+  }
+  const remove = (t) => onChange(value.filter((x) => x !== t))
+  const onKey = (e) => {
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(text) }
+    else if (e.key === 'Backspace' && !text && value.length) remove(value[value.length - 1])
+  }
+  const unused = suggestions.filter((s) => !value.includes(s)).slice(0, 6)
+  return (
+    <div>
+      <div className="tag-input">
+        {value.map((t) => (
+          <span className="tag-chip" key={t}>{t}<button type="button" onClick={() => remove(t)} aria-label={`Remove ${t}`}>×</button></span>
+        ))}
+        <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={onKey} onBlur={() => add(text)}
+          placeholder={value.length ? 'Add another…' : 'Add a tag…'} />
+      </div>
+      {unused.length > 0 && (
+        <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+          {unused.map((s) => <button type="button" key={s} className="chip" onClick={() => add(s)}>+ {s}</button>)}
+        </div>
+      )}
+    </div>
+  )
+}
 
 // Wraps content in a link to the title detail page (/title/:media/:tmdbId).
 export function TitleLink({ tmdbId, media, className, style, children }) {

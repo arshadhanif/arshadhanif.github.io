@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Modal, StarRating } from './ui'
+import { Modal, StarRating, TagInput } from './ui'
 import { markWatched } from '../lib/db'
 import { useAuth } from '../context/AuthContext'
 import { getPref } from '../lib/prefs'
@@ -20,6 +20,8 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
   const [monthVal, setMonthVal] = useState(today.slice(0, 7))
   const [yearVal, setYearVal] = useState(today.slice(0, 4))
   const [note, setNote] = useState('')
+  const [tags, setTags] = useState([])
+  const [isRewatch, setIsRewatch] = useState(!!item.rewatchSuggested)
   const [episodes, setEpisodes] = useState(0)
   const [ratings, setRatings] = useState({}) // {profileId: score}
   const [visibility, setVisibility] = useState('private')
@@ -55,6 +57,8 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
         visibility,
         whereWatched: whereWatched || null,
         service: service.trim() || null,
+        tags,
+        isRewatch,
       })
       onSaved?.()
       onClose()
@@ -145,8 +149,20 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
       </div>
 
       <div className="field">
-        <label>Note (optional)</label>
-        <textarea rows="3" value={note} onChange={(e) => setNote(e.target.value)} placeholder="What did you think?" />
+        <label>Review / notes (optional)</label>
+        <textarea rows="4" value={note} onChange={(e) => setNote(e.target.value)} placeholder="What did you think?" />
+      </div>
+
+      <div className="field">
+        <label>Tags (optional)</label>
+        <TagInput value={tags} onChange={setTags} />
+      </div>
+
+      <div className="field">
+        <label className="row" style={{ gap: 8, cursor: 'pointer' }}>
+          <input type="checkbox" style={{ width: 18, height: 18 }} checked={isRewatch} onChange={(e) => setIsRewatch(e.target.checked)} />
+          <span>This is a rewatch</span>
+        </label>
       </div>
 
       <div className="field">
