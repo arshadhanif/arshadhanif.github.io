@@ -173,12 +173,30 @@ export async function getWatchesForTitle(titleId) {
 export async function listEpisodeWatches(titleId, groupId) {
   let q = supabase
     .from('episode_watches')
-    .select('id, season_number, episode_number, watched_on')
+    .select('id, season_number, episode_number, watched_on, rating')
     .eq('title_id', titleId)
   q = groupId ? q.eq('group_id', groupId) : q.is('group_id', null)
   const { data, error } = await q
   if (error) throw error
   return data
+}
+
+// Rate a single episode (implies it's watched). Preserves an existing watched date.
+export async function setEpisodeRating({ titleId, groupId, season, episode, rating, watchedOn, createdBy }) {
+  let sel = supabase.from('episode_watches').select('id')
+    .eq('title_id', titleId).eq('season_number', season).eq('episode_number', episode)
+  sel = groupId ? sel.eq('group_id', groupId) : sel.is('group_id', null)
+  const { data: existing } = await sel.maybeSingle()
+  if (existing) {
+    const { error } = await supabase.from('episode_watches').update({ rating }).eq('id', existing.id)
+    if (error) throw error
+    return
+  }
+  const { error } = await supabase.from('episode_watches').insert({
+    title_id: titleId, group_id: groupId, season_number: season, episode_number: episode,
+    rating, watched_on: watchedOn || undefined, created_by: createdBy,
+  })
+  if (error) throw error
 }
 
 export async function markEpisode({ titleId, groupId, season, episode, watchedOn, createdBy }) {
