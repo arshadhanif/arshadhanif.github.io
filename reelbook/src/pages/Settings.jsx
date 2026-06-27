@@ -6,6 +6,7 @@ import { useAppData } from '../context/AppData'
 import { useToast } from '../context/Toast'
 import { getPref, setPref, REGIONS, regionName, DEFAULT_REGION } from '../lib/prefs'
 import { isPushSupported, getPushState, enablePush, disablePush, sendTestPush } from '../lib/push'
+import { downloadJsonBackup, downloadDiaryCsv, downloadEpisodesCsv } from '../lib/backup'
 import { initials } from '../components/ui'
 
 const COLORS = ['#5b9aff', '#ff6b9d', '#e8a838', '#4ecb71', '#b46bff', '#ff8c42', '#42d4d4']
@@ -40,6 +41,17 @@ export default function Settings() {
       toast(r?.sent ? 'Test sent. Check your notifications' : 'No devices registered yet', r?.sent ? 'ok' : 'err')
     } catch (e) { toast(e.message || 'Could not send test', 'err') }
     finally { setPushBusy(false) }
+  }
+
+  const [exporting, setExporting] = useState('')
+  async function runExport(kind, fn) {
+    setExporting(kind)
+    try {
+      const n = await fn()
+      const count = n && typeof n === 'object' ? Object.values(n).reduce((a, b) => a + b, 0) : n
+      toast(`Downloaded ${count} records`)
+    } catch (e) { toast(e.message || 'Export failed', 'err') }
+    finally { setExporting('') }
   }
 
   async function saveProfile() {
@@ -112,6 +124,25 @@ export default function Settings() {
             {push === 'on' && <button className="btn" disabled={pushBusy} onClick={testPush}>Send a test</button>}
           </div>
         )}
+      </div>
+
+      <div className="card" style={{ marginBottom: 18 }}>
+        <strong>Your data</strong>
+        <p className="faint" style={{ margin: '8px 0 14px' }}>
+          Download a copy of everything you’ve logged. The JSON file is a complete backup;
+          the CSV files open in any spreadsheet.
+        </p>
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn primary" disabled={!!exporting} onClick={() => runExport('json', downloadJsonBackup)}>
+            {exporting === 'json' ? 'Preparing…' : '⬇️ Full backup (JSON)'}
+          </button>
+          <button className="btn" disabled={!!exporting} onClick={() => runExport('diary', downloadDiaryCsv)}>
+            {exporting === 'diary' ? 'Preparing…' : 'Diary (CSV)'}
+          </button>
+          <button className="btn" disabled={!!exporting} onClick={() => runExport('eps', downloadEpisodesCsv)}>
+            {exporting === 'eps' ? 'Preparing…' : 'Episodes (CSV)'}
+          </button>
+        </div>
       </div>
 
       <div className="card" style={{ marginBottom: 18 }}>
