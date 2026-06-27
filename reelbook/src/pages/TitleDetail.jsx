@@ -3,12 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { getFullDetail, getSeason, getRecommendations, IMG, providerRegions } from '../lib/tmdb'
 import {
   ensureTitleFromFull, getWatchesForTitle, addToWatchlist,
-  listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, unmarkAllEpisodes,
+  listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, unmarkAllEpisodes, setEpisodeRating,
 } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/Toast'
-import { Poster, Spinner, DualScore, Modal, TitleLink } from '../components/ui'
+import { Poster, Spinner, DualScore, Modal, TitleLink, StarRating } from '../components/ui'
 import MarkWatchedModal from '../components/MarkWatchedModal'
 import { getPref, DEFAULT_REGION } from '../lib/prefs'
 import { formatWatched } from '../lib/dates'
@@ -289,18 +289,23 @@ function regionName(code) {
 function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
   const toast = useToast()
   const [trackGroupId, setTrackGroupId] = useState(groups[0]?.id || '')
-  const [watched, setWatched] = useState(new Set()) // "s-e"
+  const [watched, setWatched] = useState(new Set())   // "s-e"
+  const [epRatings, setEpRatings] = useState({})       // "s-e" -> rating
   const [openSeason, setOpenSeason] = useState(seasons[0]?.season_number ?? null)
   const [episodesBySeason, setEpisodesBySeason] = useState({})
+  const [expanded, setExpanded] = useState(null)       // "s-e"
+  const [desc, setDesc] = useState(false)              // newest episode first
+  const [bulkBusy, setBulkBusy] = useState(false)
   const today = new Date().toISOString().slice(0, 10)
 
-  const reloadWatched = useCallback(async () => {
-    if (!trackGroupId) { setWatched(new Set()); return }
+  const reload = useCallback(async () => {
+    if (!trackGroupId) { setWatched(new Set()); setEpRatings({}); return }
     const rows = await listEpisodeWatches(titleId, trackGroupId)
     setWatched(new Set(rows.map((r) => `${r.season_number}-${r.episode_number}`)))
+    setEpRatings(Object.fromEntries(rows.filter((r) => r.rating != null).map((r) => [`${r.season_number}-${r.episode_number}`, r.rating])))
   }, [titleId, trackGroupId])
 
-  useEffect(() => { reloadWatched() }, [reloadWatched])
+  useEffect(() => { reload() }, [reload])
 
   useEffect(() => {
     if (openSeason == null || episodesBySeason[openSeason]) return
@@ -313,61 +318,55 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
     const key = `${season}-${ep}`
     const next = new Set(watched)
     if (next.has(key)) {
-      next.delete(key)
-      setWatched(next)
-      await unmarkEpisode({ titleId, groupId: trackGroupId, season, episode: ep }).catch(reloadWatched)
+      next.delete(key); setWatched(next)
+      await unmarkEpisode({ titleId, groupId: trackGroupId, season, episode: ep }).catch(reload)
     } else {
-      next.add(key)
-      setWatched(next)
-      await markEpisode({ titleId, groupId: trackGroupId, season, episode: ep, watchedOn: today, createdBy: userId }).catch(reloadWatched)
+      next.add(key); setWatched(next)
+      await markEpisode({ titleId, groupId: trackGroupId, season, episode: ep, watchedOn: today, createdBy: userId }).catch(reload)
     }
   }
-
+  async function rate(season, ep, score) {
+    const key = `${season}-${ep}`
+    setEpRatings((r) => ({ ...r, [key]: score }))
+    setWatched((w) => new Set(w).add(key))
+    await setEpisodeRating({ titleId, groupId: trackGroupId, season, episode: ep, rating: score, watchedOn: today, createdBy: userId }).catch(reload)
+  }
   async function markWholeSeason(season, eps) {
     await markSeason({ titleId, groupId: trackGroupId, season, episodes: eps.map((e) => e.episode_number), watchedOn: today, createdBy: userId })
-    reloadWatched()
-    toast(`Marked ${eps.length} episodes watched`)
+    reload(); toast(`Marked ${eps.length} episodes watched`)
   }
-
-  const [bulkBusy, setBulkBusy] = useState(false)
   async function markEntireSeries() {
     if (!trackGroupId) return
     setBulkBusy(true)
     try {
-      // Make sure every season's episode list is loaded, then mark each.
-      const lists = await Promise.all(seasons.map(async (s) =>
-        episodesBySeason[s.season_number] || (await getSeason(tmdbId, s.season_number))
-      ))
+      const lists = await Promise.all(seasons.map(async (s) => episodesBySeason[s.season_number] || (await getSeason(tmdbId, s.season_number))))
       for (let i = 0; i < seasons.length; i++) {
         const eps = lists[i]
-        if (eps?.length) {
-          await markSeason({ titleId, groupId: trackGroupId, season: seasons[i].season_number, episodes: eps.map((e) => e.episode_number), watchedOn: today, createdBy: userId })
-        }
+        if (eps?.length) await markSeason({ titleId, groupId: trackGroupId, season: seasons[i].season_number, episodes: eps.map((e) => e.episode_number), watchedOn: today, createdBy: userId })
       }
-      await reloadWatched()
-      toast('Marked entire series watched')
-    } catch (e) { toast('Could not mark all', 'err') }
-    finally { setBulkBusy(false) }
+      await reload(); toast('Marked entire series watched')
+    } catch { toast('Could not mark all', 'err') } finally { setBulkBusy(false) }
   }
   async function clearSeries() {
-    if (!trackGroupId) return
-    if (!confirm('Unmark every episode for this group?')) return
+    if (!trackGroupId || !confirm('Unmark every episode for this group?')) return
     setBulkBusy(true)
-    try {
-      await unmarkAllEpisodes({ titleId, groupId: trackGroupId })
-      await reloadWatched()
-      toast('Cleared all episodes')
-    } finally { setBulkBusy(false) }
+    try { await unmarkAllEpisodes({ titleId, groupId: trackGroupId }); await reload(); toast('Cleared all episodes') }
+    finally { setBulkBusy(false) }
   }
 
   return (
     <div className="detail-block">
       <div className="section-head">
         <h2>Episodes</h2>
-        <select value={trackGroupId} onChange={(e) => setTrackGroupId(e.target.value)} style={{ width: 'auto' }}>
-          {groups.length === 0 && <option value="">— create a group —</option>}
-          {groups.map((g) => <option key={g.id} value={g.id}>track as: {g.name}</option>)}
-        </select>
+        <div className="row" style={{ gap: 8 }}>
+          <button className="btn sm" onClick={() => setDesc((d) => !d)} title="Sort order">
+            {desc ? 'Newest ↑' : 'Oldest ↓'}
+          </button>
+          <select value={trackGroupId} onChange={(e) => setTrackGroupId(e.target.value)} style={{ width: 'auto' }}>
+            {groups.length === 0 && <option value="">— create a group —</option>}
+            {groups.map((g) => <option key={g.id} value={g.id}>track: {g.name}</option>)}
+          </select>
+        </div>
       </div>
 
       {trackGroupId && (
@@ -379,16 +378,15 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {seasons.map((s) => {
-          const eps = episodesBySeason[s.season_number] || []
-          const watchedInSeason = eps.filter((e) => watched.has(`${s.season_number}-${e.episode_number}`)).length
+          const raw = episodesBySeason[s.season_number] || []
+          const eps = desc ? [...raw].reverse() : raw
+          const watchedInSeason = raw.filter((e) => watched.has(`${s.season_number}-${e.episode_number}`)).length
           const isOpen = openSeason === s.season_number
           return (
             <div className="card" key={s.season_number} style={{ padding: 0, overflow: 'hidden' }}>
               <button className="season-head" onClick={() => setOpenSeason(isOpen ? null : s.season_number)}>
                 <span><strong>{s.name || `Season ${s.season_number}`}</strong> <span className="faint">· {s.episode_count} eps</span></span>
-                <span className="faint">
-                  {eps.length ? `${watchedInSeason}/${eps.length} watched` : ''} {isOpen ? '▾' : '▸'}
-                </span>
+                <span className="faint">{raw.length ? `${watchedInSeason}/${raw.length} watched` : ''} {isOpen ? '▾' : '▸'}</span>
               </button>
               {isOpen && (
                 <div className="season-body">
@@ -396,18 +394,38 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
                     <div className="faint" style={{ padding: 12 }}>Loading episodes…</div>
                   ) : (
                     <>
-                      <button className="btn sm" style={{ margin: '0 12px 8px' }} disabled={!trackGroupId}
-                        onClick={() => markWholeSeason(s.season_number, eps)}>✓ Mark whole season</button>
+                      <button className="btn sm" style={{ margin: '0 12px 10px' }} disabled={!trackGroupId}
+                        onClick={() => markWholeSeason(s.season_number, raw)}>✓ Mark whole season</button>
                       {eps.map((e) => {
-                        const on = watched.has(`${s.season_number}-${e.episode_number}`)
+                        const key = `${s.season_number}-${e.episode_number}`
+                        const on = watched.has(key)
+                        const rt = epRatings[key]
+                        const isExp = expanded === key
                         return (
-                          <label className={`ep ${on ? 'on' : ''}`} key={e.episode_number}>
-                            <input type="checkbox" checked={on} disabled={!trackGroupId}
+                          <div className={`ep2 ${on ? 'on' : ''}`} key={e.episode_number}>
+                            <input type="checkbox" className="ep2-chk" checked={on} disabled={!trackGroupId}
                               onChange={() => toggle(s.season_number, e.episode_number)} />
-                            <span className="ep-num">{e.episode_number}</span>
-                            <span className="ep-name">{e.name}</span>
-                            <span className="ep-date faint">{e.air_date || ''}</span>
-                          </label>
+                            <div className="ep2-thumb">
+                              {IMG.still(e.still_path) ? <img src={IMG.still(e.still_path)} alt="" loading="lazy" /> : <span className="ep2-num">{e.episode_number}</span>}
+                            </div>
+                            <div className="ep2-body" onClick={() => setExpanded(isExp ? null : key)}>
+                              <div className="ep2-title">
+                                <strong>{e.episode_number}. {e.name}</strong>
+                                {rt ? <span className="ep2-rt">★ {rt}</span> : null}
+                              </div>
+                              <div className="faint ep2-meta">{e.air_date || 'TBA'}{e.runtime ? ` · ${e.runtime} min` : ''}</div>
+                              {isExp && e.overview && <p className="ep2-ov">{e.overview}</p>}
+                              {isExp && (
+                                <div onClick={(ev) => ev.stopPropagation()} style={{ marginTop: 8 }}>
+                                  <div className="faint" style={{ marginBottom: 4 }}>Your rating</div>
+                                  <StarRating value={rt || 0} color="var(--accent)" onChange={(sc) => rate(s.season_number, e.episode_number, sc)} />
+                                  <a className="faint" style={{ display: 'inline-block', marginTop: 8, color: 'var(--accent-2)' }}
+                                    href={`https://www.themoviedb.org/tv/${tmdbId}/season/${s.season_number}/episode/${e.episode_number}`}
+                                    target="_blank" rel="noreferrer" onClick={(ev) => ev.stopPropagation()}>View on TMDB ↗</a>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         )
                       })}
                     </>

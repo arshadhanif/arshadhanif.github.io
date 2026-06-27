@@ -338,6 +338,24 @@ input:focus, select:focus, textarea:focus {
 .ep-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ep-date { font-size: 12px; }
 
+/* rich episode rows (IMDb/TV Time style) */
+.ep2 { display: flex; gap: 12px; align-items: flex-start; padding: 10px 14px; border-top: 1px solid var(--border); }
+.ep2:first-of-type { border-top: 0; }
+.ep2:hover { background: var(--bg-hover); }
+.ep2.on { background: linear-gradient(90deg, var(--accent-soft), transparent); }
+.ep2-chk { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+.ep2-thumb { width: 116px; aspect-ratio: 16/9; flex-shrink: 0; border-radius: 8px; overflow: hidden; background: var(--bg-elev-2); display: flex; align-items: center; justify-content: center; }
+.ep2-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ep2-num { font-size: 20px; font-weight: 800; color: var(--text-faint-solid); }
+.ep2-body { flex: 1; min-width: 0; cursor: pointer; }
+.ep2-title { display: flex; align-items: center; gap: 8px; }
+.ep2-title strong { font-size: 14px; line-height: 1.3; }
+.ep2.on .ep2-title strong { color: var(--text-dim); }
+.ep2-rt { color: var(--accent); font-weight: 800; font-size: 13px; white-space: nowrap; }
+.ep2-meta { font-size: 12px; margin-top: 3px; }
+.ep2-ov { font-size: 13px; color: var(--text-dim); margin: 8px 0 0; line-height: 1.5; }
+@media (max-width: 560px) { .ep2-thumb { width: 84px; } }
+
 /* ---------- rails ---------- */
 .rail { gap: 14px; padding-bottom: 10px; }
 .rail-item { width: 130px; flex-shrink: 0; }
