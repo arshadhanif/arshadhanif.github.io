@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
-import { listDiary, deleteWatch, setRating, updateWatch } from '../lib/db'
+import { listDiary, listEpisodeDiary, deleteWatch, setRating, updateWatch } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { Poster, Spinner, Empty, GroupChips, DualScore, Modal, StarRating, TitleLink } from '../components/ui'
-import { formatWatched } from '../lib/dates'
+import { formatWatched, fmtDate } from '../lib/dates'
 
 export default function Diary() {
   const { groups, profiles } = useAppData()
   const [groupId, setGroupId] = useState(null)
   const [entries, setEntries] = useState([])
+  const [epEntries, setEpEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(null)
   const [sort, setSort] = useState('recent')   // recent | oldest | rating
-  const [typeF, setTypeF] = useState('all')     // all | movie | tv
+  const [typeF, setTypeF] = useState('all')     // all | movie | tv | episodes
   const [q, setQ] = useState('')
   const [genreF, setGenreF] = useState('all')
 
@@ -33,9 +34,17 @@ export default function Diary() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    try { setEntries(await listDiary({ groupId })) }
-    finally { setLoading(false) }
+    try {
+      const [d, e] = await Promise.all([listDiary({ groupId }), listEpisodeDiary({ groupId })])
+      setEntries(d); setEpEntries(e)
+    } finally { setLoading(false) }
   }, [groupId])
+
+  const epView = epEntries
+    .filter((e) => !q.trim() || (e.titles?.title || '').toLowerCase().includes(q.trim().toLowerCase()))
+    .sort((a, b) => sort === 'oldest'
+      ? (a.watched_on || '').localeCompare(b.watched_on || '')
+      : (b.watched_on || '').localeCompare(a.watched_on || ''))
 
   useEffect(() => { load() }, [load])
 
@@ -44,7 +53,7 @@ export default function Diary() {
       <h1>Diary</h1>
       <GroupChips groups={groups} value={groupId} onChange={setGroupId} />
 
-      {entries.length > 0 && (
+      {(entries.length > 0 || epEntries.length > 0) && (
         <div className="row" style={{ gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
           <input placeholder="Search title…" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: '1 1 150px' }} />
           <div className="seg">
@@ -53,11 +62,11 @@ export default function Diary() {
             ))}
           </div>
           <div className="seg">
-            {[['all', 'All'], ['movie', 'Movies'], ['tv', 'TV']].map(([v, l]) => (
+            {[['all', 'All'], ['movie', 'Movies'], ['tv', 'TV'], ['episodes', 'Episodes']].map(([v, l]) => (
               <button key={v} className={typeF === v ? 'on' : ''} onClick={() => setTypeF(v)}>{l}</button>
             ))}
           </div>
-          {allGenres.length > 0 && (
+          {typeF !== 'episodes' && allGenres.length > 0 && (
             <select value={genreF} onChange={(e) => setGenreF(e.target.value)} style={{ width: 'auto' }}>
               <option value="all">All genres</option>
               {allGenres.map((g) => <option key={g} value={g}>{g}</option>)}
@@ -66,7 +75,32 @@ export default function Diary() {
         </div>
       )}
 
-      {loading ? <Spinner /> : entries.length === 0 ? (
+      {loading ? <Spinner /> : typeF === 'episodes' ? (
+        epView.length === 0 ? (
+          <Empty icon="📺">No episodes ticked off yet. Open a show and mark episodes from its <strong>Episodes</strong> list.</Empty>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {epView.map((e) => {
+              const t = e.titles
+              return (
+                <div key={e.id} className="card row" style={{ alignItems: 'center', gap: 12 }}>
+                  <TitleLink className="tile" tmdbId={t?.tmdb_id} media="tv" style={{ width: 46, flexShrink: 0 }}>
+                    <Poster title={t?.title} mediaType="tv" posterPath={t?.poster_path} />
+                  </TitleLink>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <strong>{t?.title} <span className="faint">S{e.season_number}·E{e.episode_number}</span></strong>
+                    <div className="faint" style={{ marginTop: 3 }}>
+                      {e.watched_on ? fmtDate(e.watched_on) : 'Date not set'}
+                      {e.groups && <> · <span style={{ color: e.groups.color }}>{e.groups.name}</span></>}
+                    </div>
+                  </div>
+                  {e.rating != null && <span className="ep2-rt" style={{ flexShrink: 0 }}>★ {e.rating}</span>}
+                </div>
+              )
+            })}
+          </div>
+        )
+      ) : entries.length === 0 ? (
         <Empty>No watches logged yet. Mark something watched from <strong>Discover</strong> or your <strong>Watchlist</strong>.</Empty>
       ) : view.length === 0 ? (
         <Empty icon="🔎">No {typeF === 'tv' ? 'TV shows' : 'movies'} in this view.</Empty>

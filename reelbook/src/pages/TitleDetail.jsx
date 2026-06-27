@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { getFullDetail, getSeason, getRecommendations, getEpisodeExternalIds, IMG, providerRegions } from '../lib/tmdb'
 import {
   ensureTitleFromFull, getWatchesForTitle, addToWatchlist,
-  listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, unmarkAllEpisodes, setEpisodeRating,
+  listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, markEpisodesBulk, unmarkAllEpisodes, setEpisodeRating,
 } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
@@ -11,7 +11,7 @@ import { useToast } from '../context/Toast'
 import { Poster, Spinner, DualScore, Modal, TitleLink, StarRating } from '../components/ui'
 import MarkWatchedModal from '../components/MarkWatchedModal'
 import { getPref, DEFAULT_REGION } from '../lib/prefs'
-import { formatWatched } from '../lib/dates'
+import { formatWatched, fmtDate } from '../lib/dates'
 
 export default function TitleDetail() {
   const { media, id } = useParams()
@@ -291,6 +291,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
   const [trackGroupId, setTrackGroupId] = useState(groups[0]?.id || '')
   const [watched, setWatched] = useState(new Set())   // "s-e"
   const [epRatings, setEpRatings] = useState({})       // "s-e" -> rating
+  const [epDates, setEpDates] = useState({})           // "s-e" -> watched_on
   const [openSeason, setOpenSeason] = useState(seasons[0]?.season_number ?? null)
   const [episodesBySeason, setEpisodesBySeason] = useState({})
   const [expanded, setExpanded] = useState(null)       // "s-e"
@@ -312,11 +313,14 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
   }
 
   const reload = useCallback(async () => {
-    if (!trackGroupId) { setWatched(new Set()); setEpRatings({}); return }
+    if (!trackGroupId) { setWatched(new Set()); setEpRatings({}); setEpDates({}); return }
     const rows = await listEpisodeWatches(titleId, trackGroupId)
     setWatched(new Set(rows.map((r) => `${r.season_number}-${r.episode_number}`)))
     setEpRatings(Object.fromEntries(rows.filter((r) => r.rating != null).map((r) => [`${r.season_number}-${r.episode_number}`, r.rating])))
+    setEpDates(Object.fromEntries(rows.filter((r) => r.watched_on).map((r) => [`${r.season_number}-${r.episode_number}`, r.watched_on])))
   }, [titleId, trackGroupId])
+
+  const trackGroup = groups.find((g) => g.id === trackGroupId)
 
   useEffect(() => { reload() }, [reload])
 
@@ -352,12 +356,13 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
     if (!trackGroupId) return
     setBulkBusy(true)
     try {
+      // Fetch every season's episode list in parallel, then write them all in a
+      // single bulk upsert instead of one round-trip per season (much faster).
       const lists = await Promise.all(seasons.map(async (s) => episodesBySeason[s.season_number] || (await getSeason(tmdbId, s.season_number))))
-      for (let i = 0; i < seasons.length; i++) {
-        const eps = lists[i]
-        if (eps?.length) await markSeason({ titleId, groupId: trackGroupId, season: seasons[i].season_number, episodes: eps.map((e) => e.episode_number), watchedOn: today, createdBy: userId })
-      }
-      await reload(); toast('Marked entire series watched')
+      const all = []
+      seasons.forEach((s, i) => (lists[i] || []).forEach((e) => all.push({ season: s.season_number, episode: e.episode_number, watchedOn: today })))
+      if (all.length) await markEpisodesBulk({ titleId, groupId: trackGroupId, episodes: all, createdBy: userId })
+      await reload(); toast(`Marked ${all.length} episodes watched`)
     } catch { toast('Could not mark all', 'err') } finally { setBulkBusy(false) }
   }
   async function clearSeries() {
@@ -426,11 +431,24 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
                                 <strong>{e.episode_number}. {e.name}</strong>
                                 {rt ? <span className="ep2-rt">★ {rt}</span> : null}
                               </div>
-                              <div className="faint ep2-meta">{e.air_date || 'TBA'}{e.runtime ? ` · ${e.runtime} min` : ''}</div>
+                              <div className="faint ep2-meta">
+                                {e.air_date ? `Aired ${fmtDate(e.air_date)}` : 'Air date TBA'}{e.runtime ? ` · ${e.runtime} min` : ''}
+                              </div>
+                              {on && (
+                                <div className="ep2-watched">
+                                  ✓ Watched {epDates[key] ? fmtDate(epDates[key]) : '(date not set)'}
+                                  {trackGroup && <> · <span style={{ color: trackGroup.color }}>{trackGroup.name}</span></>}
+                                </div>
+                              )}
                               {isExp && e.overview && <p className="ep2-ov">{e.overview}</p>}
                               {isExp && (
                                 <div onClick={(ev) => ev.stopPropagation()} style={{ marginTop: 8 }}>
-                                  <div className="faint" style={{ marginBottom: 4 }}>Your rating</div>
+                                  <dl className="ep2-facts">
+                                    <div><dt>Released</dt><dd>{e.air_date ? fmtDate(e.air_date) : '—'}</dd></div>
+                                    <div><dt>Watched</dt><dd>{on ? (epDates[key] ? fmtDate(epDates[key]) : 'date not set') : 'Not yet'}</dd></div>
+                                    <div><dt>List / watched by</dt><dd>{trackGroup ? trackGroup.name : '—'}</dd></div>
+                                  </dl>
+                                  <div className="faint" style={{ margin: '4px 0' }}>Your rating</div>
                                   <StarRating value={rt || 0} color="var(--accent)" onChange={(sc) => rate(s.season_number, e.episode_number, sc)} />
                                   <div className="row" style={{ gap: 14, marginTop: 8, flexWrap: 'wrap' }}>
                                     {epImdb[key] && (

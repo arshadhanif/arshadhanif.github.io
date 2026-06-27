@@ -3,6 +3,7 @@ import { listTrackedShows, setTitleTotalEpisodes } from '../lib/db'
 import { getTvStatus } from '../lib/tmdb'
 import { initBaselines, buildNotifications, dismiss, markAllRead, syncNotifState } from '../lib/notify'
 import { Poster, Spinner, Empty, TitleLink } from '../components/ui'
+import { fmtDate } from '../lib/dates'
 
 export default function Notifications() {
   const [shows, setShows] = useState([])
@@ -79,7 +80,7 @@ export default function Notifications() {
                 <strong>{s.title.title}</strong>
                 <div className="faint" style={{ marginTop: 3 }}>
                   {tab === 'new' && `🆕 ${s.count} new episode${s.count > 1 ? 's' : ''} aired`}
-                  {tab === 'coming' && `📅 Next: S${s.next.season}·E${s.next.episode} on ${fmt(s.next.air_date)}`}
+                  {tab === 'coming' && `📅 Next: S${s.next.season}·E${s.next.episode} on ${fmtDate(s.next.air_date)}`}
                   {tab === 'catch' && `${s.unwatched} episode${s.unwatched > 1 ? 's' : ''} to watch`}
                 </div>
               </TitleLink>
@@ -92,8 +93,4 @@ export default function Notifications() {
       )}
     </div>
   )
-}
-
-function fmt(d) {
-  return new Date(d + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }

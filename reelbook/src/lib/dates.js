@@ -1,9 +1,26 @@
+// Centralised date formatting. We use day-month-year with a short month name
+// (e.g. 01-Jan-2026) everywhere — unambiguous and easy to read across regions.
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+function toDate(dateStr) {
+  if (!dateStr) return null
+  const s = String(dateStr)
+  const d = new Date(s.length <= 10 ? s + 'T00:00:00' : s)
+  return isNaN(d) ? null : d
+}
+
+// 01-Jan-2026
+export function fmtDate(dateStr) {
+  const d = toDate(dateStr)
+  if (!d) return ''
+  return `${String(d.getDate()).padStart(2, '0')}-${MON[d.getMonth()]}-${d.getFullYear()}`
+}
+
 // Format a watched_on date according to how precisely it's known.
 export function formatWatched(dateStr, precision) {
-  if (!dateStr) return 'Date not set'
-  const d = new Date(dateStr + 'T00:00:00')
-  if (isNaN(d)) return 'Date not set'
+  const d = toDate(dateStr)
+  if (!d) return 'Date not set'
   if (precision === 'year') return String(d.getFullYear())
-  if (precision === 'month') return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
-  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+  if (precision === 'month') return `${MON[d.getMonth()]}-${d.getFullYear()}`
+  return fmtDate(dateStr)
 }
