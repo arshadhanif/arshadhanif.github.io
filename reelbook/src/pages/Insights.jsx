@@ -40,6 +40,7 @@ export default function Insights() {
 
   const s = useMemo(() => compute(data, profiles, groups), [data, profiles, groups])
   const streaks = useMemo(() => computeStreaks(data, epData), [data, epData])
+  const groupCompare = useMemo(() => computeGroupCompare(entries, eps, groups), [entries, eps, groups])
 
   // Yearly goals (personal, unaffected by filters; targets stored locally).
   const year = new Date().getFullYear()
@@ -207,6 +208,23 @@ export default function Insights() {
             </Section>
           )}
 
+          {groupCompare.length > 1 && (
+            <Section title="👥 Compare groups">
+              <div className="goal-grid">
+                {groupCompare.map((gc) => (
+                  <div className="card" key={gc.g.id} style={{ borderTop: `3px solid ${gc.g.color}` }}>
+                    <strong style={{ color: gc.g.color }}>{gc.g.name}</strong>
+                    <div className="cmp-row"><span>Watches</span><b>{gc.total}</b></div>
+                    <div className="cmp-row"><span>Movies / TV</span><b>{gc.movies} / {gc.tv}</b></div>
+                    <div className="cmp-row"><span>Episodes</span><b>{gc.episodes}</b></div>
+                    <div className="cmp-row"><span>Avg rating</span><b>{gc.avg != null ? `★ ${gc.avg}` : '—'}</b></div>
+                    <div className="cmp-row"><span>Top genre</span><b>{gc.topGenre || '—'}</b></div>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+
           <Section title={`🕰️ Decade challenge · ${decadeChallenge.done}/${decadeChallenge.all.length}`}>
             <div className="card">
               <div className="faint" style={{ marginBottom: 10 }}>Watch a title from every decade.</div>
@@ -368,6 +386,24 @@ function Distribution({ dist, color, onPick }) {
       ))}
     </div>
   )
+}
+
+// Per-group comparison: watches, episodes, avg rating and top genre for each group.
+function computeGroupCompare(entries, eps, groups) {
+  return (groups || []).map((g) => {
+    const ge = entries.filter((e) => e.group_id === g.id)
+    const episodes = eps.filter((e) => e.group_id === g.id).length
+    const scores = ge.flatMap((e) => (e.ratings || []).map((r) => r.score)).filter((s) => s != null)
+    const avg = scores.length ? +(scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : null
+    const gc = {}
+    for (const e of ge) for (const gn of (e.titles?.genre || '').split(',').map((x) => x.trim()).filter(Boolean)) gc[gn] = (gc[gn] || 0) + 1
+    const topGenre = Object.entries(gc).sort((a, b) => b[1] - a[1])[0]?.[0] || null
+    return {
+      g, total: ge.length, episodes, avg, topGenre,
+      movies: ge.filter((e) => e.titles?.media_type !== 'tv').length,
+      tv: ge.filter((e) => e.titles?.media_type === 'tv').length,
+    }
+  }).filter((x) => x.total > 0 || x.episodes > 0)
 }
 
 // Streaks across ANY watch activity (movies + episodes), one tick per calendar day.
