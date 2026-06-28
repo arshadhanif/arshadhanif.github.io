@@ -247,7 +247,7 @@ export async function revertImportBatch(id) {
 export async function getWatchesForTitle(titleId) {
   const { data, error } = await supabase
     .from('watches')
-    .select('id, watched_on, date_precision, note, episodes_watched, where_watched, service, group_id, tags, is_rewatch, groups(id, name, color), ratings(id, profile_id, score)')
+    .select('id, watched_on, date_precision, note, episodes_watched, where_watched, service, group_id, tags, is_rewatch, rewatch_count, groups(id, name, color), ratings(id, profile_id, score)')
     .eq('title_id', titleId)
     .order('watched_on', { ascending: false })
   if (error) throw error
@@ -259,7 +259,7 @@ export async function getWatchesForTitle(titleId) {
 export async function listEpisodeWatches(titleId, groupId) {
   let q = supabase
     .from('episode_watches')
-    .select('id, season_number, episode_number, watched_on, rating')
+    .select('id, season_number, episode_number, watched_on, rating, rewatch_count')
     .eq('title_id', titleId)
   q = groupId ? q.eq('group_id', groupId) : q.is('group_id', null)
   const { data, error } = await q

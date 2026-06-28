@@ -100,7 +100,7 @@ export default function Diary() {
                     <Poster title={t?.title} mediaType="tv" posterPath={t?.poster_path} />
                   </TitleLink>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <strong>{t?.title} <span className="faint">S{e.season_number}·E{e.episode_number}</span></strong>
+                    <strong>{t?.title} <span className="faint">S{e.season_number}·E{e.episode_number}</span>{e.rewatch_count > 0 && <span className="rewatch-badge" style={{ marginLeft: 6 }}>↻ ×{e.rewatch_count + 1}</span>}</strong>
                     <div className="faint" style={{ marginTop: 3 }}>
                       {e.watched_on ? fmtDate(e.watched_on) : 'Date not set'}
                       {e.groups && <> · <span style={{ color: e.groups.color }}>{e.groups.name}</span></>}
@@ -131,7 +131,7 @@ export default function Diary() {
                   <div className="spread">
                     <strong style={{ fontSize: 16 }}>
                       {t?.title} <span className="faint">{t?.year || ''}</span>
-                      {e.is_rewatch && <span className="rewatch-badge">↻ Rewatch</span>}
+                      {(e.is_rewatch || e.rewatch_count > 0) && <span className="rewatch-badge">↻ {e.rewatch_count > 0 ? `×${e.rewatch_count + 1}` : 'Rewatch'}</span>}
                     </strong>
                     <button className="btn sm" onClick={() => setEditing(e)}>Edit</button>
                   </div>

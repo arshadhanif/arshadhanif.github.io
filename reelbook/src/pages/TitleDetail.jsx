@@ -176,7 +176,7 @@ export default function TitleDetail() {
               {watches.map((w) => (
                 <div className="card spread" key={w.id}>
                   <div style={{ minWidth: 0 }}>
-                    <div className="faint">{formatWatched(w.watched_on, w.date_precision)}{w.groups && <> · <span style={{ color: w.groups.color }}>{w.groups.name}</span></>}{w.service && <> · 📺 {w.service}</>}{w.where_watched && <> · {w.where_watched}</>}{w.is_rewatch && <span className="rewatch-badge">↻ Rewatch</span>}</div>
+                    <div className="faint">{formatWatched(w.watched_on, w.date_precision)}{w.groups && <> · <span style={{ color: w.groups.color }}>{w.groups.name}</span></>}{w.service && <> · 📺 {w.service}</>}{w.where_watched && <> · {w.where_watched}</>}{(w.is_rewatch || w.rewatch_count > 0) && <span className="rewatch-badge">↻ {w.rewatch_count > 0 ? `×${w.rewatch_count + 1}` : 'Rewatch'}</span>}</div>
                     {w.note && <div className="muted" style={{ fontSize: 14, marginTop: 4 }}>“{w.note}”</div>}
                     {(w.tags || []).length > 0 && (
                       <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
@@ -383,6 +383,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId, imdbId }) {
   const [watched, setWatched] = useState(new Set())   // "s-e"
   const [epRatings, setEpRatings] = useState({})       // "s-e" -> rating
   const [epDates, setEpDates] = useState({})           // "s-e" -> watched_on
+  const [epRewatch, setEpRewatch] = useState({})       // "s-e" -> rewatch_count
   const [openSeason, setOpenSeason] = useState(seasons[0]?.season_number ?? null)
   const [episodesBySeason, setEpisodesBySeason] = useState({})
   const [imdbBySeason, setImdbBySeason] = useState({})  // season -> { epNum: imdbRating }
@@ -405,11 +406,12 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId, imdbId }) {
   }
 
   const reload = useCallback(async () => {
-    if (!trackGroupId) { setWatched(new Set()); setEpRatings({}); setEpDates({}); return }
+    if (!trackGroupId) { setWatched(new Set()); setEpRatings({}); setEpDates({}); setEpRewatch({}); return }
     const rows = await listEpisodeWatches(titleId, trackGroupId)
     setWatched(new Set(rows.map((r) => `${r.season_number}-${r.episode_number}`)))
     setEpRatings(Object.fromEntries(rows.filter((r) => r.rating != null).map((r) => [`${r.season_number}-${r.episode_number}`, r.rating])))
     setEpDates(Object.fromEntries(rows.filter((r) => r.watched_on).map((r) => [`${r.season_number}-${r.episode_number}`, r.watched_on])))
+    setEpRewatch(Object.fromEntries(rows.filter((r) => r.rewatch_count > 0).map((r) => [`${r.season_number}-${r.episode_number}`, r.rewatch_count])))
   }, [titleId, trackGroupId])
 
   const trackGroup = groups.find((g) => g.id === trackGroupId)
@@ -534,6 +536,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId, imdbId }) {
                                 <strong>{e.episode_number}. {e.name}</strong>
                                 {imdbRt ? <span className="imdb-rating sm">IMDb {imdbRt}</span> : null}
                                 {rt ? <span className="ep2-rt">★ {rt}</span> : null}
+                                {epRewatch[key] > 0 ? <span className="rewatch-badge">↻ ×{epRewatch[key] + 1}</span> : null}
                               </div>
                               <div className="faint ep2-meta">
                                 {e.air_date ? `Aired ${fmtDate(e.air_date)}` : 'Air date TBA'}{e.runtime ? ` · ${e.runtime} min` : ''}
