@@ -1,0 +1,61 @@
+/**
+ * Brand + site-wide configuration.
+ *
+ * SITE_NAME is intentionally a single source of truth. "MyVault" is a
+ * placeholder — change it here once and it propagates everywhere (metadata,
+ * navbar, footer, structured data, etc.).
+ */
+export const SITE_NAME = 'MyVault';
+
+export const SITE_TAGLINE =
+  'The go-to resource for ERP and finance professionals';
+
+export const SITE_DESCRIPTION =
+  'Premium templates, report packages, and expert guidance for Oracle Fusion, Excel, and ERP finance professionals — curated by an Oracle Fusion consultant.';
+
+// Public URL of the deployed site (used for absolute URLs in metadata + sitemap).
+export const SITE_URL = 'https://arshadhanif.github.io';
+
+// Default Open Graph image (relative to basePath).
+export const OG_IMAGE = '/og-image.svg';
+
+export const AUTHOR = {
+  name: 'Arshad Hanif',
+  title: 'Oracle Fusion Consultant',
+  bio: 'Oracle Fusion consultant and finance professional. ACCA, Oracle certified, and part of the PwC network — helping 13+ clients streamline their ERP and finance operations.',
+  email: 'arshadhanif1999@gmail.com',
+};
+
+export const SOCIAL = {
+  linkedin: 'https://www.linkedin.com/in/arshadhanif',
+  github: 'https://github.com/arshadhanif',
+};
+
+// Blog categories (used for filter tags + badge styling).
+export const BLOG_CATEGORIES = [
+  'Oracle Fusion',
+  'Excel',
+  'ERP Strategy',
+  'Career',
+  'Tools',
+] as const;
+
+export type BlogCategory = (typeof BLOG_CATEGORIES)[number];
+
+// Store categories.
+export const PRODUCT_CATEGORIES = [
+  'Templates',
+  'Report Packages',
+  'Document Packs',
+  'Courses',
+] as const;
+
+export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
+
+export const NAV_LINKS = [
+  { href: '/blog', label: 'Blog' },
+  { href: '/store', label: 'Store' },
+  { href: '/services', label: 'Services' },
+  { href: '/about', label: 'About' },
+  { href: '/newsletter', label: 'Newsletter' },
+];

@@ -1,13 +1,13 @@
-name: Deploy portfolio to GitHub Pages
+name: Deploy site to GitHub Pages
 
-# Publishes the static site at the repository root (the portfolio index.html
-# plus the reelbook apps and assets) to GitHub Pages — exactly the content that
-# was previously served by branch-based Pages.
+# Publishes a single GitHub Pages artifact containing:
+#   - the portfolio (repository root: index.html, Assets, reelbook, reelbook-app)
+#     served at  https://arshadhanif.github.io/
+#   - the MyVault Next.js site (built from ./myvault with basePath /myvault)
+#     served at  https://arshadhanif.github.io/myvault/
 #
-# Note: this repo's Pages "Source" is currently set to "GitHub Actions". If you
-# prefer the original setup, you can change Settings -> Pages -> Source back to
-# "Deploy from a branch" (main / root) and delete this workflow; the result is
-# identical.
+# The portfolio at the root is assembled verbatim from the existing static files,
+# so it is unaffected by the MyVault build.
 
 on:
   push:
@@ -25,23 +25,57 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: myvault/package-lock.json
+
+      - name: Build MyVault (basePath /myvault)
+        working-directory: myvault
+        env:
+          BASE_PATH: /myvault
+        run: |
+          npm ci
+          npm run build
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          # Portfolio + co-hosted static apps at the root (served as-is).
+          for path in index.html Assets reelbook reelbook-app vercel.json .nojekyll README.md; do
+            if [ -e "$path" ]; then
+              cp -r "$path" _site/
+            fi
+          done
+          # MyVault under /myvault/
+          mkdir -p _site/myvault
+          cp -r myvault/out/* _site/myvault/
+          # Ensure Jekyll is disabled (Next.js uses _next directories).
+          touch _site/.nojekyll
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
   deploy:
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload site (repository root)
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
