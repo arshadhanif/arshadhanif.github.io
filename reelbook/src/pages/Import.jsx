@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { findByImdbId, findByTitle, findByTvdbId } from '../lib/tmdb'
 import {
   ensureTitlesBulk, insertWatchesBulk, insertRatingsBulk, insertWatchlistBulk, markEpisodesBulk,
-  createImportBatch, listImportBatches, revertImportBatch, getGroupImportSnapshot,
+  createImportBatch, listImportBatches, revertImportBatch, dismissImportBatch, getGroupImportSnapshot,
   updateEpisodeRewatches, setRating,
 } from '../lib/db'
 import { useAppData } from '../context/AppData'
@@ -168,6 +168,14 @@ export default function Import() {
     setReverting(b.id)
     try { await revertImportBatch(b.id); toast('Import reverted'); await loadBatches() }
     catch (e) { toast(e.message || 'Could not revert', 'err') }
+    finally { setReverting(null) }
+  }
+
+  async function dismissBatch(b) {
+    if (!confirm('Remove this import from the history list? Your watches, episodes and ratings stay. Only the history entry is removed.')) return
+    setReverting(b.id)
+    try { await dismissImportBatch(b.id); toast('Removed from history'); await loadBatches() }
+    catch (e) { toast(e.message || 'Could not remove', 'err') }
     finally { setReverting(null) }
   }
 
@@ -560,9 +568,14 @@ export default function Import() {
                     {b.profiles?.name && <span className="chip" style={{ marginLeft: 6 }}>{b.profiles.name}</span>}
                     <div className="faint" style={{ marginTop: 3 }}>{parts || 'nothing added'} · {fmtDate(b.created_at)}</div>
                   </div>
-                  <button className="btn sm danger" disabled={reverting === b.id} onClick={() => revertBatch(b)}>
-                    {reverting === b.id ? 'Undoing…' : 'Undo'}
-                  </button>
+                  <div className="row" style={{ gap: 6, flexShrink: 0 }}>
+                    <button className="btn sm ghost" disabled={reverting === b.id} onClick={() => dismissBatch(b)} title="Remove from this list but keep all the data">
+                      Clear
+                    </button>
+                    <button className="btn sm danger" disabled={reverting === b.id} onClick={() => revertBatch(b)} title="Delete everything this import added">
+                      {reverting === b.id ? '…' : 'Undo'}
+                    </button>
+                  </div>
                 </div>
               )
             })}
