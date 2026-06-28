@@ -37,6 +37,18 @@ jobs:
       - name: Build static site
         run: npm run build
 
+      - name: Preserve existing co-hosted static content
+        # This domain also serves standalone apps/assets that are NOT part of
+        # the MyVault Next.js build. Copy them into the export so their URLs
+        # (e.g. /reelbook-app/, /Assets/) keep working after deployment.
+        # Add or remove paths here as your co-hosted content changes.
+        run: |
+          for path in reelbook-app reelbook Assets; do
+            if [ -e "$path" ]; then
+              cp -r "$path" ./out/
+            fi
+          done
+
       - name: Add .nojekyll
         run: touch ./out/.nojekyll
 
