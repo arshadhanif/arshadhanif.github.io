@@ -8,14 +8,31 @@ import Onboarding, { needsOnboarding } from './Onboarding'
 import QuickAdd from './QuickAdd'
 import { setTheme, setAccent, ACCENTS } from '../lib/theme'
 import { getPref } from '../lib/prefs'
+import {
+  Compass, Sparkles, Bookmark, BookOpen, Library, BarChart3, Bell, Sun, Moon,
+  CalendarDays, Gift, Award, CreditCard, SlidersHorizontal, Users, Settings, UserRound, Upload, Info, LogOut,
+} from 'lucide-react'
 
 const TABS = [
-  { to: '/', label: 'Discover', ico: '🔍', end: true },
-  { to: '/foryou', label: 'For You', ico: '✨' },
-  { to: '/watchlist', label: 'Watchlist', ico: '🔖' },
-  { to: '/diary', label: 'Diary', ico: '📖' },
-  { to: '/lists', label: 'Lists', ico: '📚' },
-  { to: '/insights', label: 'Insights', ico: '📊' },
+  { to: '/', label: 'Discover', Icon: Compass, end: true },
+  { to: '/foryou', label: 'For You', Icon: Sparkles },
+  { to: '/watchlist', label: 'Watchlist', Icon: Bookmark },
+  { to: '/diary', label: 'Diary', Icon: BookOpen },
+  { to: '/lists', label: 'Lists', Icon: Library },
+  { to: '/insights', label: 'Insights', Icon: BarChart3 },
+]
+
+const MENU = [
+  ['/coming', 'Coming soon', CalendarDays],
+  ['/wrapped', 'Year in review', Gift],
+  ['/achievements', 'Achievements', Award],
+  ['/subscriptions', 'Subscriptions', CreditCard],
+  ['/browse', 'Advanced browse', SlidersHorizontal],
+  ['/friends', 'Friends', Users],
+  ['/settings', 'Settings', Settings],
+  ['/groups', 'Groups & profile', UserRound],
+  ['/import', 'Import history', Upload],
+  ['/about', 'About', Info],
 ]
 
 export default function Layout() {
@@ -67,10 +84,10 @@ export default function Layout() {
         </nav>
         <div className="row" style={{ gap: 6 }}>
         <button className="bell" onClick={toggleTheme} aria-label="Toggle light or dark" title="Toggle light / dark">
-          {theme === 'light' ? '🌙' : '☀️'}
+          {theme === 'light' ? <Moon size={19} /> : <Sun size={19} />}
         </button>
         <button className="bell" onClick={() => navigate('/notifications')} aria-label="Notifications">
-          🔔{notifCount > 0 && <span className="bell-badge">{notifCount > 9 ? '9+' : notifCount}</span>}
+          <Bell size={19} />{notifCount > 0 && <span className="bell-badge">{notifCount > 9 ? '9+' : notifCount}</span>}
         </button>
         <div className="menu-wrap" ref={menuRef}>
           <button onClick={() => setMenuOpen((o) => !o)} aria-label="Menu">
@@ -91,17 +108,10 @@ export default function Layout() {
                   ))}
                 </div>
               </div>
-              <button onClick={() => go('/coming')}>📅 Coming soon</button>
-              <button onClick={() => go('/wrapped')}>🎁 Year in review</button>
-              <button onClick={() => go('/achievements')}>🏅 Achievements</button>
-              <button onClick={() => go('/subscriptions')}>💳 Subscriptions</button>
-              <button onClick={() => go('/browse')}>🧭 Advanced browse</button>
-              <button onClick={() => go('/friends')}>🤝 Friends</button>
-              <button onClick={() => go('/settings')}>⚙️ Settings</button>
-              <button onClick={() => go('/groups')}>👥 Groups &amp; profile</button>
-              <button onClick={() => go('/import')}>⬆️ Import history</button>
-              <button onClick={() => go('/about')}>ℹ️ About</button>
-              <button onClick={() => { setMenuOpen(false); signOut() }}>⏻ Sign out</button>
+              {MENU.map(([path, label, Icon]) => (
+                <button key={path} onClick={() => go(path)}><Icon size={17} /> {label}</button>
+              ))}
+              <button onClick={() => { setMenuOpen(false); signOut() }}><LogOut size={17} /> Sign out</button>
             </div>
           )}
         </div>
@@ -118,7 +128,7 @@ export default function Layout() {
       <nav className="tabbar">
         {TABS.map((t) => (
           <NavLink key={t.to} to={t.to} end={t.end}>
-            <span className="ico">{t.ico}</span>
+            <span className="ico"><t.Icon size={20} /></span>
             {t.label}
           </NavLink>
         ))}

@@ -7,6 +7,7 @@ import { useToast } from '../context/Toast'
 import { getPref } from '../lib/prefs'
 import { Modal, Poster } from './ui'
 import MarkWatchedModal from './MarkWatchedModal'
+import { Plus, Bookmark } from 'lucide-react'
 
 export default function QuickAdd() {
   const { user } = useAuth()
@@ -46,7 +47,7 @@ export default function QuickAdd() {
 
   return (
     <>
-      <button className="fab" onClick={() => setOpen(true)} aria-label="Quick add" title="Log or add a title">+</button>
+      <button className="fab" onClick={() => setOpen(true)} aria-label="Quick add" title="Log or add a title"><Plus size={26} /></button>
 
       {open && (
         <Modal title="Quick add" onClose={close}>
@@ -64,7 +65,7 @@ export default function QuickAdd() {
                   <div className="faint">{r.year || ''} · {r.media_type === 'tv' ? 'TV' : 'Movie'}</div>
                 </div>
                 <button className="btn sm primary" onClick={() => setLogItem({ seed: r, title: r.title, media_type: r.media_type })}>Log</button>
-                <button className="btn sm" disabled={busy === `${r.media_type}-${r.tmdb_id}`} onClick={() => watchlist(r)}>🔖</button>
+                <button className="btn sm" disabled={busy === `${r.media_type}-${r.tmdb_id}`} onClick={() => watchlist(r)} title="Add to watchlist"><Bookmark size={16} /></button>
               </div>
             ))}
           </div>
