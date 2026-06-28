@@ -4,6 +4,7 @@ import { recommendFromHistory, recommendRails, keyOf } from '../lib/recommend'
 import { IMG } from '../lib/tmdb'
 import { useAppData } from '../context/AppData'
 import { Poster, Spinner, Empty, GroupChips, TitleLink, GridSkeleton } from '../components/ui'
+import { Shuffle } from 'lucide-react'
 
 export default function ForYou() {
   const { groups } = useAppData()
@@ -104,7 +105,7 @@ export default function ForYou() {
               <div className="faint">{pick.t.year || ''}{pick.t.genre ? ` · ${pick.t.genre.split(',')[0]}` : ''}</div>
               <div className="row" style={{ gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                 <TitleLink className="btn primary" tmdbId={pick.t.tmdb_id} media={pick.t.media_type}>Open</TitleLink>
-                <button className="btn" onClick={() => setSpin((s) => s + 1)}>🎲 Spin again</button>
+                <button className="btn" onClick={() => setSpin((s) => s + 1)}><Shuffle size={16} /> Spin again</button>
               </div>
             </div>
           </div>
