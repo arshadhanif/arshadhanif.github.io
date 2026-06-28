@@ -1,0 +1,47 @@
+name: Deploy portfolio to GitHub Pages
+
+# Publishes the static site at the repository root (the portfolio index.html
+# plus the reelbook apps and assets) to GitHub Pages — exactly the content that
+# was previously served by branch-based Pages.
+#
+# Note: this repo's Pages "Source" is currently set to "GitHub Actions". If you
+# prefer the original setup, you can change Settings -> Pages -> Source back to
+# "Deploy from a branch" (main / root) and delete this workflow; the result is
+# identical.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site (repository root)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
