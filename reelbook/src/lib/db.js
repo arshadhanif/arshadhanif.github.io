@@ -613,6 +613,30 @@ export async function getLoggedTmdbIds() {
   return set
 }
 
+// ---------- Public profile sharing ----------
+
+export async function getMyShare(profileId) {
+  const { data, error } = await supabase
+    .from('share_profiles').select('token, enabled').eq('profile_id', profileId).maybeSingle()
+  if (error) throw error
+  return data
+}
+
+// Enable sharing (creating a token if needed) or disable it.
+export async function setShareEnabled({ profileId, enabled, token }) {
+  const row = { profile_id: profileId, enabled }
+  if (token) row.token = token
+  const { error } = await supabase.from('share_profiles').upsert(row, { onConflict: 'profile_id' })
+  if (error) throw error
+}
+
+// Public, unauthenticated read of a shared profile (via security-definer RPC).
+export async function getPublicProfile(token) {
+  const { data, error } = await supabase.rpc('public_profile', { p_token: token })
+  if (error) throw error
+  return data
+}
+
 // ---------- Profile favourites (Top 4) ----------
 
 export async function listFavorites(profileId = null) {
