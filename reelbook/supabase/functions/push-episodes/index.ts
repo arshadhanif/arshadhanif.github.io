@@ -148,6 +148,28 @@ Deno.serve(async (req) => {
     }
   }
 
+  // ---- Contract reminders: contract ending within 14 days (once per date) ----
+  for (const uid of userIds) {
+    const { data: crows } = await admin
+      .from("subscriptions")
+      .select("id, name, contract_end, reminded_contract")
+      .eq("owner_id", uid).eq("active", true)
+      .not("contract_end", "is", null)
+    for (const s of crows ?? []) {
+      const sub = s as any
+      const ce = String(sub.contract_end).slice(0, 10)
+      const dd = Math.round((new Date(ce + "T00:00:00Z").getTime() - new Date(todayStr + "T00:00:00Z").getTime()) / 86400000)
+      if (dd < 0 || dd > 14 || sub.reminded_contract === ce) continue
+      await sendToUser(uid, {
+        title: "ReelBook subscriptions",
+        body: `📄 ${sub.name} contract ends ${ce} (in ${dd} day${dd === 1 ? "" : "s"}). Decide before it auto-renews for another term.`,
+        url: "/subscriptions",
+      })
+      await admin.from("subscriptions").update({ reminded_contract: ce }).eq("id", sub.id)
+      reminders++
+    }
+  }
+
   if (c.tmdb_token) {
     for (const uid of userIds) {
       const { data: rows } = await admin
