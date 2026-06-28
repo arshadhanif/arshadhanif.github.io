@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
-import { getAllPosts } from '@/lib/posts';
-import { SITE_URL } from '@/lib/constants';
+import { getAllPosts, getPostsByCategory } from '@/lib/posts';
+import { SITE_URL, BLOG_CATEGORIES } from '@/lib/constants';
+import { categorySlug } from '@/lib/categories';
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
@@ -32,5 +33,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...postRoutes];
+  const categoryRoutes = BLOG_CATEGORIES.filter(
+    (c) => getPostsByCategory(c).length > 0
+  ).map((c) => ({
+    url: `${base}/blog/category/${categorySlug(c)}/`,
+    lastModified: new Date('2026-06-28'),
+    changeFrequency: 'weekly' as const,
+    priority: 0.5,
+  }));
+
+  return [...staticRoutes, ...postRoutes, ...categoryRoutes];
 }
