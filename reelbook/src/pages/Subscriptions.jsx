@@ -183,14 +183,35 @@ export default function Subscriptions() {
     return <span><strong>{fmt(Number(s.cost), c)}</strong> /{s.cycle === 'yearly' ? 'yr' : 'mo'}{conv != null && <span className="faint"> · ≈ {fmt(conv, display)}{perSuffix}</span>}</span>
   }
 
-  function Card({ s, nested }) {
+  // Compact one-line row for a bundled child (and its own children, indented).
+  function NestedItem({ s, depth = 0 }) {
+    const kids = childrenOf[s.id] || []
+    return (
+      <div style={{ marginLeft: depth ? 14 : 0 }}>
+        <div className="row" style={{ justifyContent: 'space-between', gap: 8, alignItems: 'center', padding: '6px 0', borderTop: '1px solid var(--border)' }}>
+          <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => setEditing(s.id)}>
+            <span style={{ fontWeight: 600 }}>{s.name}</span>
+            {s.plan && <span className="faint" style={{ fontSize: 12 }}> · {s.plan}</span>}
+          </span>
+          <span className="row" style={{ gap: 6, flexShrink: 0 }}>
+            {isFreeCycle(s.cycle) && <span className="chip" style={{ color: 'var(--green)', borderColor: 'var(--green)' }}>{FREE_BADGE[s.cycle] || 'Free'}</span>}
+            <button className="btn sm ghost" onClick={() => setEditing(s.id)} title="Edit">✎</button>
+            <button className="btn sm ghost" onClick={() => remove(s)} title="Remove">✕</button>
+          </span>
+        </div>
+        {kids.map((k) => <NestedItem key={k.id} s={k} depth={depth + 1} />)}
+      </div>
+    )
+  }
+
+  function Card({ s }) {
     const free = isFreeCycle(s.cycle)
     const nd = effDate(s); const d = daysUntil(nd); const cd = daysUntil(s.contract_end)
     const kids = childrenOf[s.id] || []
     return (
-      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 6, opacity: s.active ? 1 : 0.5, ...(nested ? { background: 'var(--bg-elev-2)', padding: 12 } : {}) }}>
+      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 6, opacity: s.active ? 1 : 0.5 }}>
         <div className="row" style={{ justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
-          <strong style={{ fontSize: nested ? 14 : 16 }}>{s.name}</strong>
+          <strong style={{ fontSize: 16 }}>{s.name}</strong>
           {free && <span className="chip" style={{ color: 'var(--green)', borderColor: 'var(--green)' }}>{FREE_BADGE[s.cycle]}</span>}
         </div>
         <div style={{ fontSize: 14 }}>{priceLine(s)}</div>
@@ -207,9 +228,9 @@ export default function Subscriptions() {
         {s.note && <div className="faint" style={{ fontSize: 12 }}>{s.note}</div>}
 
         {kids.length > 0 && (
-          <div style={{ marginTop: 4, borderTop: '1px solid var(--border)', paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ marginTop: 4 }}>
             <span className="faint" style={{ fontSize: 11 }}>Includes</span>
-            {kids.map((k) => <Card key={k.id} s={k} nested />)}
+            {kids.map((k) => <NestedItem key={k.id} s={k} />)}
           </div>
         )}
 
