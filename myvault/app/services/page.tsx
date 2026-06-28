@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import JsonLd from '@/components/JsonLd';
+import Testimonials from '@/components/Testimonials';
 import { FOUNDER, SITE_NAME } from '@/lib/constants';
 
 export const metadata: Metadata = {
@@ -110,6 +111,8 @@ export default function ServicesPage() {
         </Link>
         .
       </p>
+
+      <Testimonials />
 
       <section className="mt-16 max-w-3xl">
         <h2 className="text-2xl font-bold tracking-tight">Common questions</h2>

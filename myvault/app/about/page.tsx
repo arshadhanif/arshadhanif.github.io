@@ -1,26 +1,40 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { FOUNDER, SITE_NAME } from '@/lib/constants';
+import { FOUNDER, SITE_NAME, SOCIAL } from '@/lib/constants';
 
 export const metadata: Metadata = {
   title: 'About',
   description:
-    'What MyVault is, who it is for, and the person behind it. A resource hub for ERP and finance professionals.',
+    'What MyVault is, who it is for, and the founder behind it: Arshad Hanif, ACCA member and Oracle Fusion Cloud consultant.',
   openGraph: {
     title: 'About',
     description:
-      'What MyVault is, who it is for, and the person behind it.',
+      'What MyVault is, who it is for, and the founder behind it.',
   },
 };
 
 const TRUST_SIGNALS = [
+  { stat: '7+', label: 'Years experience' },
   { stat: '13+', label: 'Clients served' },
-  { stat: 'PwC', label: 'Professional network' },
-  { stat: 'ACCA', label: 'Qualified' },
-  { stat: 'Oracle', label: 'Certified' },
+  { stat: '5', label: 'Oracle certifications' },
+  { stat: 'ACCA', label: 'Member' },
+];
+
+const SELECTED_CLIENTS = [
+  'Charlotte-Mecklenburg Schools (USA)',
+  'Central Florida RTA, LYNX (USA)',
+  'Tarshid, National Energy Services (KSA)',
+  'Gerry’s International, FedEx Express (Pakistan)',
+  'Indus Hospital & Health Network',
+  'Hum Network',
 ];
 
 export default function AboutPage() {
+  const initials = FOUNDER.name
+    .split(' ')
+    .map((n) => n.charAt(0))
+    .join('');
+
   return (
     <div className="container-page max-w-3xl py-16">
       <header className="mb-10">
@@ -64,25 +78,64 @@ export default function AboutPage() {
         </p>
       </section>
 
-      {/* Who's behind MyVault */}
-      <section className="mt-14">
-        <h2 className="text-2xl font-bold tracking-tight">
-          Who is behind {SITE_NAME}
-        </h2>
+      {/* Meet the founder */}
+      <section className="mt-16">
+        <h2 className="text-2xl font-bold tracking-tight">Meet the founder</h2>
 
         <div className="mt-6 flex flex-col gap-5 rounded-xl border border-border bg-surface p-6 sm:flex-row sm:items-start">
           <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-accent text-xl font-bold text-background">
-            {FOUNDER.name.split(' ').map((n) => n.charAt(0)).join('')}
+            {initials}
           </div>
           <div>
             <p className="text-base font-semibold">{FOUNDER.name}</p>
             <p className="text-sm text-accent">{FOUNDER.title}</p>
-            <p className="mt-3 text-sm leading-relaxed text-muted">
-              {FOUNDER.shortBio}
-            </p>
+            <p className="text-xs text-muted">{FOUNDER.location}</p>
+            <div className="mt-3 flex flex-wrap gap-3 text-sm">
+              <a
+                href={SOCIAL.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent hover:opacity-80"
+              >
+                LinkedIn
+              </a>
+              <a
+                href={FOUNDER.portfolioUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent hover:opacity-80"
+              >
+                Full portfolio
+              </a>
+            </div>
           </div>
         </div>
 
+        <div className="prose-article mt-6">
+          <p>
+            {SITE_NAME} is run by {FOUNDER.name}, an ACCA member and Oracle Fusion
+            Cloud consultant based in {FOUNDER.location}. Over more than seven
+            years he has delivered end-to-end ERP implementations and finance
+            transformation for clients across the UAE, USA, Saudi Arabia, Canada,
+            Australia and Pakistan.
+          </p>
+          <p>
+            His career started at Capital Accounting and was shaped at A.F.
+            Ferguson &amp; Co. (PwC Pakistan), where he delivered four complete
+            end-to-end Oracle Fusion implementations as a module lead across
+            General Ledger, Payables, Receivables, Fixed Assets, Procurement and
+            more. He went on to lead Oracle ERP engagements at TATA Pakistan and
+            Gerry’s Group, managing teams of up to eight consultants, and now
+            works independently with global clients.
+          </p>
+          <p>
+            Beyond enterprise Oracle, he works hands-on with Excel and financial
+            modelling, Xero and QuickBooks. The templates and guides on{' '}
+            {SITE_NAME} come straight out of that day-to-day work.
+          </p>
+        </div>
+
+        {/* Stats */}
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {TRUST_SIGNALS.map((t) => (
             <div
@@ -95,19 +148,51 @@ export default function AboutPage() {
           ))}
         </div>
 
-        <ul className="mt-6 space-y-3">
-          {FOUNDER.credentials.map((c) => (
-            <li key={c} className="flex items-start gap-3 text-muted">
-              <span className="mt-1 text-accent" aria-hidden="true">
-                ✓
-              </span>
-              <span>{c}</span>
-            </li>
-          ))}
-        </ul>
+        {/* Credentials and expertise */}
+        <div className="mt-8 grid gap-8 sm:grid-cols-2">
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+              Credentials
+            </h3>
+            <ul className="mt-4 space-y-2.5">
+              {FOUNDER.credentials.map((c) => (
+                <li key={c} className="flex items-start gap-3 text-sm text-muted">
+                  <span className="mt-0.5 text-accent" aria-hidden="true">
+                    ✓
+                  </span>
+                  <span>{c}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+              Expertise
+            </h3>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {FOUNDER.expertise.map((e) => (
+                <span
+                  key={e}
+                  className="rounded-full border border-border bg-surface-alt px-3 py-1 text-xs text-muted"
+                >
+                  {e}
+                </span>
+              ))}
+            </div>
+
+            <h3 className="mt-8 text-sm font-semibold uppercase tracking-wider text-muted">
+              Selected clients
+            </h3>
+            <ul className="mt-4 space-y-2 text-sm text-muted">
+              {SELECTED_CLIENTS.map((c) => (
+                <li key={c}>{c}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </section>
 
-      <div className="mt-14 rounded-xl border border-border bg-surface p-7 text-center">
+      <div className="mt-16 rounded-xl border border-border bg-surface p-7 text-center">
         <h2 className="text-xl font-semibold">Need hands-on help?</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted">
           {SITE_NAME} also offers advisory, coaching and Oracle Fusion consulting

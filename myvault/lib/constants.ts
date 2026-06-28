@@ -23,14 +23,27 @@ export const OG_IMAGE = '/og-image.svg';
 // homepage. MyVault is the entity; this is the credibility behind it.
 export const FOUNDER = {
   name: 'Arshad Hanif',
-  title: 'Founder of MyVault, Oracle Fusion consultant',
+  title: 'Founder of MyVault, Oracle Fusion Cloud consultant and ACCA member',
+  location: 'Riyadh, Saudi Arabia',
+  portfolioUrl: 'https://arshadhanif.github.io/',
   shortBio:
-    'Arshad is an Oracle Fusion consultant and ACCA-qualified finance professional. He started MyVault to put the templates and know-how he uses on real projects into the hands of other finance and ERP people.',
+    'Arshad is an ACCA member and Oracle Fusion Cloud consultant with 7+ years delivering end-to-end ERP implementations and finance transformation for clients across the UAE, USA, Saudi Arabia, Canada, Australia and Pakistan. He started MyVault to share the templates and know-how he uses on real projects.',
   credentials: [
-    'Oracle Fusion Financials certified consultant',
-    'ACCA-qualified finance professional',
-    'Part of the PwC professional network',
-    'Has delivered ERP work for 13+ clients across industries',
+    'ACCA member (Association of Chartered Certified Accountants)',
+    'Oracle Financials Certified Foundations Associate',
+    'Oracle Procurement Certified Foundations Associate',
+    'Oracle SCM Certified Foundations Associate',
+    'Oracle HCM Certified Foundations Associate',
+    'Oracle Fusion Analytics Warehouse Certified Implementation Professional',
+    'PwC alumnus (A.F. Ferguson & Co., PwC Pakistan)',
+  ],
+  expertise: [
+    'Oracle Fusion Cloud ERP',
+    'ERP implementation and go-live',
+    'Finance transformation',
+    'OTBI and BI Publisher reporting',
+    'Financial modelling in Excel',
+    'Xero and QuickBooks',
   ],
   email: 'arshadhanif1999@gmail.com',
 };
