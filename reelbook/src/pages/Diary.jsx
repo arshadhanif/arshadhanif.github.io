@@ -3,6 +3,7 @@ import { listDiary, listEpisodeDiary, deleteWatch, setRating, updateWatch } from
 import { useAppData } from '../context/AppData'
 import { Poster, Spinner, Empty, GroupChips, DualScore, Modal, StarRating, TitleLink, TagInput } from '../components/ui'
 import { formatWatched, fmtDate } from '../lib/dates'
+import RateNudge from '../components/RateNudge'
 
 export default function Diary() {
   const { groups, profiles } = useAppData()
@@ -55,6 +56,7 @@ export default function Diary() {
   return (
     <div className="page">
       <h1>Diary</h1>
+      <RateNudge />
       <GroupChips groups={groups} value={groupId} onChange={setGroupId} />
 
       {(entries.length > 0 || epEntries.length > 0) && (
