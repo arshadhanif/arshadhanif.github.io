@@ -29,6 +29,7 @@ const Import = lazy(() => import('./pages/Import'))
 const Groups = lazy(() => import('./pages/Groups'))
 const About = lazy(() => import('./pages/About'))
 const Insights = lazy(() => import('./pages/Insights'))
+const TasteMatch = lazy(() => import('./pages/TasteMatch'))
 const TitleDetail = lazy(() => import('./pages/TitleDetail'))
 const ForYou = lazy(() => import('./pages/ForYou'))
 const Settings = lazy(() => import('./pages/Settings'))
@@ -92,6 +93,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 <Route path="wrapped" element={<Wrapped />} />
                 <Route path="achievements" element={<Achievements />} />
                 <Route path="subscriptions" element={<Subscriptions />} />
+                <Route path="match" element={<TasteMatch />} />
                 <Route path="browse" element={<Browse />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="about" element={<About />} />
