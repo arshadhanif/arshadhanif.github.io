@@ -30,6 +30,7 @@ const Wrapped = lazy(() => import('./pages/Wrapped'))
 const Achievements = lazy(() => import('./pages/Achievements'))
 const Person = lazy(() => import('./pages/Person'))
 const Subscriptions = lazy(() => import('./pages/Subscriptions'))
+const PublicProfile = lazy(() => import('./pages/PublicProfile'))
 
 // Register the service worker so ReelBook is installable on phones.
 if ('serviceWorker' in navigator) {
@@ -58,6 +59,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Routes>
               <Route path="/welcome" element={<Landing />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/p/:token" element={<PublicProfile />} />
               <Route element={<Protected />}>
                 <Route index element={<Discover />} />
                 <Route path="watchlist" element={<Watchlist />} />

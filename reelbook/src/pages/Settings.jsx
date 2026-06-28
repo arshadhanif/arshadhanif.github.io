@@ -7,7 +7,7 @@ import { useToast } from '../context/Toast'
 import { getPref, setPref, REGIONS, regionName, DEFAULT_REGION } from '../lib/prefs'
 import { isPushSupported, getPushState, enablePush, disablePush, sendTestPush } from '../lib/push'
 import { downloadJsonBackup, downloadDiaryCsv, downloadEpisodesCsv } from '../lib/backup'
-import { listFavorites } from '../lib/db'
+import { listFavorites, getMyShare, setShareEnabled } from '../lib/db'
 import { FavoritesEditor, FavoritesStrip } from '../components/Favorites'
 import { initials } from '../components/ui'
 
@@ -48,6 +48,25 @@ export default function Settings() {
       toast(r?.sent ? 'Test sent. Check your notifications' : 'No devices registered yet', r?.sent ? 'ok' : 'err')
     } catch (e) { toast(e.message || 'Could not send test', 'err') }
     finally { setPushBusy(false) }
+  }
+
+  const [share, setShare] = useState(null)   // { token, enabled } | null
+  const [shareBusy, setShareBusy] = useState(false)
+  useEffect(() => { if (user) getMyShare(user.id).then(setShare).catch(() => {}) }, [user])
+  const shareUrl = share?.token ? `${location.origin}/p/${share.token}` : ''
+
+  async function toggleShare() {
+    setShareBusy(true)
+    try {
+      const token = share?.token || (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '').slice(0, 16) : String(Math.random()).slice(2, 18))
+      const enabled = !share?.enabled
+      await setShareEnabled({ profileId: user.id, enabled, token })
+      setShare({ token, enabled })
+      toast(enabled ? 'Public profile is on' : 'Public profile turned off')
+    } catch (e) { toast(e.message || 'Could not update', 'err') } finally { setShareBusy(false) }
+  }
+  async function copyShare() {
+    try { await navigator.clipboard.writeText(shareUrl); toast('Link copied') } catch { toast('Could not copy', 'err') }
   }
 
   const [exporting, setExporting] = useState('')
@@ -106,6 +125,26 @@ export default function Settings() {
             <FavoritesStrip favorites={othersFavs[p.id]} />
           </div>
         )))}
+      </div>
+
+      <div className="card" style={{ marginBottom: 18 }}>
+        <strong>Public profile</strong>
+        <p className="faint" style={{ margin: '8px 0 14px' }}>
+          Share a read-only page with your favourites, top-rated titles and rating stats.
+          Anyone with the link can view it; no private notes, diary or friends are shown.
+        </p>
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          <button className={`btn ${share?.enabled ? '' : 'primary'}`} disabled={shareBusy} onClick={toggleShare}>
+            {share?.enabled ? 'Turn off sharing' : '🔗 Create share link'}
+          </button>
+          {share?.enabled && <a className="btn" href={shareUrl} target="_blank" rel="noreferrer">Preview</a>}
+        </div>
+        {share?.enabled && (
+          <div className="row" style={{ gap: 8, marginTop: 12 }}>
+            <input readOnly value={shareUrl} onFocus={(e) => e.target.select()} style={{ flex: 1 }} />
+            <button className="btn" onClick={copyShare}>Copy</button>
+          </div>
+        )}
       </div>
 
       <div className="card" style={{ marginBottom: 18 }}>
