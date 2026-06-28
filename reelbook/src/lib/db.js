@@ -158,6 +158,32 @@ export async function insertWatchlistBulk(rows) {
 }
 
 // ---------- Import history & revert ----------
+
+// Snapshot of what a group already contains, so an import can compute an
+// incremental diff (paginates past the 1000-row API cap).
+export async function getGroupImportSnapshot(groupId) {
+  async function fetchAll(table, cols) {
+    const out = []
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabase.from(table).select(cols).eq('group_id', groupId).range(from, from + 999)
+      if (error) throw error
+      out.push(...(data || []))
+      if (!data || data.length < 1000) break
+    }
+    return out
+  }
+  const [w, e, wl] = await Promise.all([
+    fetchAll('watches', 'title_id'),
+    fetchAll('episode_watches', 'title_id, season_number, episode_number'),
+    fetchAll('watchlist', 'title_id'),
+  ])
+  return {
+    watches: new Set(w.map((r) => r.title_id)),
+    episodes: new Set(e.map((r) => `${r.title_id}-${r.season_number}-${r.episode_number}`)),
+    watchlist: new Set(wl.map((r) => r.title_id)),
+  }
+}
+
 export async function createImportBatch({ id, ownerId, householdId = null, kind, groupId = null, profileId = null, filename = null, watches = 0, episodes = 0, watchlist = 0 }) {
   const { error } = await supabase.from('import_batches').insert({
     id, owner_id: ownerId, household_id: householdId, kind, group_id: groupId, profile_id: profileId,
