@@ -49,6 +49,12 @@ export default function Insights() {
   const [goalFilms, setGoalFilms] = useState(getPref('goalFilms', 50))
   const [goalEps, setGoalEps] = useState(getPref('goalEps', 100))
 
+  // Lifetime watch-time (all watches + episodes, unaffected by filters).
+  const lifeMin = entries.filter((e) => e.titles?.media_type !== 'tv').reduce((a, e) => a + (e.titles?.runtime || 115), 0)
+    + eps.reduce((a, e) => a + (e.titles?.runtime || 40), 0)
+  const lifeHours = Math.round(lifeMin / 60)
+  const lifeDays = (lifeMin / 1440).toFixed(1)
+
   // Decade challenge: which decades you've watched a title from.
   const decadeChallenge = useMemo(() => {
     const covered = new Set(entries.map((e) => e.titles?.year).filter(Boolean).map((y) => Math.floor(y / 10) * 10))
@@ -63,6 +69,12 @@ export default function Insights() {
   return (
     <div className="page">
       <h1>Insights</h1>
+
+      {lifeHours > 0 && (
+        <div className="lifetime-banner">
+          You’ve spent <strong>{lifeHours.toLocaleString()} hours</strong> watching — about <strong>{lifeDays} days</strong> of your life on screen. 🍿
+        </div>
+      )}
 
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="spread" style={{ marginBottom: 12 }}><strong>🎯 {year} goals</strong></div>
