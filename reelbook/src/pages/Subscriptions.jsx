@@ -7,12 +7,12 @@ import { getRates, convert } from '../lib/fx'
 import { todayLocal, fmtDate } from '../lib/dates'
 import { Spinner, Empty } from '../components/ui'
 
-// Lists of values for the form
 const SERVICES = ['Netflix', 'OSN+', 'Prime Video', 'Disney+', 'Apple TV+', 'Shahid VIP', 'StarzPlay', 'Max', 'Hulu', 'YouTube Premium', 'Spotify', 'Crunchyroll']
 const CURRENCIES = ['PKR', 'SAR', 'AED', 'USD', 'GBP', 'EUR', 'INR', 'QAR']
-const CATEGORIES = ['Video streaming', 'Music', 'Sports', 'News & reading', 'Cloud & storage', 'Gaming', 'Other']
+const CATEGORIES = ['Video streaming', 'Music', 'Gaming', 'Sports', 'News & reading', 'Cloud & storage', 'AI & software', 'Internet & phone', 'Shopping & memberships', 'Fitness & health', 'Education', 'Other']
 const PLANS = ['Basic', 'Standard', 'Premium', 'Family', 'Mobile', 'Ad-supported', '4K Ultra HD', 'Annual', 'Other']
 const PROVIDERS = ['STC', 'Mobily', 'Zain', 'Salam', 'e& (Etisalat)', 'du', 'PTCL', 'Jazz', 'Zong', 'Ufone', 'Nayatel', 'StormFiber', 'Apple App Store', 'Google Play', 'Direct (app / website)', 'Gift card']
+const PAYMENT_METHODS = ['Visa', 'Mastercard', 'mada', 'American Express', 'Apple Pay', 'Google Pay', 'PayPal', 'STC Pay', 'Bank transfer', 'Cash']
 const OTHER = 'Other…'
 
 const CYCLES = [
@@ -25,12 +25,29 @@ const CYCLES = [
 const FREE_CYCLES = ['free', 'trial', 'tier', 'bundle']
 const isFreeCycle = (c) => FREE_CYCLES.includes(c)
 const FREE_BADGE = { trial: 'Free trial', tier: 'Free tier', bundle: 'Bundled', free: 'Free' }
-const dateLabel = (c) => c === 'trial' ? 'Trial ends' : c === 'yearly' ? 'Renews' : c === 'monthly' ? 'Renews' : 'Review'
+const dateLabel = (c) => c === 'trial' ? 'Trial ends' : (c === 'monthly' || c === 'yearly') ? 'Renews' : 'Review'
 
 function splitOther(value, options) {
   if (!value) return ['', '']
   if (options.includes(value)) return [value, '']
   return [OTHER, value]
+}
+const pad = (n) => String(n).padStart(2, '0')
+// For recurring subs that auto-renew, advance a past date to its next occurrence.
+function nextOccurrence(dateStr, cycle, autoRenew) {
+  if (!dateStr) return null
+  const ds = String(dateStr).slice(0, 10)
+  if ((cycle === 'monthly' || cycle === 'yearly') && autoRenew !== false) {
+    const today = new Date(todayLocal() + 'T00:00:00')
+    let d = new Date(ds + 'T00:00:00')
+    let g = 0
+    while (d < today && g++ < 600) {
+      if (cycle === 'monthly') d.setMonth(d.getMonth() + 1)
+      else d.setFullYear(d.getFullYear() + 1)
+    }
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  }
+  return ds
 }
 function daysUntil(dateStr) {
   if (!dateStr) return null
@@ -45,6 +62,7 @@ function countdownText(d) {
   if (d === 1) return 'tomorrow'
   return `in ${d} days`
 }
+const urgencyColor = (d) => d == null ? 'var(--muted)' : d <= 2 ? '#ef4444' : d <= 7 ? '#f5b50a' : 'var(--muted)'
 
 export default function Subscriptions() {
   const { user } = useAuth()
@@ -58,6 +76,7 @@ export default function Subscriptions() {
   const [fPayer, setFPayer] = useState('')
   const [fProvider, setFProvider] = useState('')
   const [fCategory, setFCategory] = useState('')
+  const [sort, setSort] = useState('added')
   const [editing, setEditing] = useState(null)
   const [formKey, setFormKey] = useState(0)
 
@@ -78,8 +97,9 @@ export default function Subscriptions() {
   }, [])
 
   const monthlyNative = (s) => (isFreeCycle(s.cycle) ? 0 : s.cycle === 'yearly' ? Number(s.cost) / 12 : Number(s.cost))
-  const monthlyIn = (s, target) => { const n = monthlyNative(s); if (!n) return 0; return convert(n, s.currency || 'USD', target, rates) }
+  const monthlyIn = (s, target) => { const n = monthlyNative(s); if (!n) return 0; return convert(n, s.currency || 'USD', target, rates) || 0 }
   const fmt = (n, c) => `${c} ${Number(n).toLocaleString(undefined, { maximumFractionDigits: n < 100 ? 2 : 0 })}`
+  const effDate = (s) => nextOccurrence(s.renews_on, s.cycle, s.auto_renew)
 
   const totals = useMemo(() => {
     const active = subs.filter((s) => s.active)
@@ -94,7 +114,6 @@ export default function Subscriptions() {
     return { month: m, year: m * 12, count: active.length, free, missing }
   }, [subs, display, rates])
 
-  // ---- Insights (active subs, expressed in insCur) ----
   const insights = useMemo(() => {
     const active = subs.filter((s) => s.active)
     const paid = active.filter((s) => !isFreeCycle(s.cycle))
@@ -106,14 +125,25 @@ export default function Subscriptions() {
       byCat[s.category || 'Uncategorised'] = (byCat[s.category || 'Uncategorised'] || 0) + m
       byPayer[s.paid_by || 'Unassigned'] = (byPayer[s.paid_by || 'Unassigned'] || 0) + m
     }
-    const upcoming = active
-      .filter((s) => s.renews_on)
-      .map((s) => ({ s, d: daysUntil(s.renews_on) }))
-      .filter((x) => x.d != null && x.d <= 30)
-      .sort((a, b) => a.d - b.d)
+    // Projection: trials that convert (price_after_trial), treated as monthly
+    let projected = 0, projCount = 0
+    for (const s of active.filter((s) => s.cycle === 'trial' && s.price_after_trial)) {
+      projected += convert(Number(s.price_after_trial), s.currency || 'USD', insCur, rates) || 0
+      projCount++
+    }
+    // Coming up: renewals/trial-ends (<=30d) + contracts ending (<=60d)
+    const up = []
+    for (const s of active) {
+      const nd = effDate(s)
+      const d = daysUntil(nd)
+      if (d != null && d <= 30 && d >= -7) up.push({ id: s.id, name: s.name, date: nd, d, label: dateLabel(s.cycle).toLowerCase() })
+      const cd = daysUntil(s.contract_end)
+      if (cd != null && cd <= 60 && cd >= 0) up.push({ id: s.id + '-c', name: s.name, date: s.contract_end, d: cd, label: 'contract ends' })
+    }
+    up.sort((a, b) => a.d - b.d)
     const needsAttention = active.filter((s) => !s.paid_by || (['trial', 'monthly', 'yearly'].includes(s.cycle) && !s.renews_on))
-    return { paidCount: paid.length, freeCount: active.length - paid.length, byKind, byCat, byPayer, upcoming, needsAttention }
-  }, [subs, rates, insCur])
+    return { paidCount: paid.length, freeCount: active.length - paid.length, byKind, byCat, byPayer, upcoming: up, needsAttention, projected, projCount, monthNow: totals.month }
+  }, [subs, rates, insCur, totals])
 
   const peopleOptions = [...new Set([...people, 'Shared', 'Family', 'Work'])]
   const payerOpts = [...new Set(subs.map((s) => s.paid_by).filter(Boolean))]
@@ -131,7 +161,11 @@ export default function Subscriptions() {
       currency: values.currency, cycle: values.cycle,
       category: values.category || null, plan: values.plan || null,
       provider: values.provider || null, paid_by: values.paidBy || null,
-      renews_on: values.renewsOn || null, reminded_for: null, note: values.note || null,
+      renews_on: values.renewsOn || null, reminded_for: null,
+      auto_renew: values.autoRenew !== false,
+      price_after_trial: values.priceAfterTrial ? Number(values.priceAfterTrial) : null,
+      contract_end: values.contractEnd || null, term_months: values.termMonths ? Number(values.termMonths) : null,
+      payment_method: values.paymentMethod || null, note: values.note || null,
     })
     setEditing(null); await load(); toast('Saved')
   }
@@ -144,6 +178,14 @@ export default function Subscriptions() {
     (!fPayer || s.paid_by === fPayer) &&
     (!fProvider || s.provider === fProvider) &&
     (!fCategory || s.category === fCategory))
+  const sorted = [...view].sort((a, b) => {
+    if (sort === 'cost') return monthlyIn(b, insCur) - monthlyIn(a, insCur)
+    if (sort === 'renewal') {
+      const da = daysUntil(effDate(a)), db = daysUntil(effDate(b))
+      if (da == null) return 1; if (db == null) return -1; return da - db
+    }
+    return new Date(a.created_at) - new Date(b.created_at)
+  })
 
   return (
     <div className="page" style={{ maxWidth: 680 }}>
@@ -168,15 +210,14 @@ export default function Subscriptions() {
         <Stat v={totals.count} l="Active services" s={totals.free ? `${totals.free} free/included` : undefined} />
       </div>
 
-      {/* Things to watch — trials/renewals coming up */}
       {insights.upcoming.length > 0 && (
         <div className="card" style={{ marginBottom: 16, borderColor: 'rgba(245,181,10,0.4)' }}>
           <strong>⏰ Coming up</strong>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-            {insights.upcoming.map(({ s, d }) => (
-              <div key={s.id} className="row" style={{ gap: 8, justifyContent: 'space-between' }}>
-                <span>{s.name} <span className="faint">· {dateLabel(s.cycle).toLowerCase()} {fmtDate(s.renews_on)}</span></span>
-                <span style={{ color: d <= 2 ? '#ef4444' : d <= 7 ? '#f5b50a' : 'var(--muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>{countdownText(d)}</span>
+            {insights.upcoming.map((u) => (
+              <div key={u.id} className="row" style={{ gap: 8, justifyContent: 'space-between' }}>
+                <span>{u.name} <span className="faint">· {u.label} {fmtDate(u.date)}</span></span>
+                <span style={{ color: urgencyColor(u.d), fontWeight: 600, whiteSpace: 'nowrap' }}>{countdownText(u.d)}</span>
               </div>
             ))}
           </div>
@@ -184,27 +225,27 @@ export default function Subscriptions() {
         </div>
       )}
 
-      {/* Insights */}
       {subs.filter((s) => s.active).length > 0 && (
         <details className="card" style={{ marginBottom: 16 }}>
           <summary style={{ cursor: 'pointer', fontWeight: 600 }}>Insights & breakdown</summary>
           <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div className="faint">{insights.paidCount} paid · {insights.freeCount} free
               {insights.freeCount > 0 && <> ({[['trial', 'trial'], ['tier', 'free tier'], ['bundle', 'bundled']].filter(([k]) => insights.byKind[k]).map(([k, l]) => `${insights.byKind[k]} ${l}`).join(', ')})</>}</div>
+            {insights.projCount > 0 && (
+              <div className="faint">If your {insights.projCount} trial{insights.projCount > 1 ? 's' : ''} convert: <strong>+{fmt(insights.projected, insCur)}/mo</strong> → new total ≈ {fmt(insights.monthNow + insights.projected, insCur)}/mo</div>
+            )}
             <Breakdown title={`Spend by category (${insCur}/mo)`} map={insights.byCat} fmt={(n) => fmt(n, insCur)} />
             <Breakdown title={`Who pays (${insCur}/mo)`} map={insights.byPayer} fmt={(n) => fmt(n, insCur)} />
           </div>
         </details>
       )}
 
-      {/* Needs attention */}
       {insights.needsAttention.length > 0 && (
         <div className="card" style={{ marginBottom: 16 }}>
           <span className="faint">⚠️ {insights.needsAttention.length} subscription{insights.needsAttention.length > 1 ? 's' : ''} could use details (a payer, or a renewal/trial-end date). Tap one below to Edit.</span>
         </div>
       )}
 
-      {/* Add */}
       <div className="card" style={{ marginBottom: 18 }}>
         <strong>Add a subscription</strong>
         <SubForm key={`add-${formKey}`} people={peopleOptions} defaultCur={defCur} submitLabel="Add" onSubmit={addNew} />
@@ -221,17 +262,22 @@ export default function Subscriptions() {
             <FilterSelect value={fPayer} onChange={setFPayer} all="Any payer" options={payerOpts} />
             <FilterSelect value={fProvider} onChange={setFProvider} all="Any provider" options={providerOpts} />
             <FilterSelect value={fCategory} onChange={setFCategory} all="Any category" options={categoryOpts} />
+            <select value={sort} onChange={(e) => setSort(e.target.value)} style={{ width: 'auto', flex: '0 1 auto' }}>
+              <option value="added">Sort: Added</option>
+              <option value="renewal">Sort: Next renewal</option>
+              <option value="cost">Sort: Cost (high → low)</option>
+            </select>
           </div>
         </>
       )}
 
       {loading ? <Spinner /> : subs.length === 0 ? (
         <Empty icon="💳">No subscriptions yet. Add what you pay for, plus free trials and bundled services.</Empty>
-      ) : view.length === 0 ? (
+      ) : sorted.length === 0 ? (
         <Empty icon="🔍">No subscriptions match these filters.</Empty>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {view.map((s) => {
+          {sorted.map((s) => {
             if (editing === s.id) {
               return (
                 <div className="card" key={s.id}>
@@ -244,7 +290,12 @@ export default function Subscriptions() {
                       currency: s.currency || defCur, cycle: s.cycle || 'monthly',
                       category: s.category || '', plan: s.plan || '',
                       provider: s.provider || '', paidBy: s.paid_by || '',
-                      renewsOn: s.renews_on ? String(s.renews_on).slice(0, 10) : '', note: s.note || '',
+                      renewsOn: s.renews_on ? String(s.renews_on).slice(0, 10) : '',
+                      autoRenew: s.auto_renew !== false,
+                      priceAfterTrial: s.price_after_trial ? String(s.price_after_trial) : '',
+                      contractEnd: s.contract_end ? String(s.contract_end).slice(0, 10) : '',
+                      termMonths: s.term_months ? String(s.term_months) : '',
+                      paymentMethod: s.payment_method || '', note: s.note || '',
                     }}
                     submitLabel="Save"
                     onSubmit={(v) => saveEdit(s.id, v)}
@@ -256,7 +307,9 @@ export default function Subscriptions() {
             const c = s.currency || 'USD'
             const free = isFreeCycle(s.cycle)
             const conv = display !== 'ALL' && c !== display && !free ? monthlyIn(s, display) : null
-            const d = daysUntil(s.renews_on)
+            const nd = effDate(s)
+            const d = daysUntil(nd)
+            const cd = daysUntil(s.contract_end)
             return (
               <div className="card row" key={s.id} style={{ gap: 12, alignItems: 'center', opacity: s.active ? 1 : 0.55 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -267,19 +320,31 @@ export default function Subscriptions() {
                     {s.category && <span className="chip">{s.category}</span>}
                     {s.provider && <span className="chip">via {s.provider}</span>}
                     {s.paid_by && <span className="chip">Paid by {s.paid_by}</span>}
+                    {s.payment_method && <span className="chip">{s.payment_method}</span>}
+                    {!isFreeCycle(s.cycle) && s.auto_renew === false && <span className="chip">No auto-renew</span>}
                   </div>
                   <div className="faint" style={{ marginTop: 2 }}>
                     {free
-                      ? (s.note || FREE_BADGE[s.cycle] || 'Free / included')
+                      ? <>
+                          {s.cycle === 'trial' && s.price_after_trial
+                            ? <>then {fmt(Number(s.price_after_trial), c)}/mo</>
+                            : (s.note || FREE_BADGE[s.cycle] || 'Free / included')}
+                          {s.cycle === 'trial' && s.price_after_trial && s.note ? ` · ${s.note}` : ''}
+                        </>
                       : <>
                           {fmt(Number(s.cost), c)} / {s.cycle === 'yearly' ? 'year' : 'month'}
                           {conv != null && <> · ≈ {fmt(monthlyIn(s, display), display)}/mo</>}
                           {s.note ? ` · ${s.note}` : ''}
                         </>}
                   </div>
-                  {s.renews_on && (
-                    <div style={{ marginTop: 4, fontSize: 12, color: d != null && d <= 2 ? '#ef4444' : d != null && d <= 7 ? '#f5b50a' : 'var(--muted)' }}>
-                      {dateLabel(s.cycle)} {fmtDate(s.renews_on)} · {countdownText(d)}
+                  {nd && (
+                    <div style={{ marginTop: 4, fontSize: 12, color: urgencyColor(d) }}>
+                      {dateLabel(s.cycle)} {fmtDate(nd)} · {countdownText(d)}
+                    </div>
+                  )}
+                  {s.contract_end && (
+                    <div style={{ marginTop: 2, fontSize: 12, color: cd != null && cd <= 30 ? '#f5b50a' : 'var(--muted)' }}>
+                      📄 Contract ends {fmtDate(s.contract_end)}{cd != null && cd >= 0 ? ` · ${countdownText(cd)}` : ''}
                     </div>
                   )}
                 </div>
@@ -304,6 +369,7 @@ function SubForm({ initial, people, defaultCur, submitLabel, onSubmit, onCancel 
   const [svcSel, svcOtherInit] = splitOther(init.name || '', SERVICES)
   const [provSel, provOtherInit] = splitOther(init.provider || '', PROVIDERS)
   const [paidSel, paidOtherInit] = splitOther(init.paidBy || '', people)
+  const [paySel, payOtherInit] = splitOther(init.paymentMethod || '', PAYMENT_METHODS)
 
   const [service, setService] = useState(svcSel)
   const [serviceOther, setServiceOther] = useState(svcOtherInit)
@@ -317,20 +383,34 @@ function SubForm({ initial, people, defaultCur, submitLabel, onSubmit, onCancel 
   const [paidBy, setPaidBy] = useState(paidSel)
   const [paidByOther, setPaidByOther] = useState(paidOtherInit)
   const [renewsOn, setRenewsOn] = useState(init.renewsOn || '')
+  const [autoRenew, setAutoRenew] = useState(init.autoRenew !== false)
+  const [priceAfterTrial, setPriceAfterTrial] = useState(init.priceAfterTrial || '')
+  const [contractEnd, setContractEnd] = useState(init.contractEnd || '')
+  const [termMonths, setTermMonths] = useState(init.termMonths || '')
+  const [payMethod, setPayMethod] = useState(paySel)
+  const [payMethodOther, setPayMethodOther] = useState(payOtherInit)
   const [note, setNote] = useState(init.note || '')
+  const [moreOpen, setMoreOpen] = useState(!!(init.contractEnd || init.termMonths))
   const [busy, setBusy] = useState(false)
 
   const isFree = isFreeCycle(cycle)
+  const isTrial = cycle === 'trial'
+  const isRecurring = cycle === 'monthly' || cycle === 'yearly'
   const name = (service === OTHER ? serviceOther : service).trim()
   const providerVal = (provider === OTHER ? providerOther : provider).trim()
   const paidByVal = (paidBy === OTHER ? paidByOther : paidBy).trim()
+  const payMethodVal = (payMethod === OTHER ? payMethodOther : payMethod).trim()
 
   async function submit(e) {
     e.preventDefault()
     if (!name || (!isFree && !cost)) return
     setBusy(true)
     try {
-      await onSubmit({ name, cost, currency: cur, cycle, category, plan, provider: providerVal, paidBy: paidByVal, renewsOn, note: note.trim() })
+      await onSubmit({
+        name, cost, currency: cur, cycle, category, plan, provider: providerVal, paidBy: paidByVal,
+        renewsOn, autoRenew, priceAfterTrial: isTrial ? priceAfterTrial : '',
+        contractEnd, termMonths, paymentMethod: payMethodVal, note: note.trim(),
+      })
     } catch (e2) { setBusy(false) }
   }
 
@@ -354,7 +434,7 @@ function SubForm({ initial, people, defaultCur, submitLabel, onSubmit, onCancel 
             onChange={(e) => setCost(e.target.value)} placeholder={isFree ? 'Free' : '0.00'} />
         </Field>
         <Field label="Currency" flex="1 1 90px">
-          <select value={cur} onChange={(e) => setCur(e.target.value)} disabled={isFree}>
+          <select value={cur} onChange={(e) => setCur(e.target.value)}>
             {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </Field>
@@ -364,6 +444,13 @@ function SubForm({ initial, people, defaultCur, submitLabel, onSubmit, onCancel 
           </select>
         </Field>
       </div>
+
+      {isTrial && (
+        <Field label="Price after trial (optional)">
+          <input type="number" min="0" step="0.01" value={priceAfterTrial} onChange={(e) => setPriceAfterTrial(e.target.value)}
+            placeholder={`What it'll cost in ${cur} once the trial ends`} />
+        </Field>
+      )}
 
       <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <Field label="Category" flex="1 1 150px">
@@ -405,9 +492,43 @@ function SubForm({ initial, people, defaultCur, submitLabel, onSubmit, onCancel 
         </Field>
       </div>
 
-      <Field label={cycle === 'trial' ? 'Trial ends on' : 'Renews / ends on (optional)'}>
-        <input type="date" value={renewsOn} onChange={(e) => setRenewsOn(e.target.value)} />
-      </Field>
+      <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <Field label={isTrial ? 'Trial ends on' : 'Renews / ends on (optional)'} flex="1 1 160px">
+          <input type="date" value={renewsOn} onChange={(e) => setRenewsOn(e.target.value)} />
+        </Field>
+        <Field label="Payment method" flex="1 1 150px">
+          <select value={payMethod} onChange={(e) => setPayMethod(e.target.value)}>
+            <option value="">Select method…</option>
+            {PAYMENT_METHODS.map((o) => <option key={o} value={o}>{o}</option>)}
+            <option value={OTHER}>{OTHER}</option>
+          </select>
+          {payMethod === OTHER && (
+            <input value={payMethodOther} onChange={(e) => setPayMethodOther(e.target.value)}
+              placeholder="e.g. Visa …4321" style={{ marginTop: 8 }} />
+          )}
+        </Field>
+      </div>
+
+      {isRecurring && (
+        <label className="row" style={{ gap: 8, marginTop: 12, alignItems: 'center', cursor: 'pointer' }}>
+          <input type="checkbox" checked={autoRenew} onChange={(e) => setAutoRenew(e.target.checked)} style={{ width: 'auto' }} />
+          <span className="faint">Auto-renews (date rolls forward automatically)</span>
+        </label>
+      )}
+
+      <button type="button" className="btn sm ghost" style={{ marginTop: 12 }} onClick={() => setMoreOpen((o) => !o)}>
+        {moreOpen ? '− Contract details' : '+ Contract details'}
+      </button>
+      {moreOpen && (
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <Field label="Contract ends on" flex="1 1 160px">
+            <input type="date" value={contractEnd} onChange={(e) => setContractEnd(e.target.value)} />
+          </Field>
+          <Field label="Min. term (months)" flex="1 1 120px">
+            <input type="number" min="0" step="1" value={termMonths} onChange={(e) => setTermMonths(e.target.value)} placeholder="e.g. 18" />
+          </Field>
+        </div>
+      )}
 
       <Field label="Note">
         <input value={note} onChange={(e) => setNote(e.target.value)}

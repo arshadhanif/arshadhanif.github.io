@@ -718,14 +718,14 @@ export async function reorderFavorites(orderedIds) {
 export async function listSubscriptions() {
   const { data, error } = await supabase
     .from('subscriptions')
-    .select('id, name, cost, currency, cycle, active, note, category, plan, paid_by, provider, renews_on, owner_id, created_at')
+    .select('id, name, cost, currency, cycle, active, note, category, plan, paid_by, provider, renews_on, auto_renew, price_after_trial, contract_end, term_months, payment_method, owner_id, created_at')
     .order('created_at', { ascending: true })
   if (error) throw error
   return data || []
 }
 
 const FREE_CYCLES = ['free', 'trial', 'tier', 'bundle']
-export async function createSubscription({ name, cost, currency, cycle, note, category, plan, paidBy, provider, renewsOn, ownerId }) {
+export async function createSubscription({ name, cost, currency, cycle, note, category, plan, paidBy, provider, renewsOn, autoRenew, priceAfterTrial, contractEnd, termMonths, paymentMethod, ownerId }) {
   const { data: hm } = await supabase
     .from('household_members').select('household_id').eq('profile_id', ownerId).limit(1).maybeSingle()
   const isFree = FREE_CYCLES.includes(cycle)
@@ -733,6 +733,10 @@ export async function createSubscription({ name, cost, currency, cycle, note, ca
     name, cost: isFree ? 0 : Number(cost) || 0, currency: currency || 'USD', cycle: cycle || 'monthly',
     note: note || null, category: category || null, plan: plan || null,
     paid_by: paidBy || null, provider: provider || null, renews_on: renewsOn || null,
+    auto_renew: autoRenew !== false,
+    price_after_trial: priceAfterTrial ? Number(priceAfterTrial) : null,
+    contract_end: contractEnd || null, term_months: termMonths ? Number(termMonths) : null,
+    payment_method: paymentMethod || null,
     owner_id: ownerId, household_id: hm?.household_id || null,
   })
   if (error) throw error

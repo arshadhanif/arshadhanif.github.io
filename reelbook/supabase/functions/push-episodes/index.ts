@@ -105,27 +105,45 @@ Deno.serve(async (req) => {
   let pushes = 0
 
   // ---- Subscription reminders: trials ending / renewals due within 2 days ----
-  // Remind once per renewal date (reminded_for guards against repeats).
+  // Recurring auto-renew dates are rolled forward to their next occurrence so
+  // they never go stale; reminded_for guards against repeating a reminder.
   let reminders = 0
-  const today = new Date()
-  const horizon = new Date(today.getTime() + 2 * 86400000).toISOString().slice(0, 10)
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const horizon = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10)
+  const rollFwd = (ds: string, cycle: string): string => {
+    let d = new Date(ds + "T00:00:00Z")
+    const t = new Date(todayStr + "T00:00:00Z")
+    let g = 0
+    while (d < t && g++ < 600) {
+      if (cycle === "monthly") d.setUTCMonth(d.getUTCMonth() + 1)
+      else d.setUTCFullYear(d.getUTCFullYear() + 1)
+    }
+    return d.toISOString().slice(0, 10)
+  }
   for (const uid of userIds) {
-    const { data: dueSubs } = await admin
+    const { data: rows } = await admin
       .from("subscriptions")
-      .select("id, name, cost, currency, cycle, renews_on, reminded_for")
+      .select("id, name, cost, currency, cycle, renews_on, reminded_for, auto_renew")
       .eq("owner_id", uid).eq("active", true)
       .not("renews_on", "is", null)
-      .lte("renews_on", horizon)
-    for (const s of dueSubs ?? []) {
+    for (const s of rows ?? []) {
       const sub = s as any
-      if (sub.reminded_for === sub.renews_on) continue
+      let when = String(sub.renews_on).slice(0, 10)
+      if ((sub.cycle === "monthly" || sub.cycle === "yearly") && sub.auto_renew !== false && when < todayStr) {
+        const rolled = rollFwd(when, sub.cycle)
+        if (rolled !== when) {
+          await admin.from("subscriptions").update({ renews_on: rolled, reminded_for: null }).eq("id", sub.id)
+          when = rolled; sub.reminded_for = null
+        }
+      }
+      if (when < todayStr || when > horizon) continue
+      if (sub.reminded_for === when) continue
       const isTrial = sub.cycle === "trial"
-      const when = sub.renews_on
       const bodyText = isTrial
         ? `⏰ Your ${sub.name} free trial ends ${when}. Cancel before then to avoid being charged.`
         : `💳 ${sub.name} renews ${when}${sub.cost ? ` (${sub.currency} ${sub.cost})` : ""}.`
       await sendToUser(uid, { title: "ReelBook subscriptions", body: bodyText, url: "/subscriptions" })
-      await admin.from("subscriptions").update({ reminded_for: sub.renews_on }).eq("id", sub.id)
+      await admin.from("subscriptions").update({ reminded_for: when }).eq("id", sub.id)
       reminders++
     }
   }
