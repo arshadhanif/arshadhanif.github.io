@@ -32,7 +32,7 @@ const MENU = [
   ['/friends', 'Friends', Users],
   ['/settings', 'Settings', Settings],
   ['/groups', 'Groups & profile', UserRound],
-  ['/import', 'Import history', Upload],
+  ['/import', 'Import & history', Upload],
   ['/about', 'About', Info],
 ]
 
