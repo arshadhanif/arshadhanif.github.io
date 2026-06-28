@@ -10,7 +10,7 @@ import { setTheme, setAccent, ACCENTS } from '../lib/theme'
 import { getPref } from '../lib/prefs'
 import {
   Compass, Sparkles, Bookmark, BookOpen, Library, BarChart3, Bell, Sun, Moon,
-  CalendarDays, Gift, Award, CreditCard, SlidersHorizontal, Users, Settings, UserRound, Upload, Info, LogOut,
+  CalendarDays, Gift, Award, CreditCard, SlidersHorizontal, Users, Settings, UserRound, Upload, Info, LogOut, HeartHandshake,
 } from 'lucide-react'
 
 const TABS = [
@@ -26,6 +26,7 @@ const MENU = [
   ['/coming', 'Coming soon', CalendarDays],
   ['/wrapped', 'Year in review', Gift],
   ['/achievements', 'Achievements', Award],
+  ['/match', 'Taste match', HeartHandshake],
   ['/subscriptions', 'Subscriptions', CreditCard],
   ['/browse', 'Advanced browse', SlidersHorizontal],
   ['/friends', 'Friends', Users],
