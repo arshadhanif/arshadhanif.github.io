@@ -304,8 +304,12 @@ export default function Subscriptions() {
       ) : sorted.length === 0 ? (
         <Empty icon="🔍">No subscriptions match these filters.</Empty>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12, alignItems: 'start' }}>
-          {sorted.map((s) => <Card key={s.id} s={s} />)}
+        <div style={{ columnWidth: '280px', columnGap: '12px' }}>
+          {sorted.map((s) => (
+            <div key={s.id} style={{ breakInside: 'avoid', WebkitColumnBreakInside: 'avoid', marginBottom: 12 }}>
+              <Card s={s} />
+            </div>
+          ))}
         </div>
       )}
 
