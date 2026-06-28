@@ -1,0 +1,144 @@
+---
+title: 'Understanding Oracle Fusion Cloud Enterprise Structure'
+date: '2026-06-26'
+category: 'Oracle Fusion'
+excerpt: 'A structured way to understand any Oracle Fusion instance in minutes: the enterprise structure hierarchy, the key tables, and one validated SQL query that pulls the whole picture in a single run.'
+readTime: '10 min read'
+published: true
+---
+
+When you join a project as a support consultant, implementation analyst, or report developer, one of the first challenges is working out how the client's Oracle Fusion Cloud instance is structured. Which ledgers exist? Which legal entities map to each ledger? Which business unit drives Payables, Receivables, or Procurement data? Where is Fixed Assets configured? Are there inventory organisations relevant to Supply Chain queries?
+
+Without those answers, even a straightforward SQL query or BI Publisher report needs a lot of investigation before it can be written correctly. A query against `AP_INVOICES_ALL` without the right `ORG_ID` returns the wrong data. A Fixed Assets count that omits the `BOOK_TYPE_CODE` filter pulls tax books in alongside corporate books and inflates the figures. A General Ledger query that joins to a secondary ledger produces duplicate balances.
+
+This article gives you a structured way to understand any Fusion instance within minutes of getting database access. It covers the enterprise structure hierarchy, the key tables and views that expose it, one validated SQL query that extracts the complete picture in a single run, and how to use the output to write accurate, portable reports across Financials and SCM.
+
+The query has been validated across live Fusion instances spanning real estate, media and broadcasting, logistics, manufacturing, food production, and international financial services. It works across single-entity and multi-entity setups, single-currency and multi-currency ledgers, and implementations with and without SCM, Fixed Assets, and Budgetary Control.
+
+## The enterprise structure, layer by layer
+
+Oracle Fusion organises the enterprise across several layers. Each has a distinct role and maps to specific database objects.
+
+### Ledger
+The top-level accounting object. It defines the currency, the chart of accounts, the accounting calendar, and the subledger accounting method. A primary ledger is where all transactional accounting is recorded. Secondary ledgers and reporting currencies exist for local GAAP or currency conversion but are not relevant to transaction counting.
+
+Key table: `GL_LEDGERS`. Filter on `LEDGER_CATEGORY_CODE = 'PRIMARY'` and `OBJECT_TYPE_CODE = 'L'` to isolate primary ledgers and exclude ledger sets.
+
+### Legal entity
+A registered organisation with statutory reporting obligations. One or more legal entities are assigned to each primary ledger. Where multiple entities share a ledger, they are differentiated through balancing segment values.
+
+Key table: `XLE_ENTITY_PROFILES`. Join to `GL_LEDGER_LE_V` to map each legal entity to its primary ledger.
+
+### Business unit
+The operational entity where day-to-day transactions are processed. It is the `ORG_ID` that appears throughout the transactional tables: `AP_INVOICES_ALL`, `AR_CUSTOMER_TRX_ALL`, `PO_HEADERS_ALL`, `POR_REQUISITION_HEADERS_ALL`, and the Expenses tables. A multi-entity implementation commonly has several business units on one ledger, so filtering by `LEDGER_ID` alone is not enough. The correct key is `BUSINESS_UNIT_ID` (ORG_ID).
+
+Key table: `HR_OPERATING_UNITS`. Join column: `SET_OF_BOOKS_ID = GL_LEDGERS.LEDGER_ID`.
+
+### Fixed Assets book
+Fixed Assets is structured around books rather than ledgers. The corporate book is the primary accounting book for additions, adjustments, transfers, retirements, and depreciation. For transaction activity, only the corporate book is relevant.
+
+Key table: `FA_BOOK_CONTROLS`. Filter: `BOOK_CLASS = 'CORPORATE'` and `DATE_INEFFECTIVE IS NULL`. Join to `GL_LEDGERS` on `SET_OF_BOOKS_ID = LEDGER_ID`.
+
+### Inventory organisation
+Physical or logical stocking locations where material transactions occur. They are the primary filter for SCM queries: Receivings (`RCV_TRANSACTIONS`), Inventory (`MTL_MATERIAL_TRANSACTIONS`), and Order Management. Each inventory organisation belongs to a business unit.
+
+Key table: `INV_ORG_PARAMETERS`. Join to `HR_OPERATING_UNITS` on `BUSINESS_UNIT_ID`.
+
+## Why every query depends on this
+
+The enterprise structure is the filter architecture that decides what every module query returns.
+
+- **Accounts Payable:** `AP_INVOICES_ALL` holds invoices across every business unit. Without `WHERE org_id = :business_unit_id`, you get invoices for every entity on the pod.
+- **Fixed Assets:** `FA_TRANSACTION_HEADERS` stores transactions for all FA books. Without `WHERE book_type_code = :asset_book_code`, the query includes system-generated TRANSFER IN records that mirror every asset addition from AP, doubling the count.
+- **General Ledger:** `GL_JE_HEADERS` holds journals for all ledgers. On a multi-country setup with eight primary ledgers, no `WHERE ledger_id` filter aggregates across currencies and makes period analysis meaningless.
+- **Budgetary Control:** the `BC_ENABLED` flag tells you immediately whether BC queries even apply. Querying a BC-disabled ledger returns zero rows, which is correct but confusing without context.
+- **SCM and Receivings:** `RCV_TRANSACTIONS` covers every inventory organisation. The correct filter is `organization_id IN (:inv_org_ids)` from the structure output.
+
+## The enterprise structure query
+
+This retrieves the complete enterprise structure for all primary ledgers in a single run. It has been validated across single-entity, multi-entity, single-COA, and multi-COA configurations.
+
+```sql
+SELECT
+    gl.ledger_id,
+    gl.name                          AS ledger_name,
+    gl.short_name                    AS ledger_short_name,
+    gl.ledger_category_code          AS ledger_category,
+    gl.currency_code                 AS ledger_currency,
+    gl.period_set_name               AS accounting_calendar,
+    gl.chart_of_accounts_id          AS coa_id,
+    coa_b.id_flex_structure_code     AS coa_code,
+    coa_tl.id_flex_structure_name    AS coa_name,
+    gl.enable_budgetary_control_flag AS bc_enabled,
+    le.legal_entity_id,
+    le.name                          AS legal_entity_name,
+    le.legal_entity_identifier       AS legal_entity_code,
+    le.effective_from                AS le_effective_from,
+    le.effective_to                  AS le_effective_to,
+    hou.organization_id              AS business_unit_id,
+    hou.name                         AS business_unit_name,
+    fbc.book_type_code               AS asset_book_code,
+    fbc.book_class                   AS asset_book_class,
+    iop.organization_id              AS inv_org_id,
+    iop.organization_code            AS inv_org_code,
+    hou2.name                        AS inv_org_name
+FROM
+    fusion.gl_ledgers                     gl
+    JOIN fusion.gl_ledger_le_v            llv ON llv.ledger_id = gl.ledger_id
+    JOIN fusion.xle_entity_profiles       le  ON le.legal_entity_id = llv.legal_entity_id
+    JOIN fusion.fnd_id_flex_structures_tl coa_tl
+        ON coa_tl.id_flex_num    = gl.chart_of_accounts_id
+       AND coa_tl.id_flex_code   = 'GL#'
+       AND coa_tl.application_id = 101
+       AND coa_tl.language       = 'US'
+    JOIN fusion.fnd_id_flex_structures    coa_b
+        ON coa_b.id_flex_num     = gl.chart_of_accounts_id
+       AND coa_b.id_flex_code    = 'GL#'
+       AND coa_b.application_id  = 101
+    LEFT JOIN fusion.hr_operating_units   hou ON hou.set_of_books_id = gl.ledger_id
+    LEFT JOIN fusion.fa_book_controls     fbc
+        ON fbc.set_of_books_id   = gl.ledger_id
+       AND fbc.book_class        = 'CORPORATE'
+       AND fbc.date_ineffective IS NULL
+    LEFT JOIN fusion.inv_org_parameters   iop ON iop.business_unit_id = hou.organization_id
+    LEFT JOIN fusion.hr_operating_units   hou2 ON hou2.organization_id = iop.organization_id
+WHERE
+    gl.ledger_category_code = 'PRIMARY'
+    AND gl.object_type_code = 'L'
+ORDER BY
+    gl.name, le.name, hou.name, fbc.book_type_code, iop.organization_code;
+```
+
+### Join logic worth knowing
+`GL_LEDGER_LE_V` is the correct view for mapping ledgers to legal entities. The alternative `GL_LEDGER_LE_BSV_SPECIFIC_V` does not expose the ORG_ID connection and should not be used here.
+
+The COA name needs two joins: `FND_ID_FLEX_STRUCTURES` (base table) for the structure code, and `FND_ID_FLEX_STRUCTURES_TL` (translation, language = US) for the readable name. Pulling both from the TL table alone fails with ORA-00904, because the structure code column lives only in the base table.
+
+`FA_BOOK_CONTROLS` and `INV_ORG_PARAMETERS` are LEFT JOINed because not every ledger has Fixed Assets or Inventory. Ledgers used only for intercompany, consolidation, or financial services return NULL for these, which is correct.
+
+### Known behaviours
+On multi-entity ledgers the query fans out to one row per combination of ledger, legal entity, business unit, asset book, and inventory organisation. That can be hundreds of rows. It is by design. On a shared-COA instance, `COA_ID` and `COA_CODE` repeat across ledgers. And in Cloud, `LEDGER_SHORT_NAME` commonly equals the numeric `LEDGER_ID`, a difference from EBS where short names were meaningful codes.
+
+## Mapping the output to module filters
+
+Store the output as a reference sheet and use the right ID as your primary filter for every module query:
+
+| Module | Filter column in transaction table | Parameter from enterprise structure |
+|---|---|---|
+| GL Journals | LEDGER_ID | LEDGER_ID |
+| AP Invoices and Payments | ORG_ID | BUSINESS_UNIT_ID |
+| AR Invoices and Receipts | ORG_ID | BUSINESS_UNIT_ID |
+| Procurement (PO and PR) | ORG_ID | BUSINESS_UNIT_ID |
+| Expenses | ORG_ID | BUSINESS_UNIT_ID |
+| Fixed Assets | BOOK_TYPE_CODE | ASSET_BOOK_CODE |
+| Receivings | ORGANIZATION_ID | INV_ORG_ID |
+| Inventory Transactions | ORGANIZATION_ID | INV_ORG_ID |
+| Budgetary Control | filter if BC_ENABLED = Y | LEDGER_ID |
+
+## Deploying it as a BIP report
+
+The query is well suited to a standalone BI Publisher report on the `ApplicationDB_FSCM` data source, output to Excel for a reference sheet and PDF for documentation. No parameters are needed. Group by ledger, then legal entity, then business unit, with asset book and inventory organisation as detail rows. Built that way, it becomes a live reference you can run any time IDs change, and report packages that read their parameters from it become portable across any Fusion instance instead of carrying hardcoded ORG_IDs.
+
+## The point
+
+The enterprise structure is the foundation of every query, report, and analysis built on Fusion data. Understanding it early removes a whole class of errors that catch new consultants: wrong entity data, inflated counts, cross-ledger aggregation, and queries that silently return the wrong thing because the right filter was never applied. The query above is field-built, not theoretical. The column choices, the join logic, and the filters all came from fixing real errors on real instances.

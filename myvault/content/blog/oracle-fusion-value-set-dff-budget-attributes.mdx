@@ -1,0 +1,99 @@
+---
+title: 'Adding Custom Budget Attributes to Oracle Fusion GL Segments'
+date: '2026-06-18'
+category: 'Oracle Fusion'
+excerpt: 'How to attach reporting attributes like a budget category to individual Chart of Accounts segment values using the Value Set Values DFF, including the bulk-upload format and the API-name gotcha that trips people up.'
+readTime: '8 min read'
+published: true
+---
+
+One question comes up again and again on Oracle Fusion implementations: how do you attach extra reporting attributes to individual segment values in the Chart of Accounts? A cost center has a department group. An account has a budget category. These attributes do not belong on the transaction. They describe the segment value, and they need to follow it everywhere it appears.
+
+Oracle provides a clean mechanism: the Value Set Values Descriptive Flexfield (`FND_VS_VALUES_B`). It is underused on most projects because it is not as well signposted as the transaction-level DFFs, but it works reliably and feeds OTBI directly once deployed. This article walks through a complete implementation: the design decisions, the configuration steps, the bulk upload approach, and the specific gotcha that will trip you up if you try to push attribute values through the import.
+
+## The requirement
+
+On a recent real estate implementation, the Finance team needed two things. First, each Natural Account tagged with a budget classification (Capital Expenditure, Operating Expenditure, or Projects) and a sub-classification (Staff Cost, G&A, BOD Expenses, Construction, Professional Fees, and so on). Second, each Cost Center tagged with a reporting group for budget consolidation.
+
+The goal was simple: when someone builds a budget variance report or an OTBI dashboard, they can filter or group by these attributes without hand-building account hierarchies for every possible classification.
+
+The transaction-level DFF approach was ruled out. Budget classification belongs to the account, not to individual journal lines. Put it on the transaction and you get inconsistency, where different people classify the same account differently across entries. Attaching it at the segment value level means it is set once and inherited everywhere.
+
+## Understanding the Value Set Values DFF
+
+Every segment value in Fusion, whether a Natural Account, a Cost Center, or any other CoA segment, is stored in `FND_VS_VALUES_B`. Oracle ships a descriptive flexfield registered against this table, called Value Set Values. It appears under the Application Flexfields module, not General Ledger, which is exactly why it gets missed.
+
+The key capability is context-sensitive segments. Rather than one set of attributes on every value set, you create a context per value set. The Natural Account value set gets its own context with Head Category and Sub Head Category segments. The Cost Center value set gets a separate context with a Report Head segment. The context discriminator is the value set code, and the context code you configure must match the value set code exactly, including spacing and case.
+
+## Design decisions before you configure
+
+- **Value set naming.** Each DFF attribute needs its own independent value set to drive the dropdown. Spaces are technically allowed in value set codes, but Oracle's guidance for table-validated scenarios recommends letters, numbers, and underscores only. If a code might ever appear in a WHERE clause, spaces cause errors. A convention like `[ClientCode]_Budget_[Segment]_[Attribute]` keeps them grouped and identifiable.
+- **Keep values clean.** The Value field is the stored key, the Description is what users see. Strip special characters (ampersands, apostrophes, parentheses, slashes) from the Value and keep them in the Description. For example the value `Corporate CAPEX IT GA` stores cleanly while the description reads `Corporate CAPEX (IT-G&A)`.
+- **Do not tag parents.** Parent accounts (Summary = Yes) are rollup nodes, not posting accounts. Tagging them adds noise to reports. Only tag child values (Summary = No).
+
+## Implementation steps
+
+### Step 1: Create the supporting value sets
+In Setup and Maintenance, open Manage Value Sets. Create one independent value set per DFF attribute, all with Module = General Ledger, Validation Type = Independent, Value Data Type = Character, Value Subtype = Text. Set a generous Maximum Length (50 to 80). Create the shells first, then bulk-load the values.
+
+### Step 2: Load values in bulk
+Oracle supports bulk import of value set values through a pipe-delimited text file uploaded to the UCM path `fin/generalLedger/import`, triggered from Manage Chart of Accounts Value Sets, then Actions, then Import. Multiple value sets can share one file. The format is:
+
+```text
+ValueSetCode|Value|Description|EnabledFlag
+COMP_Budget_ACCT_Head_Category|Corporate CAPEX|Corporate CAPEX|Y
+COMP_Budget_ACCT_Head_Category|OPEX|OPEX|Y
+COMP_Budget_ACCT_Head_Category|Projects|Projects|Y
+```
+
+### Step 3: Configure the DFF
+In Setup and Maintenance, open Manage Descriptive Flexfields, filter by Module = Application Flexfields, and search for Value Set Values. Click Manage Contexts. For each segment you want attributes on, create a context whose code is the exact value set code. Within each context, add context-sensitive segments:
+
+| Setting | Value |
+|---|---|
+| Table Column | ATTRIBUTE1, ATTRIBUTE2, and so on (sequential, no gaps) |
+| Value Set | the relevant independent value set from Step 1 |
+| Display Type | List of Values |
+| BI Enabled | checked, required for OTBI subject area exposure |
+| Definition Help Text | tooltip on the field help icon |
+| Instruction Help Text | in-field guidance when the user focuses the field |
+
+### Step 4: Deploy
+Back on Manage Descriptive Flexfields, select Value Set Values and click Deploy Flexfield. Wait for 0 errors and 0 warnings, and do not navigate away during deployment. Log out and back in afterwards. The DFF columns do not appear on the Manage Values screen until a new session starts.
+
+### Step 5: Tag the segment values in bulk
+This is where most guides stop and leave you tagging hundreds of values by hand. The same pipe-delimited import also writes DFF attribute values back to existing records.
+
+The critical finding: the column header in the import file must be the **API name** of the DFF segment, not the prompt name. When you create a segment named `Budget Report Head Category`, Oracle auto-generates an API name in camelCase, `budgetReportHeadCategory`. The import resolves columns by API name. Using the prompt name produces:
+
+```text
+JBO-25058: Definition Budget Report Head of type Attribute is not found in
+ValueSetValueDFFCostCenterSDCVO
+```
+
+The correct format for tagging existing values is:
+
+```text
+ValueSetCode|Value|Description|EnabledFlag|budgetReportHeadCategory|budgetReportSubHeadCategory
+COMP_NATURAL_ACCOUNT|510101|Basic Salary|Y|OPEX|Staff Cost
+COMP_NATURAL_ACCOUNT|510102|Housing Allowance|Y|OPEX|Staff Cost
+COMP_NATURAL_ACCOUNT|120202|CWIP Vertical Construction|Y|Projects|Construction
+```
+
+The import runs incrementally. Only the rows you include get updated, so partial updates are safe. Cost Center and Natural Account must be uploaded as separate files, because they have different DFF column structures and combining them causes a column count mismatch.
+
+## Finding the API names
+
+The API name is set when you create the segment and can be reviewed by opening the segment in Edit mode in Manage Descriptive Flexfields. It is the segment name in camelCase with spaces and special characters removed. If an import fails, the API name is also visible in the error log: the VO name in the JBO exception carries the context code (with spaces replaced by double underscores), and the message names the attribute it could not resolve.
+
+## The Prepare in Spreadsheet alternative
+
+From release 21A, Oracle added a Prepare in Spreadsheet option on the Value Set tab in Manage Chart of Accounts Configurations. It downloads a macro-enabled Excel workbook with an FTXT data file in a ZIP. The Excel reads the FTXT to populate live application data, you edit in Excel, then upload back. This is a clean approach for ad hoc updates after the initial load, especially when Finance maintains the values themselves. Extract the ZIP before opening the Excel.
+
+## Post-configuration checks
+
+After the upload, open Manage Values and verify a sample manually. Confirm child values (Allow Posting = Yes) show the expected attribute, and parent values (Summary = Yes) have none. If you have OTBI access, build a quick analysis on the GL subject area and check the new attributes surface as filters. They appear under the segment's dimension folder once the BI metadata refreshes.
+
+## Summary
+
+The Value Set Values DFF solves a common reporting requirement cleanly once you know where to find it. The configuration is not complex, but the deployment and bulk upload have enough undocumented behaviour to slow you down the first time. The two things most likely to cost you time are the context code matching requirement (it must equal the value set code exactly) and the API name requirement for import headers (the prompt name fails at the update stage). Get those two right and the rest is straightforward.

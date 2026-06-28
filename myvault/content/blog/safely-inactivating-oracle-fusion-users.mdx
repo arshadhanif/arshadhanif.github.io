@@ -1,0 +1,151 @@
+---
+title: 'Safely Inactivating Oracle Fusion Implementation User Accounts'
+date: '2026-06-20'
+category: 'Oracle Fusion'
+excerpt: 'Toggling an implementation account inactive looks like a one-click job. It is not. Here is a structured pre-inactivation checklist that catches the scheduled jobs, BI catalog objects, and integrations that break silently.'
+readTime: '11 min read'
+published: true
+---
+
+Every Oracle Fusion implementation creates a set of technical user accounts that consultants use to configure, test, and integrate the system. These accounts usually carry elevated roles, span multiple modules, and often own scheduled processes and BI catalog objects the business comes to depend on. Once the project ends and the client moves to business-as-usual, the accounts are no longer needed day to day. Leaving them active is a licence compliance risk, a security exposure, and an audit finding waiting to happen.
+
+This article documents a structured methodology for identifying what each implementation account owns or controls before you inactivate it, and how to resolve each dependency cleanly. It was validated on a live Oracle Fusion ERP, HCM, and SCM environment for a real estate entity in KSA, where four implementation accounts needed assessment. The approach applies to any Fusion environment, regardless of industry or geography.
+
+## Why this is harder than it looks
+
+The temptation is to open Security Console, find the account, and toggle it inactive. In practice, inactivating without investigation can cause:
+
+- Scheduled processes that run under the account stop executing, often silently.
+- BI catalog objects owned by the account become unmanageable by other users.
+- Integration connections authenticated under the account break at their next execution.
+- Approval workflow tasks assigned to the account get stuck indefinitely.
+- BPM approval groups with the account as a sole member route to a dead end.
+
+None of these are instant or obvious. A nightly scheduled process will not fail until its next run. An integration credential will not fail until the next payload. That delayed failure pattern is exactly why pre-inactivation investigation matters.
+
+## The pre-inactivation checklist
+
+Seven areas to assess for each account, ordered from highest operational risk to lowest.
+
+| # | Check | What could go wrong if skipped | Applies to |
+|---|---|---|---|
+| 1 | Active Scheduled Processes | Processes stop running silently at next execution | All accounts |
+| 2 | BPM Worklist Pending Tasks | Open tasks stuck permanently, transactions cannot proceed | Named approver accounts |
+| 3 | BPM Approval Groups | Routing dead-ends if account is the sole member | Named approver accounts |
+| 4 | BPM Approval Rules | Named user references route to a dead end | Named approver accounts |
+| 5 | BI Catalog Ownership | Objects become uneditable, access loss after catalog validation | All accounts |
+| 6 | Integration Credentials | Connections break silently at next execution | Technical / service accounts |
+| 7 | Open Transactions | Incomplete transactions left in a stale state | Transactional accounts |
+
+For implementation accounts that were never used for approvals or transactions (checks 2, 3, 4, 7 not applicable), focus on checks 1, 5, and 6, which apply universally.
+
+## Check 1: Active scheduled processes
+
+Oracle's Enterprise Scheduler Service (ESS) ties every scheduled process submission to the username that submitted it. If a recurring process is owned by an account that gets inactivated, it fails at its next execution. Depending on the process, that ranges from a missed report to a critical failure such as purchase orders not generating.
+
+The primary table is `FUSION.ESS_REQUEST_HISTORY`. The state codes that matter are 1 (Wait), 2 (Ready), 3 (Running), and 4 (Completed / scheduled for recurrence). States 1 through 4 represent active or recurring jobs.
+
+```sql
+SELECT
+    r.requestid,
+    r.username,
+    r.definition,
+    r.application,
+    DECODE(r.state,
+        1,'Wait', 2,'Ready', 3,'Running', 4,'Completed',
+        5,'Blocked', 9,'Canceled', 10,'Error', 11,'Warning',
+        12,'Succeeded', TO_CHAR(r.state)) AS status,
+    r.absparentid AS parent_request_id,
+    TO_CHAR(r.scheduled,    'yyyy-mm-dd hh24:mi:ss') AS scheduled_time,
+    TO_CHAR(r.processstart, 'yyyy-mm-dd hh24:mi:ss') AS process_start
+FROM fusion.ess_request_history r
+WHERE r.username IN ('USER1', 'USER2', 'USER3')
+  AND r.state IN (1, 2, 3, 4)
+ORDER BY r.username, r.scheduled DESC;
+```
+
+Replace the usernames with the exact accounts under review. ESS usernames are case-sensitive and must match the stored value exactly.
+
+To gauge the risk of each process, check whether the same definition is also submitted by other active users:
+
+```sql
+SELECT
+    r.definition,
+    r.application,
+    COUNT(DISTINCT r.username) AS submitting_user_count,
+    LISTAGG(DISTINCT r.username, ', ')
+        WITHIN GROUP (ORDER BY r.username) AS usernames,
+    COUNT(r.requestid) AS total_submissions
+FROM fusion.ess_request_history r
+WHERE r.definition IN (
+        'JobDefinition://...',  -- paste definitions from the first query
+        'JobDefinition://...')
+  AND r.state IN (1, 2, 3, 4)
+GROUP BY r.definition, r.application
+ORDER BY r.definition;
+```
+
+If a definition shows more than one active submitter, the process has coverage and the implementation account's jobs can be cancelled. If the account is the sole submitter, the process must be reassigned to an active account before inactivation.
+
+**Field example.** On the KSA engagement, an HCM implementation account was the sole submitter of a Job Offer Letter Template Restore process running every five minutes. Inactivating the account without reassigning it would have made the recruiting team's offer letter templates disappear at the next cycle, breaking offer creation silently. Inactivation was held until the process was reassigned to an active HCM system account and a test run confirmed.
+
+## Check 5: BI catalog ownership
+
+Every report, analysis, dashboard, and data model in the BI catalog has an owner. Ownership controls who can edit, manage permissions, and delete. It is separate from access. Others can run a report they do not own, but only the owner can modify it.
+
+When an account is inactivated, the objects it owns stay in place but freeze. No one else can edit them until an administrator takes ownership. Worse, a catalog validation run after inactivation scrubs dead accounts from Access Control List entries, which can remove the inactivated account from permission lists and cause unexpected access changes.
+
+There is no SQL query for this, because the catalog is a file system on the presentation server, not a database schema. Navigate to Tools, then Reports and Analytics, then Browse Catalog, enable Show More Details, and scroll the Shared Folders and Custom directory for any object showing the implementation account in the Owner column. On the KSA engagement, two folders owned by an HCM implementation account needed their ownership transferred first.
+
+To resolve, open each affected folder or object, click More, then Properties, and use Set Ownership of this item and all subitems to transfer ownership to a named active account in one operation. Always transfer ownership before inactivation, never after.
+
+## Check 6: Integration and web service credentials
+
+If any external system, middleware, or Oracle Integration Cloud connection uses an implementation account to authenticate REST or SOAP calls into Fusion, inactivating it breaks those integrations at the next execution. Unlike ESS failures, integration failures usually surface in the external system, not in Fusion.
+
+Accounts provisioned with integration-oriented roles such as Integration Specialist are higher risk. You can rule out one path by running the full ESS history with no state filter:
+
+```sql
+SELECT
+    r.requestid, r.definition, r.application,
+    DECODE(r.state,
+        1,'Wait', 2,'Ready', 3,'Running', 4,'Completed',
+        5,'Blocked', 9,'Canceled', 10,'Error', 11,'Warning',
+        12,'Succeeded', TO_CHAR(r.state)) AS status,
+    TO_CHAR(r.processstart, 'yyyy-mm-dd hh24:mi:ss') AS process_start
+FROM fusion.ess_request_history r
+WHERE r.username = 'Integration.user'
+ORDER BY r.processstart DESC;
+```
+
+No rows means the account has never submitted a scheduled process. That does not rule out API credential use, but it lowers the risk. Whether any OIC connection stores the account's credentials cannot be verified from inside Fusion, because those credentials live in OIC, not the Fusion database. A direct question to the integration team closes that gap.
+
+## Supplementary: last login date
+
+Confirming the last login date is useful evidence an account is genuinely dormant. Fusion stores it in `ASE_USER_LOGIN_INFO`, populated by the Import User Login History scheduled process.
+
+```sql
+SELECT
+    pu.username,
+    pu.active_flag,
+    TO_CHAR(pu.creation_date,    'yyyy-mm-dd hh24:mi:ss') AS account_created,
+    TO_CHAR(al.last_login_date,  'yyyy-mm-dd hh24:mi:ss') AS last_login_date
+FROM per_users pu
+    JOIN ase_user_login_info al ON al.user_guid = pu.user_guid
+WHERE pu.username IN ('USER1', 'USER2', 'USER3')
+ORDER BY al.last_login_date DESC;
+```
+
+`FND_SESSIONS` records every session under the username, including ESS executions, and is purged after about seven days. An account showing recent `FND_SESSIONS` activity but no human login in `ASE_USER_LOGIN_INFO` is likely active only because its scheduled processes are opening system sessions, not because a person is logging in. Read the two sources together.
+
+## Recommended resolution sequence
+
+1. Reassign any scheduled process with no other active submitter to an active service account, and test it under the new account.
+2. Cancel all remaining jobs owned by the implementation account via Tools, then Scheduled Processes. Cancel explicitly even where coverage exists, to avoid duplicate execution.
+3. Transfer BI catalog ownership for all affected objects to an active named account.
+4. Confirm with the integration team that no active connection references the account's credentials.
+5. Inactivate via Security Console, and document the date and checks completed as an audit trail.
+
+## The principle
+
+Implementation accounts accumulate dependencies quietly over a project. Cleaning them up needs the same discipline as any other decommissioning: treat it as a mini-project, document your findings, and do not inactivate until every check has a confirmed resolution. On a recent engagement, these checks surfaced a business-critical HCM process running every five minutes, two catalog folders needing ownership transfer, and an integration account provisioned for programmatic access. None would have been obvious without structured investigation.
