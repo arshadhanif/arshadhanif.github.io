@@ -5,6 +5,7 @@ import { listTrackedShows } from '../lib/db'
 import { initBaselines, buildNotifications, getUnread, syncNotifState } from '../lib/notify'
 import { initials } from './ui'
 import Onboarding, { needsOnboarding } from './Onboarding'
+import QuickAdd from './QuickAdd'
 
 const TABS = [
   { to: '/', label: 'Discover', ico: '🔍', end: true },
@@ -96,6 +97,7 @@ export default function Layout() {
       </main>
 
       {showOnb && <Onboarding onClose={() => setShowOnb(false)} />}
+      <QuickAdd />
 
       <nav className="tabbar">
         {TABS.map((t) => (
