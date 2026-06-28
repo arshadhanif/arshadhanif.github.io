@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useAppData } from '../context/AppData'
 import { useToast } from '../context/Toast'
 import { getPref, setPref, REGIONS, regionName, DEFAULT_REGION } from '../lib/prefs'
-import { ACCENTS, setTheme, setAccent } from '../lib/theme'
+import { ACCENTS, THEMES, setTheme, setAccent } from '../lib/theme'
 import { isPushSupported, getPushState, enablePush, disablePush, sendTestPush } from '../lib/push'
 import { downloadJsonBackup, downloadDiaryCsv, downloadEpisodesCsv } from '../lib/backup'
 import { listFavorites, getMyShare, setShareEnabled } from '../lib/db'
@@ -122,9 +122,17 @@ export default function Settings() {
         <strong>Appearance</strong>
         <div className="field" style={{ marginTop: 12 }}>
           <label>Theme</label>
-          <div className="seg">
-            {[['system', 'System'], ['light', 'Light'], ['dark', 'Dark']].map(([v, l]) => (
-              <button key={v} className={theme === v ? 'on' : ''} onClick={() => { setThemeState(v); setTheme(v) }}>{l}</button>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))', gap: 10 }}>
+            {THEMES.map((t) => (
+              <button key={t.id} type="button" onClick={() => { setThemeState(t.id); setTheme(t.id) }}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: 10,
+                  borderRadius: 12, background: 'var(--bg-elev-2)',
+                  border: theme === t.id ? '2px solid var(--accent)' : '2px solid var(--border)',
+                }}>
+                <span style={{ width: '100%', height: 40, borderRadius: 8, background: t.bg, border: '1px solid var(--border)', display: 'grid', placeItems: 'center', color: t.fg, fontWeight: 800, fontSize: 13 }}>Aa</span>
+                <span style={{ fontSize: 12, fontWeight: 600 }}>{t.label}</span>
+              </button>
             ))}
           </div>
         </div>
