@@ -11,7 +11,7 @@ export default function ResourceCard({ resource }: { resource: Resource }) {
   const href = `${basePath}${resource.fileUrl}`;
 
   return (
-    <article className="flex h-full flex-col rounded-xl border border-border bg-surface p-6">
+    <article className="card-hover flex h-full flex-col rounded-xl border border-border bg-surface p-6">
       <div className="mb-3">
         <span className="text-xs font-semibold uppercase tracking-wider text-accent">
           Free · {resource.format}

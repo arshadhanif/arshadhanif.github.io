@@ -14,7 +14,7 @@ function formatDate(date: string) {
 
 export default function ArticleCard({ post }: { post: PostMeta }) {
   return (
-    <article className="group flex h-full flex-col rounded-xl border border-border bg-surface p-6 transition-colors hover:border-accent/50">
+    <article className="group card-hover flex h-full flex-col rounded-xl border border-border bg-surface p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <CategoryBadge
           category={post.category}

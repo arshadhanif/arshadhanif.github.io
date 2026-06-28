@@ -19,7 +19,7 @@ export default function VideoCard({ video }: { video: Video }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface transition-colors hover:border-accent/50"
+      className="group card-hover flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface"
     >
       <div className="relative aspect-video w-full bg-surface-alt">
         {thumb ? (
