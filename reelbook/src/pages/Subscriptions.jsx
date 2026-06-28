@@ -264,7 +264,7 @@ export default function Subscriptions() {
 
       <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', margin: '16px 0' }}>
         {display === 'ALL' ? (
-          <Stat v={Object.keys(totals.byCur).length ? Object.entries(totals.byCur).map(([c, m]) => fmt(m * perMul, c)).join(' · ') : '—'} l={`Per ${period === 'yr' ? 'year' : 'month'}`} s="each in its own currency" />
+          <Stat v={Object.keys(totals.byCur).length ? Object.entries(totals.byCur).map(([c, m]) => fmt(m * perMul, c)).join(' · ') : 'n/a'} l={`Per ${period === 'yr' ? 'year' : 'month'}`} s="each in its own currency" />
         ) : (
           <Stat v={fmt((totals.month || 0) * perMul, display)} l={`Per ${period === 'yr' ? 'year' : 'month'}`} s={`≈ ${fmt((totals.month || 0) * (period === 'yr' ? 1 : 12), display)}/${period === 'yr' ? 'mo' : 'yr'}`} />
         )}
@@ -300,7 +300,7 @@ export default function Subscriptions() {
       </div>
 
       {insights.needsAttention > 0 && (
-        <div className="faint" style={{ marginBottom: 12, fontSize: 13 }}>⚠️ {insights.needsAttention} subscription{insights.needsAttention > 1 ? 's' : ''} missing a payer or a renewal/trial date — open one to add it.</div>
+        <div className="faint" style={{ marginBottom: 12, fontSize: 13 }}>⚠️ {insights.needsAttention} subscription{insights.needsAttention > 1 ? 's' : ''} missing a payer or a renewal/trial date. Open one to add it.</div>
       )}
 
       {subs.length > 0 && (

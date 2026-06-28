@@ -304,7 +304,7 @@ function WhereToWatch({ providers, region, setRegion, title, titleId, tmdbId, me
         )}
       </div>
 
-      {/* Manual override — always trusted, set by you */}
+      {/* Manual override - always trusted, set by you */}
       <div className="ws-manual">
         <div className="spread" style={{ marginBottom: manual.length || editing ? 8 : 0 }}>
           <span className="faint">{manual.length ? '✓ You watch this on' : 'Set where you watch this'}</span>

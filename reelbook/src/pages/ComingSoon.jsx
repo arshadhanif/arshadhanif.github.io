@@ -50,7 +50,7 @@ function buildIcs(items) {
       `UID:reelbook-${i.key}-${d}@reelbook`,
       `DTSTAMP:${stamp}`,
       `DTSTART;VALUE=DATE:${d}`,
-      `SUMMARY:${icsEscape((i.media === 'tv' ? '📺 ' : '🎬 ') + i.title + (i.sub ? ' — ' + i.sub : ''))}`,
+      `SUMMARY:${icsEscape((i.media === 'tv' ? '📺 ' : '🎬 ') + i.title + (i.sub ? ': ' + i.sub : ''))}`,
       `DESCRIPTION:${icsEscape('Via ReelBook')}`,
       'END:VEVENT',
     )

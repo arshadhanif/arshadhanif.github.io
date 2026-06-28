@@ -45,7 +45,7 @@ const Subscriptions = lazy(() => import('./pages/Subscriptions'))
 const PublicProfile = lazy(() => import('./pages/PublicProfile'))
 
 // Register the service worker so ReelBook is installable on phones.
-// Only on a root deployment (Vercel) — on the GitHub Pages preview the app
+// Only on a root deployment (Vercel) - on the GitHub Pages preview the app
 // lives under a subpath that shares its origin with the portfolio, so we skip
 // SW registration there to avoid controlling the whole origin.
 if ('serviceWorker' in navigator && import.meta.env.BASE_URL === '/') {
