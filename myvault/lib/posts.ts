@@ -69,3 +69,22 @@ export function getPostBySlug(slug: string): Post | null {
 export function getAllPostSlugs(): string[] {
   return getAllPosts().map((p) => p.slug);
 }
+
+/**
+ * Posts related to the given slug. Same category first, then most recent,
+ * with the current post left out. Used for the "Keep reading" section.
+ */
+export function getRelatedPosts(slug: string, limit = 2): PostMeta[] {
+  const all = getAllPosts();
+  const current = all.find((p) => p.slug === slug);
+  if (!current) return all.filter((p) => p.slug !== slug).slice(0, limit);
+
+  const sameCategory = all.filter(
+    (p) => p.slug !== slug && p.category === current.category
+  );
+  const others = all.filter(
+    (p) => p.slug !== slug && p.category !== current.category
+  );
+
+  return [...sameCategory, ...others].slice(0, limit);
+}

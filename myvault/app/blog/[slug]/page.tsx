@@ -2,11 +2,13 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { MDXRemote } from 'next-mdx-remote/rsc';
-import { getAllPostSlugs, getPostBySlug } from '@/lib/posts';
+import { getAllPostSlugs, getPostBySlug, getRelatedPosts } from '@/lib/posts';
 import CategoryBadge from '@/components/CategoryBadge';
 import AuthorBio from '@/components/AuthorBio';
 import ShareButtons from '@/components/ShareButtons';
-import { SITE_NAME, FOUNDER } from '@/lib/constants';
+import ArticleCard from '@/components/ArticleCard';
+import LeadMagnet from '@/components/LeadMagnet';
+import { SITE_NAME, FOUNDER, LEAD_MAGNET } from '@/lib/constants';
 
 export const dynamicParams = false;
 
@@ -53,6 +55,8 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
   const post = getPostBySlug(params.slug);
   if (!post) notFound();
 
+  const related = getRelatedPosts(post.slug, 2);
+
   return (
     <article className="container-page max-w-3xl py-16">
       <Link
@@ -81,6 +85,17 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         <MDXRemote source={post.content} />
       </div>
 
+      {/* Content upgrade: turn a reader into a subscriber */}
+      <div className="mt-12">
+        <LeadMagnet
+          variant="banner"
+          title={LEAD_MAGNET.title}
+          description={LEAD_MAGNET.description}
+          fileUrl={LEAD_MAGNET.fileUrl}
+          format={LEAD_MAGNET.format}
+        />
+      </div>
+
       <hr className="my-10 border-border" />
 
       <div className="flex flex-col gap-8">
@@ -88,8 +103,19 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         <AuthorBio />
       </div>
 
-      <p className="mt-10 text-center text-sm text-muted">
-        Enjoyed this? Explore more on {SITE_NAME}.
+      {related.length > 0 && (
+        <section className="mt-14">
+          <h2 className="mb-6 text-2xl font-bold tracking-tight">Keep reading</h2>
+          <div className="grid gap-6 sm:grid-cols-2">
+            {related.map((r) => (
+              <ArticleCard key={r.slug} post={r} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <p className="mt-12 text-center text-sm text-muted">
+        Find more templates and guides across {SITE_NAME}.
       </p>
     </article>
   );

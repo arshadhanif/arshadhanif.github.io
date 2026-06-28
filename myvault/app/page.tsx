@@ -4,7 +4,8 @@ import { getFeaturedProducts } from '@/lib/products';
 import ArticleCard from '@/components/ArticleCard';
 import ProductCard from '@/components/ProductCard';
 import NewsletterSignup from '@/components/NewsletterSignup';
-import { SITE_TAGLINE } from '@/lib/constants';
+import LeadMagnet from '@/components/LeadMagnet';
+import { SITE_TAGLINE, LEAD_MAGNET } from '@/lib/constants';
 
 const VALUE_PROPS = [
   {
@@ -74,6 +75,17 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Free starter kit (lead magnet) */}
+      <section className="container-page py-12">
+        <LeadMagnet
+          variant="banner"
+          title={LEAD_MAGNET.title}
+          description={LEAD_MAGNET.description}
+          fileUrl={LEAD_MAGNET.fileUrl}
+          format={LEAD_MAGNET.format}
+        />
       </section>
 
       {/* Latest articles */}

@@ -5,19 +5,20 @@ import { SITE_NAME } from '@/lib/constants';
 export const metadata: Metadata = {
   title: 'Newsletter',
   description:
-    'Join the MyVault newsletter for practical ERP, Oracle Fusion, Excel, and finance career insights.',
+    'Join the MyVault newsletter for practical ERP, Oracle Fusion, Excel and finance career insights, plus the free starter kit.',
   openGraph: {
     title: 'Newsletter',
     description:
-      'Join the MyVault newsletter for practical ERP, Oracle Fusion, Excel, and finance career insights.',
+      'Join the MyVault newsletter for practical ERP, Oracle Fusion, Excel and finance career insights.',
   },
 };
 
 const BENEFITS = [
-  'Practical Oracle Fusion & ERP tips you can apply immediately',
+  'The free ERP and Finance Starter Kit the moment you join',
+  'Practical Oracle Fusion and ERP tips you can use straight away',
   'Excel techniques and templates for finance work',
   'Career insights for breaking into and growing in consulting',
-  'Early access to new products and resources',
+  'A first look at new products and free resources',
 ];
 
 export default function NewsletterPage() {
@@ -31,8 +32,8 @@ export default function NewsletterPage() {
           The {SITE_NAME} Newsletter
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-lg text-muted">
-          Join finance and ERP professionals getting sharp, practical insights
-          delivered straight to their inbox.
+          Join finance and ERP professionals getting practical insights straight
+          to their inbox. Subscribe and the free starter kit is yours.
         </p>
       </header>
 

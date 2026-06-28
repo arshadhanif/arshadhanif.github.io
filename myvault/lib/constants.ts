@@ -64,7 +64,17 @@ export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 export const NAV_LINKS = [
   { href: '/blog', label: 'Articles' },
   { href: '/store', label: 'Store' },
+  { href: '/resources', label: 'Free Resources' },
   { href: '/services', label: 'Services' },
   { href: '/about', label: 'About' },
-  { href: '/newsletter', label: 'Newsletter' },
 ];
+
+// The headline free offer used to grow the email list. This is the thing the
+// homepage and article pages point people to. Swap the file once it is ready.
+export const LEAD_MAGNET = {
+  title: "The ERP and Finance Starter Kit",
+  description:
+    'A free bundle to get a quick win this week: a one-page month-end close checklist, an OTBI subject area cheat sheet, and a set of Excel finance shortcuts.',
+  fileUrl: '/downloads/erp-finance-starter-kit.pdf',
+  format: 'PDF',
+};
