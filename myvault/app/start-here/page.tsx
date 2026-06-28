@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getAllPosts } from '@/lib/posts';
 import { getFeaturedResources } from '@/lib/resources';
 import ArticleCard from '@/components/ArticleCard';
-import LeadMagnet from '@/components/LeadMagnet';
+import ResourceCard from '@/components/ResourceCard';
 import { SITE_NAME } from '@/lib/constants';
 
 export const metadata: Metadata = {
@@ -99,13 +99,7 @@ export default function StartHerePage() {
         </div>
         <div className="grid gap-6 sm:grid-cols-2">
           {resources.map((resource) => (
-            <LeadMagnet
-              key={resource.id}
-              title={resource.title}
-              description={resource.description}
-              fileUrl={resource.fileUrl}
-              format={resource.format}
-            />
+            <ResourceCard key={resource.id} resource={resource} />
           ))}
         </div>
       </section>

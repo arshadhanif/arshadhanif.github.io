@@ -69,6 +69,10 @@ export const NAV_LINKS = [
   { href: '/about', label: 'About' },
 ];
 
+// Beehiiv subscribe form id (from the embed snippet). Used by the BeehiivForm
+// component for all email capture across the site.
+export const BEEHIIV_FORM_ID = '918006cc-0744-44ac-a374-75efce67f345';
+
 // The headline free offer used to grow the email list. This is the thing the
 // homepage and article pages point people to. Swap the file once it is ready.
 export const LEAD_MAGNET = {

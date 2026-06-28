@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getAllResources } from '@/lib/resources';
-import LeadMagnet from '@/components/LeadMagnet';
+import ResourceCard from '@/components/ResourceCard';
+import NewsletterSignup from '@/components/NewsletterSignup';
 import { SITE_NAME } from '@/lib/constants';
 
 export const metadata: Metadata = {
@@ -26,21 +27,22 @@ export default function ResourcesPage() {
         </h1>
         <p className="mt-4 text-lg text-muted">
           Useful things you can grab for free: checklists, cheat sheets and
-          templates built for real finance and ERP work. Drop your email and the
-          download is yours.
+          templates built for real finance and ERP work. No email required, just
+          download and go.
         </p>
       </header>
 
       <div className="grid gap-6 sm:grid-cols-2">
         {resources.map((resource) => (
-          <LeadMagnet
-            key={resource.id}
-            title={resource.title}
-            description={resource.description}
-            fileUrl={resource.fileUrl}
-            format={resource.format}
-          />
+          <ResourceCard key={resource.id} resource={resource} />
         ))}
+      </div>
+
+      <div className="mt-12">
+        <NewsletterSignup
+          heading="Want the new ones too?"
+          subheading="Subscribe and get new templates and guides as they drop, plus the free starter kit."
+        />
       </div>
 
       <div className="mt-12 rounded-xl border border-border bg-surface p-7 text-center">
