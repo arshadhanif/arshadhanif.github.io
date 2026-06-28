@@ -72,7 +72,7 @@ const organizationSchema = {
   url: `${siteBase}/`,
   logo: `${siteBase}/favicon.svg`,
   description: SITE_DESCRIPTION,
-  sameAs: [SOCIAL.linkedin, SOCIAL.github],
+  sameAs: [SOCIAL.linkedin, SOCIAL.website],
 };
 
 const websiteSchema = {

@@ -50,7 +50,7 @@ export const FOUNDER = {
 
 export const SOCIAL = {
   linkedin: 'https://www.linkedin.com/in/arshad-hanif-acca-erp/',
-  github: 'https://github.com/arshadhanif',
+  website: 'https://arshadhanif.github.io/',
 };
 
 // Blog categories (used for filter tags and badge styling).
