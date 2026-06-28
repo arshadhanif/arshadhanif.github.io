@@ -3,6 +3,7 @@ import { listWatchlist, removeFromWatchlist } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { Poster, Spinner, Empty, GroupChips, TitleLink } from '../components/ui'
 import MarkWatchedModal from '../components/MarkWatchedModal'
+import Roulette from '../components/Roulette'
 
 export default function Watchlist() {
   const { groups, profiles } = useAppData()
@@ -13,6 +14,7 @@ export default function Watchlist() {
   const [typeF, setTypeF] = useState('all')
   const [sort, setSort] = useState('recent')
   const [q, setQ] = useState('')
+  const [roulette, setRoulette] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -38,7 +40,10 @@ export default function Watchlist() {
 
   return (
     <div className="page">
-      <h1>Watchlist</h1>
+      <div className="page-head">
+        <h1>Watchlist</h1>
+        {items.length > 0 && <button className="btn sm primary" onClick={() => setRoulette(true)}>🎲 Surprise me</button>}
+      </div>
       <GroupChips groups={groups} value={groupId} onChange={setGroupId} />
       <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
         <input placeholder="Search title…" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: '1 1 160px' }} />
@@ -86,6 +91,14 @@ export default function Watchlist() {
             )
           })}
         </div>
+      )}
+
+      {roulette && (
+        <Roulette
+          pool={view}
+          onClose={() => setRoulette(false)}
+          onWatched={(it) => { setRoulette(false); setWatchItem({ titleId: it.titles.id, title: it.titles.title, media_type: it.titles.media_type, total_episodes: it.titles.total_episodes, _watchlistId: it.id }) }}
+        />
       )}
 
       {watchItem && (

@@ -392,6 +392,16 @@ input:focus, select:focus, textarea:focus {
 .ep2-facts dt { font-size: 11px; color: var(--text-faint-solid); text-transform: uppercase; letter-spacing: .4px; }
 .ep2-facts dd { margin: 1px 0 0; font-size: 13px; font-weight: 600; }
 
+/* watchlist roulette */
+.roulette-poster { transition: transform .12s; }
+.roulette-poster.spinning { animation: rouletteShake .12s linear infinite; }
+.roulette-poster.spinning .poster { box-shadow: 0 0 0 2px var(--accent-soft); }
+.roulette-poster.landed { animation: roulettePop .4s ease; }
+.roulette-poster.landed .poster { border-color: var(--accent); box-shadow: 0 12px 30px rgba(0,0,0,.4); }
+@keyframes rouletteShake { 0%,100% { transform: translateX(-2px); } 50% { transform: translateX(2px); } }
+@keyframes roulettePop { 0% { transform: scale(.8); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .roulette-poster.spinning, .roulette-poster.landed { animation: none; } }
+
 /* decade challenge */
 .decade-chip { padding: 7px 13px; border-radius: 999px; font-weight: 800; font-size: 13px; background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text-faint-solid); }
 .decade-chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
@@ -409,6 +419,9 @@ input:focus, select:focus, textarea:focus {
 .fab:hover { filter: brightness(1.08); }
 .fab:active { transform: scale(.92); }
 @media (min-width: 820px) { .fab { bottom: 24px; right: 24px; } }
+
+/* lifetime banner */
+.lifetime-banner { background: linear-gradient(120deg, var(--accent-soft), transparent); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 18px; font-size: 15px; line-height: 1.5; }
 
 /* yearly goals */
 .goal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
