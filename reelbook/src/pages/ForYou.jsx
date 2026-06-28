@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { listDiary, listWatchlist } from '../lib/db'
+import { listDiary, listWatchlist, friendFeed } from '../lib/db'
 import { recommendFromHistory, recommendRails, keyOf } from '../lib/recommend'
 import { IMG } from '../lib/tmdb'
 import { useAppData } from '../context/AppData'
@@ -17,6 +17,7 @@ export default function ForYou() {
   const [groupId, setGroupId] = useState(null)
   const [type, setType] = useState('all')
   const [spin, setSpin] = useState(0)
+  const [friendsLoved, setFriendsLoved] = useState([])
 
   useEffect(() => {
     Promise.all([listDiary({ limit: 2000 }), listWatchlist()])
@@ -50,6 +51,27 @@ export default function ForYou() {
       .finally(() => alive && setLoadingRecs(false))
     return () => { alive = false }
   }, [seedEntries, exclude, type, loadingData])
+
+  // "Loved by friends": titles your friends rated 8+ that you haven't seen yet.
+  useEffect(() => {
+    if (loadingData) return
+    let alive = true
+    friendFeed().then((rows) => {
+      const seen = new Set(); const out = []
+      for (const w of rows || []) {
+        if (!w.poster_path || !w.tmdb_id) continue
+        const top = Math.max(0, ...(w.ratings || []).map((r) => r.score || 0))
+        if (top < 8) continue
+        const k = keyOf(w.media_type, w.tmdb_id)
+        if (exclude.has(k) || seen.has(k)) continue
+        seen.add(k)
+        out.push({ tmdb_id: w.tmdb_id, media_type: w.media_type, title: w.title, poster_path: w.poster_path, by: w.household_name })
+        if (out.length >= 16) break
+      }
+      if (alive) setFriendsLoved(out)
+    }).catch(() => {})
+    return () => { alive = false }
+  }, [loadingData, exclude])
 
   // "Tonight's pick": favour the watchlist (things you mean to watch), else a top rec.
   const wlPool = useMemo(() => {
@@ -108,6 +130,21 @@ export default function ForYou() {
                 <button className="btn" onClick={() => setSpin((s) => s + 1)}><Shuffle size={16} /> Spin again</button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {friendsLoved.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <div className="section-head"><h2 style={{ fontSize: 18 }}>❤️ Loved by friends</h2></div>
+          <div className="scroll-x rail">
+            {friendsLoved.map((r) => (
+              <TitleLink className="tile rail-item" key={keyOf(r.media_type, r.tmdb_id)} tmdbId={r.tmdb_id} media={r.media_type}>
+                <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
+                <div className="tile-title">{r.title}</div>
+                <div className="tile-sub faint">{r.by}</div>
+              </TitleLink>
+            ))}
           </div>
         </div>
       )}
