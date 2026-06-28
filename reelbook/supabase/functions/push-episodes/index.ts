@@ -99,34 +99,62 @@ Deno.serve(async (req) => {
 
   // ---- Scheduled scan: triggered by pg_cron with the shared secret ----
   if (body.secret !== c.cron_secret) return json({ error: "forbidden" }, 403)
-  if (!c.tmdb_token) return json({ ok: true, skipped: "tmdb_token not set" })
 
   const { data: subUsers } = await admin.from("push_subscriptions").select("user_id")
   const userIds = [...new Set((subUsers ?? []).map((r: any) => r.user_id))]
   let pushes = 0
+
+  // ---- Subscription reminders: trials ending / renewals due within 2 days ----
+  // Remind once per renewal date (reminded_for guards against repeats).
+  let reminders = 0
+  const today = new Date()
+  const horizon = new Date(today.getTime() + 2 * 86400000).toISOString().slice(0, 10)
   for (const uid of userIds) {
-    const { data: rows } = await admin
-      .from("notif_state")
-      .select("title_id, baseline_aired, pushed_aired, titles!inner(tmdb_id, media_type, title)")
-      .eq("user_id", uid)
-    for (const r of rows ?? []) {
-      const t = (r as any).titles
-      if (!t || t.media_type !== "tv" || !t.tmdb_id) continue
-      const aired = await tmdbAired(c.tmdb_token, t.tmdb_id)
-      if (aired == null) continue
-      const baseline = (r as any).baseline_aired ?? 0
-      const threshold = Math.max(baseline, (r as any).pushed_aired ?? 0)
-      if (aired > threshold) {
-        const n = aired - baseline
-        await sendToUser(uid, {
-          title: t.title,
-          body: `🆕 ${n} new episode${n > 1 ? "s" : ""} aired`,
-          url: "/notifications",
-        })
-        await admin.from("notif_state").update({ pushed_aired: aired }).eq("user_id", uid).eq("title_id", (r as any).title_id)
-        pushes++
+    const { data: dueSubs } = await admin
+      .from("subscriptions")
+      .select("id, name, cost, currency, cycle, renews_on, reminded_for")
+      .eq("owner_id", uid).eq("active", true)
+      .not("renews_on", "is", null)
+      .lte("renews_on", horizon)
+    for (const s of dueSubs ?? []) {
+      const sub = s as any
+      if (sub.reminded_for === sub.renews_on) continue
+      const isTrial = sub.cycle === "trial"
+      const when = sub.renews_on
+      const bodyText = isTrial
+        ? `⏰ Your ${sub.name} free trial ends ${when}. Cancel before then to avoid being charged.`
+        : `💳 ${sub.name} renews ${when}${sub.cost ? ` (${sub.currency} ${sub.cost})` : ""}.`
+      await sendToUser(uid, { title: "ReelBook subscriptions", body: bodyText, url: "/subscriptions" })
+      await admin.from("subscriptions").update({ reminded_for: sub.renews_on }).eq("id", sub.id)
+      reminders++
+    }
+  }
+
+  if (c.tmdb_token) {
+    for (const uid of userIds) {
+      const { data: rows } = await admin
+        .from("notif_state")
+        .select("title_id, baseline_aired, pushed_aired, titles!inner(tmdb_id, media_type, title)")
+        .eq("user_id", uid)
+      for (const r of rows ?? []) {
+        const t = (r as any).titles
+        if (!t || t.media_type !== "tv" || !t.tmdb_id) continue
+        const aired = await tmdbAired(c.tmdb_token, t.tmdb_id)
+        if (aired == null) continue
+        const baseline = (r as any).baseline_aired ?? 0
+        const threshold = Math.max(baseline, (r as any).pushed_aired ?? 0)
+        if (aired > threshold) {
+          const n = aired - baseline
+          await sendToUser(uid, {
+            title: t.title,
+            body: `🆕 ${n} new episode${n > 1 ? "s" : ""} aired`,
+            url: "/notifications",
+          })
+          await admin.from("notif_state").update({ pushed_aired: aired }).eq("user_id", uid).eq("title_id", (r as any).title_id)
+          pushes++
+        }
       }
     }
   }
-  return json({ ok: true, users: userIds.length, pushes })
+  return json({ ok: true, users: userIds.length, pushes, reminders })
 })

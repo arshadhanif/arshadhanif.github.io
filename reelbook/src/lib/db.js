@@ -718,21 +718,21 @@ export async function reorderFavorites(orderedIds) {
 export async function listSubscriptions() {
   const { data, error } = await supabase
     .from('subscriptions')
-    .select('id, name, cost, currency, cycle, active, note, category, plan, paid_by, provider, owner_id, created_at')
+    .select('id, name, cost, currency, cycle, active, note, category, plan, paid_by, provider, renews_on, owner_id, created_at')
     .order('created_at', { ascending: true })
   if (error) throw error
   return data || []
 }
 
 const FREE_CYCLES = ['free', 'trial', 'tier', 'bundle']
-export async function createSubscription({ name, cost, currency, cycle, note, category, plan, paidBy, provider, ownerId }) {
+export async function createSubscription({ name, cost, currency, cycle, note, category, plan, paidBy, provider, renewsOn, ownerId }) {
   const { data: hm } = await supabase
     .from('household_members').select('household_id').eq('profile_id', ownerId).limit(1).maybeSingle()
   const isFree = FREE_CYCLES.includes(cycle)
   const { error } = await supabase.from('subscriptions').insert({
     name, cost: isFree ? 0 : Number(cost) || 0, currency: currency || 'USD', cycle: cycle || 'monthly',
     note: note || null, category: category || null, plan: plan || null,
-    paid_by: paidBy || null, provider: provider || null,
+    paid_by: paidBy || null, provider: provider || null, renews_on: renewsOn || null,
     owner_id: ownerId, household_id: hm?.household_id || null,
   })
   if (error) throw error
