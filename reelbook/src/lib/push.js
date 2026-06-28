@@ -22,7 +22,7 @@ function urlBase64ToUint8Array(base64) {
 
 async function swReady() {
   const reg = await navigator.serviceWorker.getRegistration()
-  return reg || navigator.serviceWorker.register('/sw.js')
+  return reg || navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js')
 }
 
 // Current state: 'unsupported' | 'denied' | 'on' | 'off'

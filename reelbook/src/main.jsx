@@ -36,7 +36,10 @@ const Subscriptions = lazy(() => import('./pages/Subscriptions'))
 const PublicProfile = lazy(() => import('./pages/PublicProfile'))
 
 // Register the service worker so ReelBook is installable on phones.
-if ('serviceWorker' in navigator) {
+// Only on a root deployment (Vercel) — on the GitHub Pages preview the app
+// lives under a subpath that shares its origin with the portfolio, so we skip
+// SW registration there to avoid controlling the whole origin.
+if ('serviceWorker' in navigator && import.meta.env.BASE_URL === '/') {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {})
   })
@@ -55,7 +58,7 @@ function Protected() {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
       <AuthProvider>
         <ToastProvider>
           <Suspense fallback={<Spinner label="Loading…" />}>
