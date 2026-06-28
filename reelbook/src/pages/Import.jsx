@@ -1,11 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { findByImdbId, findByTitle, findByTvdbId } from '../lib/tmdb'
 import {
   ensureTitlesBulk, insertWatchesBulk, insertRatingsBulk, insertWatchlistBulk, markEpisodesBulk,
+  createImportBatch, listImportBatches, revertImportBatch,
 } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/Toast'
 import { Empty } from '../components/ui'
+import { fmtDate } from '../lib/dates'
+
+const newId = () => (crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`)
 
 // Run async fn over items with bounded concurrency; calls onTick after each.
 async function pool(items, fn, concurrency, onTick) {
@@ -144,8 +149,23 @@ export default function Import() {
   const [tvFiles, setTvFiles] = useState([])
   const [skippedTitles, setSkippedTitles] = useState([])
   const [showSkipped, setShowSkipped] = useState(false)
+  const [batches, setBatches] = useState([])
+  const [reverting, setReverting] = useState(null)
+  const toast = useToast()
 
   const cfg = MODES[mode]
+
+  const loadBatches = () => listImportBatches().then(setBatches).catch(() => {})
+  useEffect(() => { loadBatches() }, [])
+
+  async function revertBatch(b) {
+    const n = b.watches_count + b.episodes_count + b.watchlist_count
+    if (!confirm(`Undo this import? This removes the ~${n} items it added (and their ratings). This cannot be undone.`)) return
+    setReverting(b.id)
+    try { await revertImportBatch(b.id); toast('Import reverted'); await loadBatches() }
+    catch (e) { toast(e.message || 'Could not revert', 'err') }
+    finally { setReverting(null) }
+  }
 
   function onFile(e) {
     const file = e.target.files?.[0]
@@ -204,6 +224,8 @@ export default function Import() {
     if (!total) { setStatus({ type: 'error', text: 'No recognised TV Time files.' }); return }
 
     setRunning(true)
+    const batchId = newId()
+    let epCount = 0
     let done = 0
     setProgress({ done: 0, total, ok: 0, skipped: 0 })
     const tick = () => { done++; setProgress((p) => ({ ...p, done })) }
@@ -231,7 +253,8 @@ export default function Import() {
       const watchRows = [], wlRows = []
       for (const { s, seed } of epR) {
         const tid = seed && map.get(keyOf(seed)); if (!tid) continue
-        await markEpisodesBulk({ titleId: tid, groupId, episodes: s.watched, createdBy: user.id })
+        await markEpisodesBulk({ titleId: tid, groupId, episodes: s.watched, createdBy: user.id, importBatch: batchId })
+        epCount += s.watched.length
         const dates = s.watched.map((e) => e.watchedOn).filter(Boolean).sort()
         const last = dates[dates.length - 1]
         watchRows.push({ title_id: tid, group_id: groupId, watched_on: last || null, date_precision: last ? 'day' : null, episodes_watched: s.watched.length, created_by: user.id, visibility: 'private' })
@@ -251,8 +274,13 @@ export default function Import() {
         else watchRows.push({ title_id: tid, group_id: groupId, watched_on: null, date_precision: null, created_by: user.id, visibility: 'private' })
       }
 
-      await insertWatchesBulk(watchRows)
-      await insertWatchlistBulk(wlRows)
+      const tag = (r) => ({ ...r, import_batch: batchId })
+      await insertWatchesBulk(watchRows.map(tag))
+      await insertWatchlistBulk(wlRows.map(tag))
+      if (watchRows.length + wlRows.length + epCount > 0) {
+        await createImportBatch({ id: batchId, ownerId: user.id, kind: 'TV Time', groupId, filename: tvFiles.map((f) => f.name).join(', '), watches: watchRows.length, watchlist: wlRows.length, episodes: epCount }).catch(() => {})
+        loadBatches()
+      }
       setProgress({ done: total, total, ok: watchRows.length + wlRows.length, skipped: 0 })
       setStatus({ type: 'ok', text: `Done. ${watchRows.length} watched, ${wlRows.length} on watchlist.` })
     } catch (e) {
@@ -266,6 +294,7 @@ export default function Import() {
   async function runImport() {
     if (!groupId) { setStatus({ type: 'error', text: 'Pick a group first.' }); return }
     setRunning(true)
+    const batchId = newId()
     let done = 0
     setProgress({ done: 0, total: items.length, ok: 0, skipped: 0 })
 
@@ -283,23 +312,30 @@ export default function Import() {
       // 2) Upsert all titles in a few queries.
       const map = await ensureTitlesBulk(matched.map((m) => m.seed))
 
+      let wlCount = 0, watchCount = 0
       if (cfg.target === 'watchlist') {
-        const rows = matched.map((m) => ({ title_id: map.get(keyOf(m.seed)), group_id: groupId, added_by: user.id })).filter((r) => r.title_id)
+        const rows = matched.map((m) => ({ title_id: map.get(keyOf(m.seed)), group_id: groupId, added_by: user.id, import_batch: batchId })).filter((r) => r.title_id)
         await insertWatchlistBulk(rows)
+        wlCount = rows.length
       } else {
         // 3) Bulk-insert watches, then attach ratings.
         const watchRows = [], scores = []
         for (const m of matched) {
           const tid = map.get(keyOf(m.seed)); if (!tid) continue
           const wd = normDate(m.it.date)
-          watchRows.push({ title_id: tid, group_id: groupId, watched_on: wd || null, date_precision: wd ? 'day' : null, created_by: user.id, visibility: 'private' })
+          watchRows.push({ title_id: tid, group_id: groupId, watched_on: wd || null, date_precision: wd ? 'day' : null, created_by: user.id, visibility: 'private', import_batch: batchId })
           const s = m.it.score ? Math.max(1, Math.min(10, Math.round(Number(m.it.score)))) : null
           scores.push(profileId ? s : null)
         }
         const ids = await insertWatchesBulk(watchRows)
+        watchCount = ids.length
         const ratingRows = []
         ids.forEach((wid, i) => { if (wid && scores[i]) ratingRows.push({ watch_id: wid, profile_id: profileId, score: scores[i] }) })
         if (ratingRows.length) await insertRatingsBulk(ratingRows)
+      }
+      if (watchCount + wlCount > 0) {
+        await createImportBatch({ id: batchId, ownerId: user.id, kind: cfg.label, groupId, profileId: cfg.needsPerson ? profileId : null, filename, watches: watchCount, watchlist: wlCount }).catch(() => {})
+        loadBatches()
       }
       setProgress({ done: items.length, total: items.length, ok: matched.length, skipped })
       setStatus({ type: 'ok', text: `Done. ${matched.length} ${cfg.target === 'watchlist' ? 'added to watchlist' : 'logged'}, ${skipped} unmatched.` })
@@ -445,6 +481,35 @@ export default function Import() {
 
       {!cfg.multi && items.length === 0 && !status && (
         <Empty>Choose a file above to preview and import your history.</Empty>
+      )}
+
+      {batches.length > 0 && (
+        <div style={{ marginTop: 28 }}>
+          <div className="section-head"><h2 style={{ fontSize: 18 }}>Import history</h2></div>
+          <p className="faint" style={{ margin: '0 0 12px' }}>Each import is tracked here. “Undo” removes exactly what that import added — handy if you imported into the wrong group or by mistake.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {batches.map((b) => {
+              const parts = [
+                b.watches_count ? `${b.watches_count} watched` : '',
+                b.episodes_count ? `${b.episodes_count} episodes` : '',
+                b.watchlist_count ? `${b.watchlist_count} watchlist` : '',
+              ].filter(Boolean).join(' · ')
+              return (
+                <div className="card row" key={b.id} style={{ gap: 12, alignItems: 'center' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <strong>{b.kind}</strong>
+                    {b.groups?.name && <span className="chip" style={{ marginLeft: 8 }}>{b.groups.name}</span>}
+                    {b.profiles?.name && <span className="chip" style={{ marginLeft: 6 }}>{b.profiles.name}</span>}
+                    <div className="faint" style={{ marginTop: 3 }}>{parts || 'nothing added'} · {fmtDate(b.created_at)}</div>
+                  </div>
+                  <button className="btn sm danger" disabled={reverting === b.id} onClick={() => revertBatch(b)}>
+                    {reverting === b.id ? 'Undoing…' : 'Undo'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       )}
     </div>
   )
