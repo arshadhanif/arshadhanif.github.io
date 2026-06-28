@@ -73,7 +73,7 @@ export default function Insights() {
 
       {lifeHours > 0 && (
         <div className="lifetime-banner">
-          You’ve spent <strong>{lifeHours.toLocaleString()} hours</strong> watching — about <strong>{lifeDays} days</strong> of your life on screen. 🍿
+          You’ve spent <strong>{lifeHours.toLocaleString()} hours</strong> watching, about <strong>{lifeDays} days</strong> of your life on screen. 🍿
         </div>
       )}
 
@@ -217,8 +217,8 @@ export default function Insights() {
                     <div className="cmp-row"><span>Watches</span><b>{gc.total}</b></div>
                     <div className="cmp-row"><span>Movies / TV</span><b>{gc.movies} / {gc.tv}</b></div>
                     <div className="cmp-row"><span>Episodes</span><b>{gc.episodes}</b></div>
-                    <div className="cmp-row"><span>Avg rating</span><b>{gc.avg != null ? `★ ${gc.avg}` : '—'}</b></div>
-                    <div className="cmp-row"><span>Top genre</span><b>{gc.topGenre || '—'}</b></div>
+                    <div className="cmp-row"><span>Avg rating</span><b>{gc.avg != null ? `★ ${gc.avg}` : 'N/A'}</b></div>
+                    <div className="cmp-row"><span>Top genre</span><b>{gc.topGenre || 'N/A'}</b></div>
                   </div>
                 ))}
               </div>

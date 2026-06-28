@@ -52,7 +52,7 @@ export default function AddToCollectionModal({ item, onClose }) {
         {lists == null ? (
           <div className="faint">Loading…</div>
         ) : lists.length === 0 ? (
-          <div className="faint">No lists yet — create one above.</div>
+          <div className="faint">No lists yet. Create one above.</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {lists.map((c) => (

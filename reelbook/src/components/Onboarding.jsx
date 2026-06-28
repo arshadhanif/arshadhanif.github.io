@@ -10,7 +10,7 @@ function markDone() { try { localStorage.setItem(KEY, '1') } catch {} }
 
 const STEPS = [
   { icon: '🎬', title: 'Welcome to ReelBook', body: 'Your private movie & TV diary, just for you and the people you watch with.' },
-  { icon: '👥', title: 'Tag who watched', body: 'Every watch is logged to a group — “Just me”, “Us”, “Family”. Your lists and stats filter by group, so everyone’s history stays clear.' },
+  { icon: '👥', title: 'Tag who watched', body: 'Every watch is logged to a group: “Just me”, “Us”, “Family”. Your lists and stats filter by group, so everyone’s history stays clear.' },
   { icon: '⭐', title: 'Rate it your way', body: 'Each person rates out of 10 separately, so you can see your own averages and exactly where your tastes agree or clash.' },
   { icon: '📺', title: 'Track every episode', body: 'Tick off episodes, get a heatmap of your year, “Coming Soon” for new releases, and push alerts when shows return.' },
 ]
