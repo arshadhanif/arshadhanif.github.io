@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { listSubscriptions, createSubscription, updateSubscription, deleteSubscription } from '../lib/db'
+import { listSubscriptions, createSubscription, updateSubscription, deleteSubscription, listProfiles, listFriends } from '../lib/db'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/Toast'
 import { getPref, setPref } from '../lib/prefs'
@@ -11,54 +11,80 @@ const SERVICES = ['Netflix', 'OSN+', 'Prime Video', 'Disney+', 'Apple TV+', 'Sha
 const CURRENCIES = ['PKR', 'SAR', 'AED', 'USD', 'GBP', 'EUR', 'INR', 'QAR']
 const CATEGORIES = ['Video streaming', 'Music', 'Sports', 'News & reading', 'Cloud & storage', 'Gaming', 'Other']
 const PLANS = ['Basic', 'Standard', 'Premium', 'Family', 'Mobile', 'Ad-supported', '4K Ultra HD', 'Annual', 'Other']
-const PAID_BY = ['Me', 'Partner', 'Shared', 'Family', 'Work']
+// Telecom / fibre / app-store bundles, across the regions we use
+const PROVIDERS = ['STC', 'Mobily', 'Zain', 'Salam', 'e& (Etisalat)', 'du', 'PTCL', 'Jazz', 'Zong', 'Ufone', 'Nayatel', 'StormFiber', 'Apple App Store', 'Google Play', 'Direct (app / website)', 'Gift card']
 const OTHER = 'Other…'
+
+// Billing cycles — including the free variants
+const CYCLES = [
+  ['monthly', 'Monthly'],
+  ['yearly', 'Yearly'],
+  ['trial', 'Free trial'],
+  ['tier', 'Free tier'],
+  ['bundle', 'Included in a bundle'],
+]
+const FREE_CYCLES = ['free', 'trial', 'tier', 'bundle']
+const isFreeCycle = (c) => FREE_CYCLES.includes(c)
+const FREE_BADGE = { trial: 'Free trial', tier: 'Free tier', bundle: 'Bundled', free: 'Free' }
 
 export default function Subscriptions() {
   const { user } = useAuth()
   const toast = useToast()
   const [subs, setSubs] = useState([])
+  const [people, setPeople] = useState([])   // names: household members + friends
   const [loading, setLoading] = useState(true)
   const [rates, setRates] = useState(null)
   const [display, setDisplay] = useState(getPref('currency', 'PKR')) // display/convert target, or 'ALL'
   const [filter, setFilter] = useState('all')                         // all | active | paused
 
   // add form
-  const [service, setService] = useState('')      // dropdown value (a known service or OTHER)
-  const [customName, setCustomName] = useState('') // typed when service === OTHER
+  const [service, setService] = useState('')
+  const [serviceOther, setServiceOther] = useState('')
   const [cost, setCost] = useState('')
   const [cur, setCur] = useState(getPref('currency', 'PKR') === 'ALL' ? 'PKR' : getPref('currency', 'PKR'))
   const [cycle, setCycle] = useState('monthly')
   const [category, setCategory] = useState('')
   const [plan, setPlan] = useState('')
+  const [provider, setProvider] = useState('')
+  const [providerOther, setProviderOther] = useState('')
   const [paidBy, setPaidBy] = useState('')
+  const [paidByOther, setPaidByOther] = useState('')
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
-  const isFree = cycle === 'free'
-  const name = (service === OTHER ? customName : service).trim()
+
+  const isFree = isFreeCycle(cycle)
+  const name = (service === OTHER ? serviceOther : service).trim()
+  const providerVal = (provider === OTHER ? providerOther : provider).trim()
+  const paidByVal = (paidBy === OTHER ? paidByOther : paidBy).trim()
 
   async function load() { setLoading(true); try { setSubs(await listSubscriptions()) } finally { setLoading(false) } }
-  useEffect(() => { load(); getRates().then(setRates).catch(() => {}) }, [])
+  useEffect(() => {
+    load()
+    getRates().then(setRates).catch(() => {})
+    // Build the "Paid by" people list from the household + accepted friends
+    Promise.all([listProfiles().catch(() => []), listFriends().catch(() => [])]).then(([profs, friends]) => {
+      const names = [
+        ...profs.map((p) => p.name).filter(Boolean),
+        ...friends.filter((f) => f.status === 'accepted').map((f) => f.other_name).filter(Boolean),
+      ]
+      setPeople([...new Set(names)])
+    })
+  }, [])
 
-  // monthly amount in the subscription's own currency
-  const monthlyNative = (s) => (s.cycle === 'free' ? 0 : s.cycle === 'yearly' ? Number(s.cost) / 12 : Number(s.cost))
-  // monthly amount converted into the chosen display currency (null if not convertible)
-  const monthlyIn = (s, target) => {
-    const n = monthlyNative(s)
-    if (!n) return 0
-    return convert(n, s.currency || 'USD', target, rates)
-  }
+  const monthlyNative = (s) => (isFreeCycle(s.cycle) ? 0 : s.cycle === 'yearly' ? Number(s.cost) / 12 : Number(s.cost))
+  const monthlyIn = (s, target) => { const n = monthlyNative(s); if (!n) return 0; return convert(n, s.currency || 'USD', target, rates) }
 
   const totals = useMemo(() => {
     const active = subs.filter((s) => s.active)
+    const free = active.filter((s) => isFreeCycle(s.cycle)).length
     if (display === 'ALL') {
       const byCur = {}
       for (const s of active) { const c = s.currency || 'USD'; byCur[c] = (byCur[c] || 0) + monthlyNative(s) }
-      return { byCur, count: active.length, free: active.filter((s) => s.cycle === 'free').length }
+      return { byCur, count: active.length, free }
     }
     let m = 0, missing = false
     for (const s of active) { const v = monthlyIn(s, display); if (v == null) missing = true; else m += v }
-    return { month: m, year: m * 12, count: active.length, free: active.filter((s) => s.cycle === 'free').length, missing }
+    return { month: m, year: m * 12, count: active.length, free, missing }
   }, [subs, display, rates])
 
   async function add(e) {
@@ -68,11 +94,13 @@ export default function Subscriptions() {
     try {
       await createSubscription({
         name, cost, currency: cur, cycle, note: note.trim(),
-        category: category || null, plan: plan || null, paidBy: paidBy || null,
+        category: category || null, plan: plan || null,
+        provider: providerVal || null, paidBy: paidByVal || null,
         ownerId: user.id,
       })
-      setService(''); setCustomName(''); setCost(''); setCycle('monthly')
-      setCategory(''); setPlan(''); setPaidBy(''); setNote('')
+      setService(''); setServiceOther(''); setCost(''); setCycle('monthly')
+      setCategory(''); setPlan(''); setProvider(''); setProviderOther('')
+      setPaidBy(''); setPaidByOther(''); setNote('')
       await load(); toast('Subscription added')
     } catch (e2) { toast(e2.message || 'Could not add', 'err') } finally { setBusy(false) }
   }
@@ -82,6 +110,7 @@ export default function Subscriptions() {
   const fmt = (n, c) => `${c} ${Number(n).toLocaleString(undefined, { maximumFractionDigits: n < 100 ? 2 : 0 })}`
 
   const view = subs.filter((s) => filter === 'all' || (filter === 'active' ? s.active : !s.active))
+  const peopleOptions = [...new Set([...people, 'Shared', 'Family', 'Work'])]
 
   return (
     <div className="page" style={{ maxWidth: 680 }}>
@@ -109,42 +138,81 @@ export default function Subscriptions() {
       <form className="card" style={{ marginBottom: 18 }} onSubmit={add}>
         <strong>Add a subscription</strong>
 
-        {/* Service — a real dropdown (List of Values), with an "Other…" escape hatch */}
         <Field label="Service">
           <select value={service} onChange={(e) => setService(e.target.value)}>
             <option value="" disabled>Choose a service…</option>
             {SERVICES.map((s) => <option key={s} value={s}>{s}</option>)}
             <option value={OTHER}>{OTHER}</option>
           </select>
+          {service === OTHER && (
+            <input value={serviceOther} onChange={(e) => setServiceOther(e.target.value)} autoFocus
+              placeholder="Type the service name" style={{ marginTop: 8 }} />
+          )}
         </Field>
-        {service === OTHER && (
-          <input value={customName} onChange={(e) => setCustomName(e.target.value)} autoFocus
-            placeholder="Type the service name" style={{ marginTop: 8 }} />
-        )}
 
-        <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-          <input type="number" min="0" step="0.01" value={isFree ? '' : cost} disabled={isFree}
-            onChange={(e) => setCost(e.target.value)} placeholder={isFree ? 'Free' : 'Cost'} style={{ flex: '1 1 80px' }} />
-          <select value={cur} onChange={(e) => setCur(e.target.value)} disabled={isFree} style={{ flex: '1 1 90px' }}>
-            {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select value={cycle} onChange={(e) => setCycle(e.target.value)} style={{ flex: '1 1 130px' }}>
-            <option value="monthly">/ month</option>
-            <option value="yearly">/ year</option>
-            <option value="free">Free / included</option>
-          </select>
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <Field label="Cost" flex="1 1 90px">
+            <input type="number" min="0" step="0.01" value={isFree ? '' : cost} disabled={isFree}
+              onChange={(e) => setCost(e.target.value)} placeholder={isFree ? 'Free' : '0.00'} />
+          </Field>
+          <Field label="Currency" flex="1 1 90px">
+            <select value={cur} onChange={(e) => setCur(e.target.value)} disabled={isFree}>
+              {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+          <Field label="Billing" flex="1 1 150px">
+            <select value={cycle} onChange={(e) => setCycle(e.target.value)}>
+              {CYCLES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+          </Field>
         </div>
 
-        {/* More fields, each a List of Values */}
-        <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-          <LovSelect value={category} onChange={setCategory} placeholder="Category" options={CATEGORIES} style={{ flex: '1 1 150px' }} />
-          <LovSelect value={plan} onChange={setPlan} placeholder="Plan / tier" options={PLANS} style={{ flex: '1 1 130px' }} />
-          <LovSelect value={paidBy} onChange={setPaidBy} placeholder="Paid by" options={PAID_BY} style={{ flex: '1 1 120px' }} />
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <Field label="Category" flex="1 1 150px">
+            <select value={category} onChange={(e) => setCategory(e.target.value)}>
+              <option value="">Select category…</option>
+              {CATEGORIES.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </Field>
+          <Field label="Plan / tier" flex="1 1 130px">
+            <select value={plan} onChange={(e) => setPlan(e.target.value)}>
+              <option value="">Select plan…</option>
+              {PLANS.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </Field>
         </div>
 
-        <input value={note} onChange={(e) => setNote(e.target.value)} style={{ marginTop: 8 }}
-          placeholder={isFree ? 'Note, e.g. “via Zain fiber” or “trial ends Jan”' : 'Note (optional)'} />
-        <button className="btn primary" style={{ marginTop: 10 }} disabled={busy || !name || (!isFree && !cost)}>Add</button>
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <Field label="Provided / bundled via" flex="1 1 180px">
+            <select value={provider} onChange={(e) => setProvider(e.target.value)}>
+              <option value="">Select provider…</option>
+              {PROVIDERS.map((o) => <option key={o} value={o}>{o}</option>)}
+              <option value={OTHER}>{OTHER}</option>
+            </select>
+            {provider === OTHER && (
+              <input value={providerOther} onChange={(e) => setProviderOther(e.target.value)}
+                placeholder="Type the provider" style={{ marginTop: 8 }} />
+            )}
+          </Field>
+          <Field label="Paid by" flex="1 1 150px">
+            <select value={paidBy} onChange={(e) => setPaidBy(e.target.value)}>
+              <option value="">Select who pays…</option>
+              {peopleOptions.map((o) => <option key={o} value={o}>{o}</option>)}
+              <option value={OTHER}>{OTHER}</option>
+            </select>
+            {paidBy === OTHER && (
+              <input value={paidByOther} onChange={(e) => setPaidByOther(e.target.value)}
+                placeholder="Type a name" style={{ marginTop: 8 }} />
+            )}
+          </Field>
+        </div>
+
+        <Field label="Note">
+          <input value={note} onChange={(e) => setNote(e.target.value)}
+            placeholder={isFree ? 'e.g. “trial ends 12-Jul” or “Muneeza’s account, I share it”' : 'Optional note'} />
+        </Field>
+
+        <button className="btn primary" style={{ marginTop: 12 }} disabled={busy || !name || (!isFree && !cost)}>Add</button>
       </form>
 
       {subs.length > 0 && (
@@ -161,20 +229,22 @@ export default function Subscriptions() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {view.map((s) => {
             const c = s.currency || 'USD'
-            const conv = display !== 'ALL' && c !== display && s.cycle !== 'free' ? monthlyIn(s, display) : null
+            const free = isFreeCycle(s.cycle)
+            const conv = display !== 'ALL' && c !== display && !free ? monthlyIn(s, display) : null
             return (
               <div className="card row" key={s.id} style={{ gap: 12, alignItems: 'center', opacity: s.active ? 1 : 0.55 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
                     <strong>{s.name}</strong>
-                    {s.cycle === 'free' && <span className="chip" style={{ color: 'var(--green)', borderColor: 'var(--green)' }}>Free</span>}
+                    {free && <span className="chip" style={{ color: 'var(--green)', borderColor: 'var(--green)' }}>{FREE_BADGE[s.cycle] || 'Free'}</span>}
                     {s.plan && <span className="chip">{s.plan}</span>}
                     {s.category && <span className="chip">{s.category}</span>}
+                    {s.provider && <span className="chip">via {s.provider}</span>}
                     {s.paid_by && <span className="chip">Paid by {s.paid_by}</span>}
                   </div>
                   <div className="faint" style={{ marginTop: 2 }}>
-                    {s.cycle === 'free'
-                      ? (s.note || 'Free / included')
+                    {free
+                      ? (s.note || FREE_BADGE[s.cycle] || 'Free / included')
                       : <>
                           {fmt(Number(s.cost), c)} / {s.cycle === 'yearly' ? 'year' : 'month'}
                           {conv != null && <> · ≈ {fmt(monthlyIn(s, display), display)}/mo</>}
@@ -197,19 +267,11 @@ export default function Subscriptions() {
   )
 }
 
-// A labelled dropdown that shows a placeholder option until a value is picked.
-function LovSelect({ value, onChange, placeholder, options, style }) {
+// Labelled field: a heading sits above the control so the dropdown's own
+// placeholder never has to double as the label.
+function Field({ label, children, flex }) {
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} style={style}>
-      <option value="">{placeholder}</option>
-      {options.map((o) => <option key={o} value={o}>{o}</option>)}
-    </select>
-  )
-}
-
-function Field({ label, children }) {
-  return (
-    <label style={{ display: 'block', marginTop: 12 }}>
+    <label style={{ display: 'block', marginTop: 12, flex: flex || undefined, minWidth: 0 }}>
       <span className="faint" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>{label}</span>
       {children}
     </label>
