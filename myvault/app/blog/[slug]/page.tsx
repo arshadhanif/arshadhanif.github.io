@@ -8,7 +8,9 @@ import AuthorBio from '@/components/AuthorBio';
 import ShareButtons from '@/components/ShareButtons';
 import ArticleCard from '@/components/ArticleCard';
 import LeadMagnet from '@/components/LeadMagnet';
-import { SITE_NAME, FOUNDER, LEAD_MAGNET } from '@/lib/constants';
+import JsonLd from '@/components/JsonLd';
+import { categorySlug } from '@/lib/categories';
+import { SITE_NAME, FOUNDER, LEAD_MAGNET, SITE_URL, OG_IMAGE } from '@/lib/constants';
 
 export const dynamicParams = false;
 
@@ -57,8 +59,43 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
 
   const related = getRelatedPosts(post.slug, 2);
 
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
+  const siteBase = `${SITE_URL}${base}`;
+  const postUrl = `${siteBase}/blog/${post.slug}/`;
+
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt,
+    datePublished: post.date,
+    dateModified: post.date,
+    articleSection: post.category,
+    image: `${siteBase}${OG_IMAGE}`,
+    author: { '@type': 'Person', name: FOUNDER.name },
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      logo: { '@type': 'ImageObject', url: `${siteBase}/favicon.svg` },
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': postUrl },
+    url: postUrl,
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteBase}/` },
+      { '@type': 'ListItem', position: 2, name: 'Articles', item: `${siteBase}/blog/` },
+      { '@type': 'ListItem', position: 3, name: post.title, item: postUrl },
+    ],
+  };
+
   return (
     <article className="container-page max-w-3xl py-16">
+      <JsonLd data={articleSchema} />
+      <JsonLd data={breadcrumbSchema} />
       <Link
         href="/blog"
         className="text-sm text-muted transition-colors hover:text-accent"
@@ -68,7 +105,11 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
 
       <header className="mt-6">
         <div className="flex items-center gap-3">
-          <CategoryBadge category={post.category} />
+          <CategoryBadge
+            category={post.category}
+            as="link"
+            href={`/blog/category/${categorySlug(post.category)}`}
+          />
           <span className="text-sm text-muted">{post.readTime}</span>
         </div>
         <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">

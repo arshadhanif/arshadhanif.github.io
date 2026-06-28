@@ -3,12 +3,14 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import JsonLd from '@/components/JsonLd';
 import {
   SITE_NAME,
   SITE_TAGLINE,
   SITE_DESCRIPTION,
   SITE_URL,
   OG_IMAGE,
+  SOCIAL,
 } from '@/lib/constants';
 
 const inter = Inter({
@@ -27,6 +29,11 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
+  alternates: {
+    types: {
+      'application/rss+xml': `${basePath}/feed.xml`,
+    },
+  },
   keywords: [
     'Oracle Fusion',
     'ERP',
@@ -56,6 +63,26 @@ export const metadata: Metadata = {
   },
 };
 
+const siteBase = `${SITE_URL}${basePath}`;
+
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: SITE_NAME,
+  url: `${siteBase}/`,
+  logo: `${siteBase}/favicon.svg`,
+  description: SITE_DESCRIPTION,
+  sameAs: [SOCIAL.linkedin, SOCIAL.github],
+};
+
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: SITE_NAME,
+  url: `${siteBase}/`,
+  description: SITE_DESCRIPTION,
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -64,6 +91,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className="flex min-h-screen flex-col">
+        <JsonLd data={organizationSchema} />
+        <JsonLd data={websiteSchema} />
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />

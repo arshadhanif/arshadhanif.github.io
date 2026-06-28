@@ -70,6 +70,11 @@ export function getAllPostSlugs(): string[] {
   return getAllPosts().map((p) => p.slug);
 }
 
+/** All published posts in a given category, newest first. */
+export function getPostsByCategory(category: string): PostMeta[] {
+  return getAllPosts().filter((p) => p.category === category);
+}
+
 /**
  * Posts related to the given slug. Same category first, then most recent,
  * with the current post left out. Used for the "Keep reading" section.
