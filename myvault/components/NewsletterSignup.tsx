@@ -21,7 +21,7 @@ interface NewsletterSignupProps {
 export default function NewsletterSignup({
   variant = 'card',
   heading = 'Join the newsletter',
-  subheading = 'Practical ERP, Oracle Fusion, and finance insights — straight to your inbox. No spam, unsubscribe anytime.',
+  subheading = 'Practical ERP, Oracle Fusion and finance insights, straight to your inbox. No spam, unsubscribe anytime.',
 }: NewsletterSignupProps) {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);

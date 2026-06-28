@@ -2,8 +2,8 @@
 
 > **The go-to resource for ERP and finance professionals.**
 
-A Next.js 14 finance & ERP resource brand — blog, store, services, and
-newsletter — built as a fully static site for GitHub Pages.
+A Next.js 14 finance and ERP resource brand (blog, store, services and
+newsletter) built as a fully static site for GitHub Pages.
 
 > **`MyVault` is a placeholder name.** It lives in a single constant
 > (`SITE_NAME` in [`lib/constants.ts`](lib/constants.ts)) so it can be
@@ -14,7 +14,7 @@ newsletter — built as a fully static site for GitHub Pages.
 - **Next.js 14** (App Router) with `output: 'export'` (static HTML)
 - **Tailwind CSS** for styling
 - **MDX** for blog posts (via `next-mdx-remote`)
-- File-based content — **no database**
+- File-based content, **no database**
 
 ## Getting started
 
@@ -79,16 +79,17 @@ Edit `content/products.json`. Categories: `Templates`, `Report Packages`,
 
 - **`SITE_NAME`** in `lib/constants.ts` (currently `"MyVault"`)
 - **Gumroad URLs** in `content/products.json`
-- **Newsletter form** — `components/NewsletterSignup.tsx` is a local placeholder;
-  wire it to your Mailchimp/Beehiiv embed
-- **Social links** (`SOCIAL`) and **email** (`AUTHOR.email`) in `lib/constants.ts`
+- **Newsletter form**: `components/NewsletterSignup.tsx` is a local placeholder.
+  Wire it to your Mailchimp or Beehiiv embed.
+- **Social links** (`SOCIAL`) and **email** (`FOUNDER.email`) in `lib/constants.ts`
 
 ## Deployment (GitHub Pages)
 
-[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) builds the static
-export and deploys it to GitHub Pages on every push to `main`. Enable
-**Settings → Pages → Source: GitHub Actions** in the repo.
+MyVault lives in the `myvault/` folder of the `arshadhanif.github.io` repo and is
+served at `https://arshadhanif.github.io/myvault/`. The repo root keeps the
+portfolio. The workflow at `.github/workflows/pages.yml` (repo root) builds
+MyVault with `BASE_PATH=/myvault` and publishes it alongside the portfolio in a
+single Pages artifact on every push to `main`.
 
-This repo is a **user** Pages site (served from the domain root), so `basePath`
-is empty. To deploy under a sub-path (project page), set the `BASE_PATH` env var
-(e.g. `BASE_PATH="/myvault"`) — see [`next.config.js`](next.config.js).
+To run the site under a different sub-path, change `BASE_PATH` in that workflow.
+See [`next.config.js`](next.config.js) for how `basePath` is wired.

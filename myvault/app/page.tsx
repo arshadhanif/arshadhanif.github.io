@@ -8,16 +8,16 @@ import { SITE_TAGLINE } from '@/lib/constants';
 
 const VALUE_PROPS = [
   {
-    title: 'Built by a practitioner',
-    body: 'Every template, report pack, and guide comes from real Oracle Fusion and finance engagements — not theory.',
+    title: 'Stop starting from scratch',
+    body: 'Templates and report packs you can drop straight into real work, so you are not rebuilding the same spreadsheet every month.',
   },
   {
-    title: 'Save weeks of work',
-    body: 'Skip the blank page. Start from battle-tested artifacts that you can adapt to your organisation in hours.',
+    title: 'Answers from the field',
+    body: 'Plain-language guides on Oracle Fusion, Excel and ERP, written for the people who actually do the work.',
   },
   {
-    title: 'Stay ahead',
-    body: 'Sharp, practical insights on ERP strategy, Excel, and career growth for finance professionals.',
+    title: 'Get sharper every week',
+    body: 'Practical ideas on reporting, tools and finance careers. No fluff, no jargon.',
   },
 ];
 
@@ -39,8 +39,9 @@ export default function HomePage() {
               {SITE_TAGLINE}
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted">
-              Premium templates, report packages, and expert guidance to help you
-              ship faster, report cleaner, and grow your finance career.
+              Templates, guides and tools that help finance and ERP teams work
+              faster and report cleaner. Free resources, a no-noise newsletter,
+              and a store full of things you can use today.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
@@ -53,7 +54,7 @@ export default function HomePage() {
                 href="/blog"
                 className="w-full rounded-md border border-border px-6 py-3 font-semibold text-foreground transition-colors hover:border-accent hover:text-accent sm:w-auto"
               >
-                Read the blog
+                Read the articles
               </Link>
             </div>
           </div>
@@ -82,7 +83,7 @@ export default function HomePage() {
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
               Latest articles
             </h2>
-            <p className="mt-2 text-muted">Fresh insights from the field.</p>
+            <p className="mt-2 text-muted">Practical reads for finance and ERP teams.</p>
           </div>
           <Link
             href="/blog"
@@ -98,7 +99,7 @@ export default function HomePage() {
             ))}
           </div>
         ) : (
-          <p className="text-muted">No articles published yet — check back soon.</p>
+          <p className="text-muted">No articles published yet. Check back soon.</p>
         )}
       </section>
 
@@ -109,7 +110,7 @@ export default function HomePage() {
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
               Featured products
             </h2>
-            <p className="mt-2 text-muted">Tools that pay for themselves.</p>
+            <p className="mt-2 text-muted">Tools that earn their keep.</p>
           </div>
           <Link
             href="/store"

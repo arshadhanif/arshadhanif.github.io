@@ -1,9 +1,9 @@
 /**
- * Brand + site-wide configuration.
+ * Brand and site-wide configuration.
  *
- * SITE_NAME is intentionally a single source of truth. "MyVault" is a
- * placeholder — change it here once and it propagates everywhere (metadata,
- * navbar, footer, structured data, etc.).
+ * SITE_NAME is the single source of truth. "MyVault" is a placeholder, so
+ * change it here once and it updates everywhere (metadata, navbar, footer,
+ * structured data and so on).
  */
 export const SITE_NAME = 'MyVault';
 
@@ -11,18 +11,27 @@ export const SITE_TAGLINE =
   'The go-to resource for ERP and finance professionals';
 
 export const SITE_DESCRIPTION =
-  'Premium templates, report packages, and expert guidance for Oracle Fusion, Excel, and ERP finance professionals — curated by an Oracle Fusion consultant.';
+  'Templates, report packs and practical guides that help ERP and finance professionals work faster and report cleaner. Built around Oracle Fusion, Excel and everyday finance operations.';
 
-// Public URL of the deployed site (used for absolute URLs in metadata + sitemap).
+// Public URL of the deployed site (used for absolute URLs in metadata and sitemap).
 export const SITE_URL = 'https://arshadhanif.github.io';
 
 // Default Open Graph image (relative to basePath).
 export const OG_IMAGE = '/og-image.svg';
 
-export const AUTHOR = {
+// The person behind the brand. This shows up on the About page, not the
+// homepage. MyVault is the entity; this is the credibility behind it.
+export const FOUNDER = {
   name: 'Arshad Hanif',
-  title: 'Oracle Fusion Consultant',
-  bio: 'Oracle Fusion consultant and finance professional. ACCA, Oracle certified, and part of the PwC network — helping 13+ clients streamline their ERP and finance operations.',
+  title: 'Founder of MyVault, Oracle Fusion consultant',
+  shortBio:
+    'Arshad is an Oracle Fusion consultant and ACCA-qualified finance professional. He started MyVault to put the templates and know-how he uses on real projects into the hands of other finance and ERP people.',
+  credentials: [
+    'Oracle Fusion Financials certified consultant',
+    'ACCA-qualified finance professional',
+    'Part of the PwC professional network',
+    'Has delivered ERP work for 13+ clients across industries',
+  ],
   email: 'arshadhanif1999@gmail.com',
 };
 
@@ -31,7 +40,7 @@ export const SOCIAL = {
   github: 'https://github.com/arshadhanif',
 };
 
-// Blog categories (used for filter tags + badge styling).
+// Blog categories (used for filter tags and badge styling).
 export const BLOG_CATEGORIES = [
   'Oracle Fusion',
   'Excel',
@@ -53,7 +62,7 @@ export const PRODUCT_CATEGORIES = [
 export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 
 export const NAV_LINKS = [
-  { href: '/blog', label: 'Blog' },
+  { href: '/blog', label: 'Articles' },
   { href: '/store', label: 'Store' },
   { href: '/services', label: 'Services' },
   { href: '/about', label: 'About' },

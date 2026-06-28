@@ -6,7 +6,7 @@ import { getAllPostSlugs, getPostBySlug } from '@/lib/posts';
 import CategoryBadge from '@/components/CategoryBadge';
 import AuthorBio from '@/components/AuthorBio';
 import ShareButtons from '@/components/ShareButtons';
-import { SITE_NAME, AUTHOR } from '@/lib/constants';
+import { SITE_NAME, FOUNDER } from '@/lib/constants';
 
 export const dynamicParams = false;
 
@@ -30,7 +30,7 @@ export function generateMetadata({
       title: post.title,
       description: post.excerpt,
       publishedTime: post.date,
-      authors: [AUTHOR.name],
+      authors: [FOUNDER.name],
     },
     twitter: {
       card: 'summary_large_image',
@@ -71,7 +71,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           {post.title}
         </h1>
         <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
-          <span>By {AUTHOR.name}</span>
+          <span>By {FOUNDER.name}</span>
           <span aria-hidden="true">·</span>
           <time dateTime={post.date}>{formatDate(post.date)}</time>
         </div>

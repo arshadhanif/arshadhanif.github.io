@@ -29,8 +29,8 @@ export default function StorePage() {
           The Store
         </h1>
         <p className="mt-4 text-lg text-muted">
-          Battle-tested templates, report packages, and courses — built from real
-          Oracle Fusion and finance engagements. Filter by category below.
+          Proven templates, report packs and courses, built from real Oracle
+          Fusion and finance work. Filter by category below.
         </p>
       </header>
 
