@@ -3,6 +3,7 @@ import { Modal, StarRating, TagInput } from './ui'
 import { markWatched } from '../lib/db'
 import { useAuth } from '../context/AuthContext'
 import { getPref } from '../lib/prefs'
+import { todayLocal } from '../lib/dates'
 
 const WHERE_OPTIONS = ['Cinema / Theatre', 'TV', 'Laptop', 'Computer', 'Mobile', 'Tablet', 'Projector', 'Other']
 const SERVICE_OPTIONS = ['Netflix', 'OSN', 'Prime Video', 'Disney+', 'Apple TV+', 'Shahid', 'StarzPlay', 'Max', 'Hulu', 'YouTube', 'Cinema', 'Other']
@@ -10,7 +11,7 @@ const SERVICE_OPTIONS = ['Netflix', 'OSN', 'Prime Video', 'Disney+', 'Apple TV+'
 // item: { seed?, titleId?, title, media_type, total_episodes? }
 export default function MarkWatchedModal({ item, groups, profiles, onClose, onSaved }) {
   const { user } = useAuth()
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayLocal()
   const prefGroup = getPref('defaultGroupId', '')
   const initialGroup = (prefGroup && groups.some((g) => g.id === prefGroup)) ? prefGroup : (groups[0]?.id || null)
   const [groupId, setGroupId] = useState(initialGroup)

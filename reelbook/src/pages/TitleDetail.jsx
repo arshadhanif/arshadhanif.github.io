@@ -13,7 +13,7 @@ import { Poster, Spinner, DualScore, Modal, TitleLink, StarRating } from '../com
 import MarkWatchedModal from '../components/MarkWatchedModal'
 import AddToCollectionModal from '../components/AddToCollectionModal'
 import { getPref, DEFAULT_REGION } from '../lib/prefs'
-import { formatWatched, fmtDate } from '../lib/dates'
+import { formatWatched, fmtDate, todayLocal } from '../lib/dates'
 
 export default function TitleDetail() {
   const { media, id } = useParams()
@@ -385,7 +385,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
   const [epImdb, setEpImdb] = useState({})             // "s-e" -> imdb_id | null (fetched lazily)
   const [desc, setDesc] = useState(false)              // newest episode first
   const [bulkBusy, setBulkBusy] = useState(false)
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayLocal()
 
   // Expand a row; fetch its IMDb id the first time it's opened.
   function openRow(season, ep, key) {
