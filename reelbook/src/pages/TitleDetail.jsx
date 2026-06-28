@@ -126,7 +126,7 @@ export default function TitleDetail() {
           </Block>
         )}
 
-        <WhereToWatch providers={full.providers} region={region} setRegion={setRegion} />
+        <WhereToWatch providers={full.providers} region={region} setRegion={setRegion} title={full.title} />
 
         {full.cast.length > 0 && (
           <Block title="Cast">
@@ -254,14 +254,18 @@ function AddWatchlist({ titleId, groups, userId }) {
   )
 }
 
-function WhereToWatch({ providers, region, setRegion }) {
+function WhereToWatch({ providers, region, setRegion, title }) {
   const regions = providerRegions(providers)
   const block = providers[region]
   const groupsOf = [
     ['Stream', block?.flatrate],
+    ['Free', block?.free],
+    ['With ads', block?.ads],
     ['Rent', block?.rent],
     ['Buy', block?.buy],
   ].filter(([, list]) => list && list.length)
+  // TMDB/JustWatch coverage is patchy outside the US/EU, so always give a way to verify.
+  const justWatch = block?.link || `https://www.justwatch.com/us/search?q=${encodeURIComponent(title || '')}`
 
   return (
     <div className="detail-block">
@@ -274,7 +278,10 @@ function WhereToWatch({ providers, region, setRegion }) {
         )}
       </div>
       {groupsOf.length === 0 ? (
-        <div className="muted">No streaming/rent/buy options listed for {regionName(region)}.</div>
+        <div className="muted">
+          Nothing listed for {regionName(region)}. JustWatch’s data can be incomplete here, so it may still be streaming.{' '}
+          <a href={justWatch} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-2)' }}>Check on JustWatch ↗</a>
+        </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {groupsOf.map(([label, list]) => (
@@ -294,7 +301,7 @@ function WhereToWatch({ providers, region, setRegion }) {
         </div>
       )}
       <div className="faint" style={{ marginTop: 10 }}>
-        Streaming data by JustWatch{block?.link ? <> · <a href={block.link} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-2)' }}>view on JustWatch ↗</a></> : null}
+        Availability via JustWatch, and can be incomplete for some regions · <a href={justWatch} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-2)' }}>verify on JustWatch ↗</a>
       </div>
     </div>
   )
