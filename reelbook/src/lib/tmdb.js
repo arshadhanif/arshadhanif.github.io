@@ -131,6 +131,26 @@ export async function discoverTitles(mediaType, opts = {}) {
   }
 }
 
+// All watch providers TMDB knows about for a region (used to match a user's
+// subscription names to TMDB provider ids, which differ per region).
+export async function listWatchProviders(mediaType, region) {
+  const data = await tmdb(`/watch/providers/${mediaType}`, { watch_region: region })
+  return (data.results || []).map((p) => ({ id: p.provider_id, name: p.provider_name }))
+}
+
+// Popular titles available on a set of providers in a region (flatrate/free/ads).
+export async function discoverByProviders(mediaType, providerIds, region, page = 1) {
+  if (!providerIds || !providerIds.length) return []
+  const data = await tmdb(`/discover/${mediaType}`, {
+    sort_by: 'popularity.desc', page, include_adult: 'false',
+    watch_region: region,
+    with_watch_providers: providerIds.join('|'),
+    with_watch_monetization_types: 'flatrate|free|ads',
+    'vote_count.gte': 30,
+  })
+  return (data.results || []).map((r) => normalizeResult({ ...r, media_type: mediaType })).filter(Boolean).filter((r) => r.poster_path)
+}
+
 // Trending this week (movies + TV) — shown on the Discover screen before searching.
 export async function getTrending() {
   const data = await tmdb('/trending/all/week')

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { searchMulti, getTrending, getPopular, getTopRated, getTvStatus, getAnime, IMG } from '../lib/tmdb'
-import { listInProgressShows, setTitleTotalEpisodes } from '../lib/db'
+import { searchMulti, getTrending, getPopular, getTopRated, getTvStatus, getAnime, listWatchProviders, discoverByProviders, IMG } from '../lib/tmdb'
+import { listInProgressShows, setTitleTotalEpisodes, listSubscriptions } from '../lib/db'
+import { regionFromSubs, matchProviderIds } from '../lib/providers'
 import { Poster, Empty, SkeletonGrid, TitleLink } from '../components/ui'
 
 export default function Discover() {
@@ -12,6 +13,7 @@ export default function Discover() {
   const [err, setErr] = useState(null)
   const [rails, setRails] = useState({})
   const [continueShows, setContinueShows] = useState([])
+  const [onServices, setOnServices] = useState(null) // { items, services } | null
   const debounce = useRef()
 
   useEffect(() => {
@@ -38,6 +40,26 @@ export default function Discover() {
       const refreshed = out.filter((r) => r.status === 'fulfilled').map((r) => r.value)
         .filter((s) => !s.total || s.watched < s.total)
       setContinueShows(refreshed)
+    }).catch(() => {})
+
+    // "On your services": what's popular on the streaming services you pay for.
+    listSubscriptions().then(async (subs) => {
+      const names = subs.filter((s) => s.active).map((s) => s.name).filter(Boolean)
+      if (!names.length) return
+      const region = regionFromSubs(subs)
+      const [provMovie, provTv] = await Promise.all([
+        listWatchProviders('movie', region).catch(() => []),
+        listWatchProviders('tv', region).catch(() => []),
+      ])
+      const movieIds = matchProviderIds(names, provMovie)
+      const tvIds = matchProviderIds(names, provTv)
+      if (!movieIds.length && !tvIds.length) return
+      const [m, t] = await Promise.all([
+        discoverByProviders('movie', movieIds, region).catch(() => []),
+        discoverByProviders('tv', tvIds, region).catch(() => []),
+      ])
+      const items = interleave(m, t).slice(0, 20)
+      if (items.length) setOnServices({ items })
     }).catch(() => {})
   }, [])
 
@@ -101,6 +123,7 @@ export default function Discover() {
           {continueShows.length > 0 && (
             <ContinueRail shows={continueShows} />
           )}
+          {onServices && <Rail title="📺 On your services" items={onServices.items} />}
           <Rail title="🔥 Trending this week" items={rails.trending} />
           <Rail title="Popular movies" items={rails.popMovies} />
           <Rail title="Popular TV" items={rails.popTv} />
@@ -115,6 +138,14 @@ export default function Discover() {
 }
 
 function val(settled) { return settled.status === 'fulfilled' ? settled.value : [] }
+
+// Alternate two lists (movies/TV) and drop duplicates.
+function interleave(a, b) {
+  const out = [], seen = new Set()
+  const push = (r) => { const k = `${r.media_type}-${r.tmdb_id}`; if (!seen.has(k)) { seen.add(k); out.push(r) } }
+  for (let i = 0; i < Math.max(a.length, b.length); i++) { if (a[i]) push(a[i]); if (b[i]) push(b[i]) }
+  return out
+}
 
 function Rail({ title, items }) {
   if (!items || items.length === 0) return null
