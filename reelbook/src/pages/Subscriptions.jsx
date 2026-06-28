@@ -6,8 +6,13 @@ import { getPref, setPref } from '../lib/prefs'
 import { getRates, convert } from '../lib/fx'
 import { Spinner, Empty } from '../components/ui'
 
+// Lists of values for the add form
 const SERVICES = ['Netflix', 'OSN+', 'Prime Video', 'Disney+', 'Apple TV+', 'Shahid VIP', 'StarzPlay', 'Max', 'Hulu', 'YouTube Premium', 'Spotify', 'Crunchyroll']
 const CURRENCIES = ['PKR', 'SAR', 'AED', 'USD', 'GBP', 'EUR', 'INR', 'QAR']
+const CATEGORIES = ['Video streaming', 'Music', 'Sports', 'News & reading', 'Cloud & storage', 'Gaming', 'Other']
+const PLANS = ['Basic', 'Standard', 'Premium', 'Family', 'Mobile', 'Ad-supported', '4K Ultra HD', 'Annual', 'Other']
+const PAID_BY = ['Me', 'Partner', 'Shared', 'Family', 'Work']
+const OTHER = 'Other…'
 
 export default function Subscriptions() {
   const { user } = useAuth()
@@ -19,13 +24,18 @@ export default function Subscriptions() {
   const [filter, setFilter] = useState('all')                         // all | active | paused
 
   // add form
-  const [name, setName] = useState('')
+  const [service, setService] = useState('')      // dropdown value (a known service or OTHER)
+  const [customName, setCustomName] = useState('') // typed when service === OTHER
   const [cost, setCost] = useState('')
   const [cur, setCur] = useState(getPref('currency', 'PKR') === 'ALL' ? 'PKR' : getPref('currency', 'PKR'))
   const [cycle, setCycle] = useState('monthly')
+  const [category, setCategory] = useState('')
+  const [plan, setPlan] = useState('')
+  const [paidBy, setPaidBy] = useState('')
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const isFree = cycle === 'free'
+  const name = (service === OTHER ? customName : service).trim()
 
   async function load() { setLoading(true); try { setSubs(await listSubscriptions()) } finally { setLoading(false) } }
   useEffect(() => { load(); getRates().then(setRates).catch(() => {}) }, [])
@@ -53,11 +63,16 @@ export default function Subscriptions() {
 
   async function add(e) {
     e.preventDefault()
-    if (!name.trim() || (!isFree && !cost)) return
+    if (!name || (!isFree && !cost)) return
     setBusy(true)
     try {
-      await createSubscription({ name: name.trim(), cost, currency: cur, cycle, note: note.trim(), ownerId: user.id })
-      setName(''); setCost(''); setCycle('monthly'); setNote('')
+      await createSubscription({
+        name, cost, currency: cur, cycle, note: note.trim(),
+        category: category || null, plan: plan || null, paidBy: paidBy || null,
+        ownerId: user.id,
+      })
+      setService(''); setCustomName(''); setCost(''); setCycle('monthly')
+      setCategory(''); setPlan(''); setPaidBy(''); setNote('')
       await load(); toast('Subscription added')
     } catch (e2) { toast(e2.message || 'Could not add', 'err') } finally { setBusy(false) }
   }
@@ -93,9 +108,21 @@ export default function Subscriptions() {
 
       <form className="card" style={{ marginBottom: 18 }} onSubmit={add}>
         <strong>Add a subscription</strong>
-        <div className="row" style={{ gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-          <input list="svc" value={name} onChange={(e) => setName(e.target.value)} placeholder="Service" style={{ flex: '2 1 140px' }} />
-          <datalist id="svc">{SERVICES.map((s) => <option key={s} value={s} />)}</datalist>
+
+        {/* Service — a real dropdown (List of Values), with an "Other…" escape hatch */}
+        <Field label="Service">
+          <select value={service} onChange={(e) => setService(e.target.value)}>
+            <option value="" disabled>Choose a service…</option>
+            {SERVICES.map((s) => <option key={s} value={s}>{s}</option>)}
+            <option value={OTHER}>{OTHER}</option>
+          </select>
+        </Field>
+        {service === OTHER && (
+          <input value={customName} onChange={(e) => setCustomName(e.target.value)} autoFocus
+            placeholder="Type the service name" style={{ marginTop: 8 }} />
+        )}
+
+        <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
           <input type="number" min="0" step="0.01" value={isFree ? '' : cost} disabled={isFree}
             onChange={(e) => setCost(e.target.value)} placeholder={isFree ? 'Free' : 'Cost'} style={{ flex: '1 1 80px' }} />
           <select value={cur} onChange={(e) => setCur(e.target.value)} disabled={isFree} style={{ flex: '1 1 90px' }}>
@@ -107,9 +134,17 @@ export default function Subscriptions() {
             <option value="free">Free / included</option>
           </select>
         </div>
+
+        {/* More fields, each a List of Values */}
+        <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+          <LovSelect value={category} onChange={setCategory} placeholder="Category" options={CATEGORIES} style={{ flex: '1 1 150px' }} />
+          <LovSelect value={plan} onChange={setPlan} placeholder="Plan / tier" options={PLANS} style={{ flex: '1 1 130px' }} />
+          <LovSelect value={paidBy} onChange={setPaidBy} placeholder="Paid by" options={PAID_BY} style={{ flex: '1 1 120px' }} />
+        </div>
+
         <input value={note} onChange={(e) => setNote(e.target.value)} style={{ marginTop: 8 }}
           placeholder={isFree ? 'Note, e.g. “via Zain fiber” or “trial ends Jan”' : 'Note (optional)'} />
-        <button className="btn primary" style={{ marginTop: 10 }} disabled={busy || !name.trim() || (!isFree && !cost)}>Add</button>
+        <button className="btn primary" style={{ marginTop: 10 }} disabled={busy || !name || (!isFree && !cost)}>Add</button>
       </form>
 
       {subs.length > 0 && (
@@ -130,9 +165,12 @@ export default function Subscriptions() {
             return (
               <div className="card row" key={s.id} style={{ gap: 12, alignItems: 'center', opacity: s.active ? 1 : 0.55 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="row" style={{ gap: 8 }}>
+                  <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
                     <strong>{s.name}</strong>
                     {s.cycle === 'free' && <span className="chip" style={{ color: 'var(--green)', borderColor: 'var(--green)' }}>Free</span>}
+                    {s.plan && <span className="chip">{s.plan}</span>}
+                    {s.category && <span className="chip">{s.category}</span>}
+                    {s.paid_by && <span className="chip">Paid by {s.paid_by}</span>}
                   </div>
                   <div className="faint" style={{ marginTop: 2 }}>
                     {s.cycle === 'free'
@@ -156,6 +194,25 @@ export default function Subscriptions() {
         <div className="faint" style={{ marginTop: 12, fontSize: 12 }}>Converted to {display} at today’s rates.</div>
       )}
     </div>
+  )
+}
+
+// A labelled dropdown that shows a placeholder option until a value is picked.
+function LovSelect({ value, onChange, placeholder, options, style }) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} style={style}>
+      <option value="">{placeholder}</option>
+      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+    </select>
+  )
+}
+
+function Field({ label, children }) {
+  return (
+    <label style={{ display: 'block', marginTop: 12 }}>
+      <span className="faint" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>{label}</span>
+      {children}
+    </label>
   )
 }
 
