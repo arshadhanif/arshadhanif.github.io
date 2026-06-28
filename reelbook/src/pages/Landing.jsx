@@ -2,12 +2,12 @@ import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const FEATURES = [
-  { icon: '👥', title: 'Tag who watched', body: 'Every watch is logged to a group: “Just us”, “Family”, “The crew”. Your lists are filtered views, never duplicates.' },
-  { icon: '⭐', title: 'Two ratings, one title', body: 'Each of you rates out of 10. See your averages and exactly where your tastes collide.' },
-  { icon: '📺', title: 'Track every episode', body: 'Tick off episodes with dates, pick up where you left off, and never lose your place in a series.' },
-  { icon: '✨', title: 'What to watch tonight', body: 'Smart picks from your highest-rated history, plus a one-tap shuffle from your watchlist.' },
-  { icon: '🎬', title: 'Rich title pages', body: 'Trailers, cast, “where to watch”, and a link straight to IMDb, powered by TMDB.' },
-  { icon: '📊', title: 'Your year in data', body: 'Averages, agreement, trends over time, top genres and decades. Your shared taste, visualised.' },
+  { icon: '👥', color: '#ff6b9d', title: 'Tag who watched', body: 'Every watch is logged to a group: “Just us”, “Family”, “The crew”. Your lists are filtered views, never duplicates.' },
+  { icon: '⭐', color: '#e8a838', title: 'Two ratings, one title', body: 'Each of you rates out of 10. See your averages and exactly where your tastes collide.' },
+  { icon: '📺', color: '#5b9aff', title: 'Track every episode', body: 'Tick off episodes with dates, pick up where you left off, and never lose your place in a series.' },
+  { icon: '✨', color: '#b46bff', title: 'What to watch tonight', body: 'Smart picks from your highest-rated history, plus a one-tap shuffle from your watchlist.' },
+  { icon: '🎬', color: '#42d4d4', title: 'Rich title pages', body: 'Trailers, cast, “where to watch”, and a link straight to IMDb, powered by TMDB.' },
+  { icon: '📊', color: '#4ecb71', title: 'Your year in data', body: 'Averages, agreement, trends over time, top genres and decades. Your shared taste, visualised.' },
 ]
 
 export default function Landing() {
@@ -36,8 +36,8 @@ export default function Landing() {
 
       <section id="features" className="landing-features">
         {FEATURES.map((f) => (
-          <div className="card landing-feature" key={f.title}>
-            <div className="lf-icon">{f.icon}</div>
+          <div className="card landing-feature hoverable" key={f.title}>
+            <div className="lf-icon" style={{ background: `${f.color}22`, color: f.color, boxShadow: `0 6px 18px -8px ${f.color}` }}>{f.icon}</div>
             <h3>{f.title}</h3>
             <p className="muted">{f.body}</p>
           </div>

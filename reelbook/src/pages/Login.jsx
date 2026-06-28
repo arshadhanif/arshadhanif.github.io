@@ -31,7 +31,7 @@ export default function Login() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 20 }}>
-      <div style={{ width: '100%', maxWidth: 380 }}>
+      <div className="card" style={{ width: '100%', maxWidth: 400, padding: 30 }}>
         <Link to="/welcome" className="brand" style={{ fontSize: 34, textAlign: 'center', marginBottom: 6, display: 'block' }}>
           Reel<span>Book</span>
         </Link>
