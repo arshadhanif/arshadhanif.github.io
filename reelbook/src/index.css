@@ -358,7 +358,13 @@ input:focus, select:focus, textarea:focus {
   position: absolute; inset: 0; background-size: cover; background-position: center top;
   opacity: .34; filter: saturate(1.1);
 }
-.detail-hero-grad { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11,13,18,.35) 0%, rgba(11,13,18,.78) 62%, var(--bg) 100%); }
+.detail-hero { background: #0e1018; }
+/* Always a dark cinematic band (over the backdrop) in both themes, so the
+   white headline/meta stay readable regardless of light or dark mode. */
+.detail-hero-grad { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,10,16,.42) 0%, rgba(8,10,16,.82) 66%, rgba(8,10,16,.96) 100%); }
+.detail-headline h1 { color: #fff; }
+.detail-tagline { color: rgba(255,255,255,.82); }
+.detail-meta { color: rgba(255,255,255,.86); }
 .detail-back { position: relative; z-index: 2; margin: 0 16px 10px; }
 .detail-hero-inner { position: relative; z-index: 2; display: flex; gap: 18px; align-items: flex-end; padding-top: 30px; }
 .detail-poster { width: 120px; flex-shrink: 0; }
@@ -604,11 +610,11 @@ a.provider:hover { outline: 2px solid var(--accent); outline-offset: 1px; border
 .poster-wall { position: absolute; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
 .poster-wall-grid {
   position: absolute; top: -12%; left: -12%; width: 124%; height: 124%;
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
-  grid-auto-rows: 186px; gap: 12px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-auto-rows: max-content; gap: 12px;
   transform: rotate(-7deg) scale(1.16); opacity: .9; filter: saturate(1.12);
 }
-.pw-cell { border-radius: 12px; overflow: hidden; box-shadow: 0 10px 26px rgba(0,0,0,.5); }
+.pw-cell { aspect-ratio: 2 / 3; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 26px rgba(0,0,0,.5); }
 .pw-cell img { width: 100%; height: 100%; object-fit: cover; }
 .poster-wall-veil { position: absolute; inset: 0; }
 /* Darken behind the centred content, keep the surrounding posters bright */
