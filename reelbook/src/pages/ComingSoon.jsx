@@ -38,6 +38,36 @@ function bucketOf(diff) {
 }
 const BUCKETS = ['Today', 'Tomorrow', 'This week', 'This month', 'Later']
 
+// ---- Calendar (.ics) export of upcoming items ----
+const icsEscape = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/[,;]/g, (m) => '\\' + m).replace(/\n/g, '\\n')
+function buildIcs(items) {
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//ReelBook//Coming Soon//EN', 'CALSCALE:GREGORIAN']
+  for (const i of items) {
+    const d = String(i.date).replace(/-/g, '')
+    lines.push(
+      'BEGIN:VEVENT',
+      `UID:reelbook-${i.key}-${d}@reelbook`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;VALUE=DATE:${d}`,
+      `SUMMARY:${icsEscape((i.media === 'tv' ? '📺 ' : '🎬 ') + i.title + (i.sub ? ' — ' + i.sub : ''))}`,
+      `DESCRIPTION:${icsEscape('Via ReelBook')}`,
+      'END:VEVENT',
+    )
+  }
+  lines.push('END:VCALENDAR')
+  return lines.join('\r\n')
+}
+function exportIcs(items) {
+  if (!items.length) return
+  const blob = new Blob([buildIcs(items)], { type: 'text/calendar;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = 'reelbook-coming-soon.ics'
+  document.body.appendChild(a); a.click(); a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
 export default function ComingSoon() {
   const [items, setItems] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -111,9 +141,12 @@ export default function ComingSoon() {
     <div className="page">
       <div className="page-head">
         <h1>Coming Soon</h1>
-        <button className="btn sm" disabled={refreshing} onClick={() => { setRefreshing(true); load(true) }}>
-          {refreshing ? 'Refreshing…' : 'Refresh'}
-        </button>
+        <div className="row" style={{ gap: 8 }}>
+          <button className="btn sm" disabled={!view.length} onClick={() => exportIcs(view)} title="Download an .ics you can import into Google / Apple Calendar">📅 Add to calendar</button>
+          <button className="btn sm" disabled={refreshing} onClick={() => { setRefreshing(true); load(true) }}>
+            {refreshing ? 'Refreshing…' : 'Refresh'}
+          </button>
+        </div>
       </div>
       <p className="sub">Upcoming episodes for shows you follow, plus releases for movies on your watchlist.</p>
 
