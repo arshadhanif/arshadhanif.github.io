@@ -1,16 +1,16 @@
 :root {
-  --bg: #0b0d12;
-  --bg-grad: radial-gradient(900px 520px at 88% -8%, #3a1f5e 0%, transparent 55%), radial-gradient(820px 520px at -8% 6%, #0c3a59 0%, transparent 52%), radial-gradient(700px 500px at 50% 120%, #1d1140 0%, transparent 60%);
+  --bg: #0e1018;
+  --bg-grad: radial-gradient(1100px 640px at 85% -10%, #46266e 0%, transparent 58%), radial-gradient(1000px 620px at -10% 4%, #103a63 0%, transparent 55%), radial-gradient(900px 620px at 50% 116%, #2a1656 0%, transparent 62%);
   --accent-grad: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
   /* Vibrant signature gradient that never passes through grey — for brand & hero accents */
   --brand-grad: linear-gradient(100deg, #ff9d4d 0%, #ff5c8a 48%, #b46bff 100%);
   --card-grad: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 60%);
   --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Sora', 'Inter', system-ui, sans-serif;
-  --bg-elev: #14171f;
-  --bg-elev-2: #1c2230;
-  --bg-hover: #232a3a;
-  --border: #283041;
+  --bg-elev: #181b27;
+  --bg-elev-2: #212536;
+  --bg-hover: #2a3042;
+  --border: #2d3447;
   --border-soft: #20273400;
   --text: #eef1f7;
   --text-dim: #9aa3b4;
@@ -30,8 +30,8 @@
   --nav-h: 62px;
   --shadow: 0 8px 30px rgba(0,0,0,0.35);
   --shadow-sm: 0 4px 14px rgba(0,0,0,0.25);
-  --topbar-bg: rgba(11,13,18,0.72);
-  --tabbar-bg: rgba(11,13,18,0.94);
+  --topbar-bg: rgba(14,16,24,0.72);
+  --tabbar-bg: rgba(14,16,24,0.94);
   --on-accent: #0b0d12;
   font-family: var(--font-body);
 }
@@ -604,15 +604,16 @@ a.provider:hover { outline: 2px solid var(--accent); outline-offset: 1px; border
 .poster-wall { position: absolute; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
 .poster-wall-grid {
   position: absolute; top: -12%; left: -12%; width: 124%; height: 124%;
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
-  grid-auto-rows: 162px; gap: 10px;
-  transform: rotate(-8deg) scale(1.18); opacity: .42; filter: saturate(1.15);
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+  grid-auto-rows: 186px; gap: 12px;
+  transform: rotate(-7deg) scale(1.16); opacity: .9; filter: saturate(1.12);
 }
-.pw-cell { border-radius: 10px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,.4); }
+.pw-cell { border-radius: 12px; overflow: hidden; box-shadow: 0 10px 26px rgba(0,0,0,.5); }
 .pw-cell img { width: 100%; height: 100%; object-fit: cover; }
 .poster-wall-veil { position: absolute; inset: 0; }
-.poster-wall-veil.hero { background: radial-gradient(120% 90% at 50% 18%, transparent 0%, var(--bg) 72%), linear-gradient(180deg, rgba(0,0,0,.25) 0%, transparent 30%, var(--bg) 94%); }
-.poster-wall-veil.full { background: radial-gradient(100% 70% at 50% 42%, color-mix(in srgb, var(--bg) 55%, transparent) 0%, var(--bg) 72%); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
+/* Darken behind the centred content, keep the surrounding posters bright */
+.poster-wall-veil.hero { background: radial-gradient(78% 62% at 50% 28%, var(--bg) 0%, color-mix(in srgb, var(--bg) 45%, transparent) 52%, transparent 82%), linear-gradient(180deg, transparent 58%, var(--bg) 99%); }
+.poster-wall-veil.full { background: radial-gradient(52% 64% at 50% 50%, var(--bg) 0%, color-mix(in srgb, var(--bg) 50%, transparent) 48%, transparent 80%); }
 @media (prefers-reduced-motion: no-preference) { .poster-wall-grid { animation: pw-drift 60s linear infinite alternate; } }
 @keyframes pw-drift { from { transform: rotate(-8deg) scale(1.18) translateY(0); } to { transform: rotate(-8deg) scale(1.18) translateY(-40px); } }
 
@@ -625,6 +626,7 @@ a.provider:hover { outline: 2px solid var(--accent); outline-offset: 1px; border
 .landing-hero h1 span { background: var(--brand-grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: var(--accent); }
 @media (min-width: 700px) { .landing-hero h1 { font-size: 56px; } }
 .landing-hero p { color: var(--text-dim); font-size: 18px; line-height: 1.55; max-width: 620px; margin: 0 auto 26px; }
+.landing-hero h1, .landing-hero p { text-shadow: 0 2px 18px rgba(0,0,0,.45); }
 .landing-features { max-width: var(--maxw); margin: 0 auto; padding: 10px 16px 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
 .landing-feature .lf-icon { display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 15px; font-size: 26px; margin-bottom: 12px; box-shadow: var(--shadow-sm); }
 .landing-feature h3 { margin: 0 0 6px; font-size: 17px; }
@@ -639,6 +641,9 @@ a.provider:hover { outline: 2px solid var(--accent); outline-offset: 1px; border
 .tonight-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: .4; }
 .tonight-grad { position: absolute; inset: 0; background: linear-gradient(120deg, rgba(11,13,18,.92) 30%, rgba(11,13,18,.55)); }
 .tonight-inner { position: relative; z-index: 2; display: flex; gap: 16px; padding: 18px; align-items: center; }
+/* The banner is always dark (gradient over a backdrop), so its text must stay light in any theme */
+.tonight-inner h2 { color: #fff; }
+.tonight-inner .faint { color: rgba(255,255,255,.72); }
 
 /* ---------- toasts ---------- */
 .toasts { position: fixed; left: 0; right: 0; bottom: calc(var(--nav-h) + 16px); z-index: 80; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; padding: 0 16px; }

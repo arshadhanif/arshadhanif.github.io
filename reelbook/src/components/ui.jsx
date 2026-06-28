@@ -143,7 +143,7 @@ export function GroupChips({ groups, value, onChange, includeAll = true }) {
       {includeAll && (
         <button
           className={`chip ${!value ? 'active' : ''}`}
-          style={!value ? { background: 'var(--text)', borderColor: 'var(--text)' } : undefined}
+          style={!value ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: 'var(--on-accent)' } : undefined}
           onClick={() => onChange(null)}
         >
           All
