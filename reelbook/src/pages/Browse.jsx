@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/Toast'
 import { Poster, Spinner, Empty, SkeletonGrid, TitleLink } from '../components/ui'
 import { keyOf } from '../lib/recommend'
+import { todayLocal } from '../lib/dates'
 
 const SORTS = [
   ['popularity.desc', 'Most popular'],
@@ -214,7 +215,7 @@ function BulkLists({ groups, items, userId, onDone, toast }) {
 }
 
 function BulkWatch({ groups, items, userId, onDone, toast }) {
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayLocal()
   const [groupId, setGroupId] = useState(groups[0]?.id || '')
   const [visibility, setVisibility] = useState('private')
   const [busy, setBusy] = useState(false)

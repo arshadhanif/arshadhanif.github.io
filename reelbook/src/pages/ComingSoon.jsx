@@ -27,7 +27,7 @@ function relative(diff) {
   if (diff === 1) return 'Tomorrow'
   if (diff < 7) return `In ${diff} days`
   if (diff < 14) return 'Next week'
-  return fmtDate(new Date(Date.now() + diff * 864e5).toISOString().slice(0, 10))
+  return `In ${Math.round(diff / 7)} weeks`
 }
 function bucketOf(diff) {
   if (diff <= 0) return 'Today'
