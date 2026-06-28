@@ -24,8 +24,31 @@
   --nav-h: 62px;
   --shadow: 0 8px 30px rgba(0,0,0,0.35);
   --shadow-sm: 0 4px 14px rgba(0,0,0,0.25);
+  --topbar-bg: rgba(11,13,18,0.72);
+  --tabbar-bg: rgba(11,13,18,0.94);
+  --on-accent: #0b0d12;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
+
+/* Light theme */
+html[data-theme="light"] {
+  --bg: #f5f7fa;
+  --bg-grad: radial-gradient(1200px 600px at 80% -10%, #e8eef7 0%, #f5f7fa 55%);
+  --bg-elev: #ffffff;
+  --bg-elev-2: #eef1f6;
+  --bg-hover: #e4e9f1;
+  --border: #d8dee8;
+  --border-soft: #e4e9f100;
+  --text: #141821;
+  --text-dim: #566072;
+  --text-faint: #8a93a3;
+  --text-faint-solid: #8a93a3;
+  --shadow: 0 8px 30px rgba(20,30,50,0.12);
+  --shadow-sm: 0 4px 14px rgba(20,30,50,0.08);
+  --topbar-bg: rgba(255,255,255,0.78);
+  --tabbar-bg: rgba(255,255,255,0.95);
+}
+html[data-theme="light"] body { color-scheme: light; }
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
@@ -66,7 +89,7 @@ input:focus, select:focus, textarea:focus {
   position: sticky; top: 0; z-index: 30;
   display: flex; align-items: center; justify-content: space-between;
   height: var(--nav-h); padding: 0 16px;
-  background: rgba(11,13,18,0.72);
+  background: var(--topbar-bg);
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
 }
@@ -109,7 +132,7 @@ input:focus, select:focus, textarea:focus {
 .tabbar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
   display: flex; height: var(--nav-h);
-  background: rgba(11,13,18,0.94);
+  background: var(--tabbar-bg);
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom);
@@ -368,6 +391,10 @@ input:focus, select:focus, textarea:focus {
 .ep2-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px 16px; margin: 6px 0 10px; }
 .ep2-facts dt { font-size: 11px; color: var(--text-faint-solid); text-transform: uppercase; letter-spacing: .4px; }
 .ep2-facts dd { margin: 1px 0 0; font-size: 13px; font-weight: 600; }
+
+/* yearly goals */
+.goal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
+.goal-input { width: 56px; padding: 2px 6px; font-size: 13px; text-align: center; display: inline-block; }
 
 /* onboarding */
 .onb-overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgba(6,8,12,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: fade .2s ease; }
