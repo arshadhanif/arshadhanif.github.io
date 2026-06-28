@@ -6,6 +6,8 @@ import { initBaselines, buildNotifications, getUnread, syncNotifState } from '..
 import { initials } from './ui'
 import Onboarding, { needsOnboarding } from './Onboarding'
 import QuickAdd from './QuickAdd'
+import { setTheme, setAccent, ACCENTS } from '../lib/theme'
+import { getPref } from '../lib/prefs'
 
 const TABS = [
   { to: '/', label: 'Discover', ico: '🔍', end: true },
@@ -21,6 +23,8 @@ export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [notifCount, setNotifCount] = useState(getUnread())
   const [showOnb, setShowOnb] = useState(needsOnboarding())
+  const [theme, setThemeS] = useState(getPref('theme', 'dark') === 'light' ? 'light' : 'dark')
+  const [accent, setAccentS] = useState(getPref('accent', 'gold'))
   const menuRef = useRef(null)
   const navigate = useNavigate()
   const location = useLocation()
@@ -51,6 +55,8 @@ export default function Layout() {
   }, [])
 
   const go = (path) => { setMenuOpen(false); navigate(path) }
+  const toggleTheme = () => { const n = theme === 'light' ? 'dark' : 'light'; setThemeS(n); setTheme(n) }
+  const pickAccent = (name) => { setAccentS(name); setAccent(name) }
 
   return (
     <div className="app">
@@ -60,6 +66,9 @@ export default function Layout() {
           {TABS.map((t) => <NavLink key={t.to} to={t.to} end={t.end}>{t.label}</NavLink>)}
         </nav>
         <div className="row" style={{ gap: 6 }}>
+        <button className="bell" onClick={toggleTheme} aria-label="Toggle light or dark" title="Toggle light / dark">
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
         <button className="bell" onClick={() => navigate('/notifications')} aria-label="Notifications">
           🔔{notifCount > 0 && <span className="bell-badge">{notifCount > 9 ? '9+' : notifCount}</span>}
         </button>
@@ -74,6 +83,13 @@ export default function Layout() {
               <div className="who">
                 <div style={{ fontWeight: 700 }}>{profile?.name || 'You'}</div>
                 <div className="faint">Signed in</div>
+                <div className="faint" style={{ marginTop: 8, marginBottom: 6 }}>Accent colour</div>
+                <div className="row" style={{ gap: 7, flexWrap: 'wrap' }}>
+                  {Object.entries(ACCENTS).map(([name, c]) => (
+                    <button key={name} onClick={() => pickAccent(name)} aria-label={name} title={name}
+                      style={{ width: 22, height: 22, borderRadius: '50%', background: c, padding: 0, border: accent === name ? '2px solid var(--text)' : '2px solid transparent' }} />
+                  ))}
+                </div>
               </div>
               <button onClick={() => go('/coming')}>📅 Coming soon</button>
               <button onClick={() => go('/wrapped')}>🎁 Year in review</button>

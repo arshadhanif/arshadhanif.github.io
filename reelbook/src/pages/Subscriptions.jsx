@@ -5,6 +5,7 @@ import { useToast } from '../context/Toast'
 import { getPref, setPref } from '../lib/prefs'
 import { getRates, convert } from '../lib/fx'
 import { todayLocal, fmtDate } from '../lib/dates'
+import { catColor } from '../lib/categories'
 import { Spinner, Empty, Modal } from '../components/ui'
 
 const SERVICES = ['Netflix', 'OSN+', 'Prime Video', 'Disney+', 'Apple TV+', 'Shahid VIP', 'StarzPlay', 'Max', 'Hulu', 'YouTube Premium', 'Spotify', 'Crunchyroll']
@@ -217,7 +218,7 @@ export default function Subscriptions() {
         <div style={{ fontSize: 14 }}>{priceLine(s)}</div>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
           {s.plan && <span className="chip">{s.plan}</span>}
-          {s.category && <span className="chip">{s.category}</span>}
+          {s.category && <span className="chip" style={{ color: catColor(s.category), borderColor: catColor(s.category) }}>{s.category}</span>}
           {s.provider && <span className="chip">via {s.provider}</span>}
           {s.paid_by && <span className="chip">{s.paid_by}</span>}
           {s.payment_method && <span className="chip">{s.payment_method}</span>}
@@ -291,7 +292,7 @@ export default function Subscriptions() {
             <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div className="faint">{insights.paidCount} paid · {insights.freeCount} free
                 {insights.freeCount > 0 && <> ({[['trial', 'trial'], ['tier', 'free tier'], ['bundle', 'bundled']].filter(([k]) => insights.byKind[k]).map(([k, l]) => `${insights.byKind[k]} ${l}`).join(', ')})</>}</div>
-              <Breakdown title={`Spend by category (${insCur}${perSuffix})`} map={insights.byCat} mul={perMul} fmt={(n) => fmt(n, insCur)} />
+              <Breakdown title={`Spend by category (${insCur}${perSuffix})`} map={insights.byCat} mul={perMul} fmt={(n) => fmt(n, insCur)} barColor={catColor} />
               <Breakdown title={`Who pays (${insCur}${perSuffix})`} map={insights.byPayer} mul={perMul} fmt={(n) => fmt(n, insCur)} />
             </div>
           </details>
@@ -515,7 +516,7 @@ function SubForm({ initial, people, parents = [], defaultCur, submitLabel, onSub
   )
 }
 
-function Breakdown({ title, map, fmt, mul = 1 }) {
+function Breakdown({ title, map, fmt, mul = 1, barColor }) {
   const entries = Object.entries(map).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])
   if (!entries.length) return <div><div className="faint" style={{ fontSize: 12, marginBottom: 4 }}>{title}</div><div className="faint">Nothing paid yet.</div></div>
   const max = entries[0][1]
@@ -525,8 +526,11 @@ function Breakdown({ title, map, fmt, mul = 1 }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {entries.map(([k, v]) => (
           <div key={k}>
-            <div className="row" style={{ justifyContent: 'space-between', fontSize: 13 }}><span>{k}</span><span style={{ fontWeight: 600 }}>{fmt(v * mul)}</span></div>
-            <div style={{ height: 6, borderRadius: 4, background: 'var(--green)', opacity: 0.85, width: `${Math.max(8, (v / max) * 100)}%`, marginTop: 2 }} />
+            <div className="row" style={{ justifyContent: 'space-between', fontSize: 13 }}>
+              <span className="row" style={{ gap: 7 }}><span style={{ width: 9, height: 9, borderRadius: '50%', background: barColor ? barColor(k) : 'var(--green)', flexShrink: 0 }} />{k}</span>
+              <span style={{ fontWeight: 600 }}>{fmt(v * mul)}</span>
+            </div>
+            <div style={{ height: 6, borderRadius: 4, background: barColor ? barColor(k) : 'var(--green)', opacity: 0.9, width: `${Math.max(8, (v / max) * 100)}%`, marginTop: 2 }} />
           </div>
         ))}
       </div>
