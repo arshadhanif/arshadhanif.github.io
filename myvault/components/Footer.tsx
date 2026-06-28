@@ -28,6 +28,12 @@ export default function Footer() {
             >
               Start Here
             </Link>
+            <Link
+              href="/solutions"
+              className="text-sm text-muted transition-colors hover:text-accent"
+            >
+              Solutions
+            </Link>
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}

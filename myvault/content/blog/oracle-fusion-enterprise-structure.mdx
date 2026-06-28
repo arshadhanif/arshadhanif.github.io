@@ -109,6 +109,8 @@ ORDER BY
     gl.name, le.name, hou.name, fbc.book_type_code, iop.organization_code;
 ```
 
+> **Free download:** grab this query as a ready-to-use `.sql` file from the [free resources](https://arshadhanif.github.io/myvault/resources/), or [download it directly](https://arshadhanif.github.io/myvault/downloads/oracle-fusion-enterprise-structure-query.sql).
+
 ### Join logic worth knowing
 `GL_LEDGER_LE_V` is the correct view for mapping ledgers to legal entities. The alternative `GL_LEDGER_LE_BSV_SPECIFIC_V` does not expose the ORG_ID connection and should not be used here.
 

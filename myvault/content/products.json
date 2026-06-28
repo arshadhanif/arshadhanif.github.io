@@ -7,7 +7,19 @@
     "category": "Templates",
     "tags": ["Excel", "Dashboards"],
     "gumroadUrl": "https://gumroad.com/l/placeholder-excel-dashboard",
-    "featured": true
+    "featured": true,
+    "longDescription": "A set of board-ready Excel dashboards built the way finance teams actually present numbers. Drop in your data and the P&L, cash flow and KPI views update automatically, with a clean design system you can reuse across reports.",
+    "whatsInside": [
+      "P&L dashboard with month, quarter and year-to-date views",
+      "Cash flow dashboard with a rolling position",
+      "KPI scorecard with dynamic charts and conditional formatting",
+      "A reusable colour and chart style guide",
+      "A sample data set so you can see it working before you plug in your own"
+    ],
+    "faqs": [
+      { "q": "Which Excel version do I need?", "a": "Excel 2016 or later, including Microsoft 365. A few formulas use dynamic arrays that work best on 365." },
+      { "q": "Can I rebrand it?", "a": "Yes. The colours and fonts are driven by the style guide tab, so you can match your company brand in a few clicks." }
+    ]
   },
   {
     "id": "month-end-close-checklist",
@@ -17,7 +29,19 @@
     "category": "Templates",
     "tags": ["Excel", "Finance"],
     "gumroadUrl": "https://gumroad.com/l/placeholder-month-end-close",
-    "featured": true
+    "featured": true,
+    "longDescription": "Turn your month-end close from a scramble into a controlled, repeatable process. This Excel workbook tracks every task, who owns it, what it depends on, and where it stands, with a status dashboard that shows the whole close at a glance.",
+    "whatsInside": [
+      "Task tracker with owners, due dates and dependencies",
+      "Live status dashboard for the whole close",
+      "Reconciliation log to evidence sign-offs",
+      "A starter task list you can adapt to your close",
+      "Notes column for review points and carry-forwards"
+    ],
+    "faqs": [
+      { "q": "Is this tied to a specific ERP?", "a": "No. It works alongside any system (Oracle Fusion, SAP, NetSuite, QuickBooks). It tracks the process, not the software." },
+      { "q": "Can multiple people use it?", "a": "Yes. Store it on SharePoint or OneDrive for shared editing during the close." }
+    ]
   },
   {
     "id": "excel-3-statement-model",
@@ -87,7 +111,19 @@
     "category": "Report Packages",
     "tags": ["Oracle Fusion", "Reporting"],
     "gumroadUrl": "https://gumroad.com/l/placeholder-fusion-reporting",
-    "featured": true
+    "featured": true,
+    "longDescription": "A complete set of OTBI and BI Publisher report templates for Oracle Fusion Financials, covering the reports finance teams ask for most across GL, AP, AR and FA. Import them, point them at your ledger and business unit, and you have working reports on day one.",
+    "whatsInside": [
+      "GL trial balance and account analysis (OTBI)",
+      "AP invoice and ageing reports",
+      "AR transaction and ageing reports",
+      "Fixed Assets cost and depreciation reports",
+      "Parameter setup notes so the reports are portable across instances"
+    ],
+    "faqs": [
+      { "q": "Will these work on my instance?", "a": "Yes. They are built on standard subject areas and data models, with parameters for ledger and business unit so they move between instances without rework." },
+      { "q": "Do I need technical skills to use them?", "a": "Basic OTBI and BI Publisher familiarity helps, but the setup notes walk through importing and pointing each report at your data." }
+    ]
   },
   {
     "id": "erp-implementation-doc-pack",
@@ -108,5 +144,49 @@
     "tags": ["Oracle Fusion", "Course"],
     "gumroadUrl": "https://gumroad.com/l/placeholder-fusion-course",
     "featured": false
+  },
+  {
+    "id": "excel-finance-template-bundle",
+    "title": "Excel Finance Template Bundle",
+    "description": "Every Excel finance template in one bundle at a lower price: dashboards, the 3-statement model, 13-week cash flow, budgeting pack, reconciliations and the close tracker.",
+    "price": "$129",
+    "category": "Templates",
+    "tags": ["Excel", "Bundle"],
+    "gumroadUrl": "https://gumroad.com/l/placeholder-excel-bundle",
+    "featured": true,
+    "longDescription": "All of the ERP Finance Pro Excel templates in a single bundle, at a meaningful saving over buying them one by one. The fastest way to equip a finance team with a consistent, reusable toolkit.",
+    "whatsInside": [
+      "Excel Finance Dashboard Kit",
+      "3-Statement Financial Model",
+      "13-Week Cash Flow Model",
+      "Budgeting & Forecasting Template Pack",
+      "Reconciliation Templates Bundle",
+      "Month-End Close Checklist & Tracker",
+      "Free updates as new templates are added"
+    ],
+    "faqs": [
+      { "q": "Do I get future templates?", "a": "Yes. New Excel templates added to the bundle are included at no extra cost." },
+      { "q": "Is it cheaper than buying separately?", "a": "Yes, the bundle is priced well below the total of the individual templates." }
+    ]
+  },
+  {
+    "id": "otbi-bip-report-pack-bundle",
+    "title": "OTBI + BI Publisher Report Pack",
+    "description": "The combined Oracle Fusion reporting bundle: OTBI analyses and BI Publisher templates across GL, AP, AR and FA, with portable parameters.",
+    "price": "$149",
+    "category": "Report Packages",
+    "tags": ["Oracle Fusion", "Reporting", "Bundle"],
+    "gumroadUrl": "https://gumroad.com/l/placeholder-otbi-bip-bundle",
+    "featured": false,
+    "longDescription": "Both the OTBI and BI Publisher report sets for Oracle Fusion Financials in one bundle. Exploration in OTBI, pixel-perfect output in BIP, all built on portable parameters so they move between instances cleanly.",
+    "whatsInside": [
+      "OTBI analyses for GL, AP, AR and FA",
+      "BI Publisher templates for formal statements and documents",
+      "Parameter setup notes for portability across instances",
+      "Guidance on when to use OTBI vs BI Publisher"
+    ],
+    "faqs": [
+      { "q": "Who is this for?", "a": "Functional consultants, report developers and finance teams who want a working reporting baseline on Oracle Fusion without building from scratch." }
+    ]
   }
 ]

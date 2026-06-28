@@ -1,5 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getAllPosts, getPostsByCategory } from '@/lib/posts';
+import { getAllProductIds } from '@/lib/products';
+import { SOLUTIONS } from '@/lib/solutions';
 import { SITE_URL, BLOG_CATEGORIES } from '@/lib/constants';
 import { categorySlug } from '@/lib/categories';
 
@@ -20,6 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/tools/excel-formula-generator',
     '/watch',
     '/resources',
+    '/solutions',
     '/services',
     '/about',
     '/newsletter',
@@ -46,5 +49,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.5,
   }));
 
-  return [...staticRoutes, ...postRoutes, ...categoryRoutes];
+  const productRoutes = getAllProductIds().map((id) => ({
+    url: `${base}/store/${id}/`,
+    lastModified: new Date('2026-06-28'),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }));
+
+  const solutionRoutes = SOLUTIONS.map((s) => ({
+    url: `${base}/solutions/${s.slug}/`,
+    lastModified: new Date('2026-06-28'),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }));
+
+  return [
+    ...staticRoutes,
+    ...postRoutes,
+    ...categoryRoutes,
+    ...productRoutes,
+    ...solutionRoutes,
+  ];
 }

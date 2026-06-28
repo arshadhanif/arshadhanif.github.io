@@ -19,6 +19,19 @@ export const SITE_URL = 'https://arshadhanif.github.io';
 // Default Open Graph image (relative to basePath).
 export const OG_IMAGE = '/og-image.svg';
 
+// Privacy-friendly analytics. Nothing loads until this is filled in.
+// - For Plausible: set provider to 'plausible' and domain to your site domain.
+// - For Google Analytics 4: set provider to 'ga' and gaId to 'G-XXXXXXX'.
+export const ANALYTICS: {
+  provider: '' | 'plausible' | 'ga';
+  domain: string;
+  gaId: string;
+} = {
+  provider: '',
+  domain: 'arshadhanif.github.io',
+  gaId: '',
+};
+
 // The person behind the brand. This shows up on the About page, not the
 // homepage. The brand is the entity; this is the credibility behind it.
 export const FOUNDER = {

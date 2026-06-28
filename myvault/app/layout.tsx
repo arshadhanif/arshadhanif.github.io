@@ -4,6 +4,7 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import JsonLd from '@/components/JsonLd';
+import Analytics from '@/components/Analytics';
 import {
   SITE_NAME,
   SITE_TAGLINE,
@@ -102,6 +103,7 @@ export default function RootLayout({
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
+        <Analytics />
       </body>
     </html>
   );

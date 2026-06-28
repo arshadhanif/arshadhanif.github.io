@@ -1,6 +1,11 @@
 import productsData from '@/content/products.json';
 import type { ProductCategory } from './constants';
 
+export interface ProductFaq {
+  q: string;
+  a: string;
+}
+
 export interface Product {
   id: string;
   title: string;
@@ -10,10 +15,22 @@ export interface Product {
   tags?: string[];
   gumroadUrl: string;
   featured: boolean;
+  // Optional richer detail-page content. Falls back to description if absent.
+  longDescription?: string;
+  whatsInside?: string[];
+  faqs?: ProductFaq[];
 }
 
 export function getAllProducts(): Product[] {
   return productsData as Product[];
+}
+
+export function getProductById(id: string): Product | null {
+  return getAllProducts().find((p) => p.id === id) ?? null;
+}
+
+export function getAllProductIds(): string[] {
+  return getAllProducts().map((p) => p.id);
 }
 
 export function getFeaturedProducts(limit = 3): Product[] {

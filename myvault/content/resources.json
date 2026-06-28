@@ -30,5 +30,29 @@
     "format": "Excel",
     "fileUrl": "/downloads/erp-implementation-raci.xlsx",
     "featured": false
+  },
+  {
+    "id": "enterprise-structure-query",
+    "title": "Oracle Fusion Enterprise Structure SQL Query",
+    "description": "The validated one-run query that pulls every primary ledger with its legal entities, business units, FA books and inventory orgs. Drop it into BIP and go.",
+    "format": "SQL",
+    "fileUrl": "/downloads/oracle-fusion-enterprise-structure-query.sql",
+    "featured": true
+  },
+  {
+    "id": "new-year-setup-checklist",
+    "title": "Oracle Fusion New Year Setup Checklist",
+    "description": "A printable checklist for the fiscal year rollover: what to set up before the year turns, what happens at rollover, and the commonly missed items.",
+    "format": "PDF",
+    "fileUrl": "/downloads/oracle-fusion-new-year-checklist.pdf",
+    "featured": false
+  },
+  {
+    "id": "user-inactivation-checklist",
+    "title": "Oracle Fusion User Inactivation Checklist",
+    "description": "The seven pre-inactivation checks and the resolution sequence, so you can retire implementation accounts without breaking jobs, reports or integrations.",
+    "format": "PDF",
+    "fileUrl": "/downloads/oracle-fusion-user-inactivation-checklist.pdf",
+    "featured": false
   }
 ]

@@ -1,0 +1,60 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 1325 >>
+stream
+BT
+/F1 11 Tf
+54 760 Td
+15 TL
+/F1 16 Tf (Oracle Fusion: User Inactivation Checklist) Tj
+/F1 11 Tf
+T* () Tj
+T* (Assess each account before inactivation \(highest risk first\):) Tj
+T* ([ ] 1. Active scheduled processes \(ESS_REQUEST_HISTORY, states 1-4\)) Tj
+T* ([ ] 2. BPM worklist pending tasks \(named approver accounts\)) Tj
+T* ([ ] 3. BPM approval groups \(sole-member dead ends\)) Tj
+T* ([ ] 4. BPM approval rules \(named user references\)) Tj
+T* ([ ] 5. BI catalog ownership \(transfer before inactivation\)) Tj
+T* ([ ] 6. Integration / web service credentials \(confirm with OIC team\)) Tj
+T* ([ ] 7. Open transactions \(stale state\)) Tj
+T* () Tj
+T* (For pure implementation accounts, focus on checks 1, 5 and 6.) Tj
+T* () Tj
+T* (Resolution sequence) Tj
+T* ([ ] Reassign sole-submitter scheduled processes to an active account; test) Tj
+T* ([ ] Cancel remaining jobs explicitly \(Tools > Scheduled Processes\)) Tj
+T* ([ ] Transfer BI catalog ownership \(Set ownership of item and all subitems\)) Tj
+T* ([ ] Confirm no OIC/external connection uses the account credentials) Tj
+T* ([ ] Inactivate via Security Console; document date + checks \(audit trail\)) Tj
+T* () Tj
+T* (Tip: read ASE_USER_LOGIN_INFO \(human logins\) and FND_SESSIONS together.) Tj
+T* () Tj
+T* (ERP Finance Pro  |  arshadhanif.github.io/myvault) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001618 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1688
+%%EOF
