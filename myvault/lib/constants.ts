@@ -36,7 +36,7 @@ export const FOUNDER = {
 };
 
 export const SOCIAL = {
-  linkedin: 'https://www.linkedin.com/in/arshadhanif',
+  linkedin: 'https://www.linkedin.com/in/arshad-hanif-acca-erp/',
   github: 'https://github.com/arshadhanif',
 };
 
