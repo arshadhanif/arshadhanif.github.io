@@ -4,6 +4,7 @@ import { getFullDetail, getSeason, getRecommendations, getEpisodeExternalIds, IM
 import {
   ensureTitleFromFull, getWatchesForTitle, addToWatchlist,
   listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, markEpisodesBulk, unmarkAllEpisodes, setEpisodeRating,
+  getTitleServices, setTitleServices, getStreamingAvailability,
 } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
@@ -126,7 +127,8 @@ export default function TitleDetail() {
           </Block>
         )}
 
-        <WhereToWatch providers={full.providers} region={region} setRegion={setRegion} title={full.title} />
+        <WhereToWatch providers={full.providers} region={region} setRegion={setRegion} title={full.title}
+          titleId={titleId} tmdbId={Number(id)} mediaType={media} imdbId={full.imdb_id} userId={user.id} />
 
         {full.cast.length > 0 && (
           <Block title="Cast">
@@ -254,18 +256,38 @@ function AddWatchlist({ titleId, groups, userId }) {
   )
 }
 
-function WhereToWatch({ providers, region, setRegion, title }) {
+const SERVICE_LIST = ['Netflix', 'Disney+', 'OSN+', 'Prime Video', 'Apple TV+', 'Shahid', 'StarzPlay', 'Max', 'Hulu', 'YouTube', 'Cinema']
+
+function WhereToWatch({ providers, region, setRegion, title, titleId, tmdbId, mediaType, imdbId, userId }) {
+  const toast = useToast()
   const regions = providerRegions(providers)
   const block = providers[region]
-  const groupsOf = [
-    ['Stream', block?.flatrate],
-    ['Free', block?.free],
-    ['With ads', block?.ads],
-    ['Rent', block?.rent],
-    ['Buy', block?.buy],
+  const tmdbGroups = [
+    ['Stream', block?.flatrate], ['Free', block?.free], ['With ads', block?.ads],
+    ['Rent', block?.rent], ['Buy', block?.buy],
   ].filter(([, list]) => list && list.length)
-  // TMDB/JustWatch coverage is patchy outside the US/EU, so always give a way to verify.
   const justWatch = block?.link || `https://www.justwatch.com/us/search?q=${encodeURIComponent(title || '')}`
+
+  const [live, setLive] = useState(null)       // { ok, total, groups } | null
+  const [manual, setManual] = useState([])
+  const [editing, setEditing] = useState(false)
+
+  useEffect(() => { if (titleId) getTitleServices(titleId).then(setManual).catch(() => {}) }, [titleId])
+  useEffect(() => {
+    setLive(null)
+    if (!tmdbId && !imdbId) return
+    getStreamingAvailability({ tmdbId, mediaType, imdbId, country: region }).then(setLive).catch(() => {})
+  }, [tmdbId, imdbId, mediaType, region])
+
+  async function toggleService(s) {
+    const next = manual.includes(s) ? manual.filter((x) => x !== s) : [...manual, s]
+    setManual(next)
+    try { await setTitleServices(titleId, next, userId) } catch (e) { toast(e.message || 'Could not save', 'err') }
+  }
+
+  const liveGroups = live?.ok && live.total > 0
+    ? [['Stream', live.groups.stream], ['Free', live.groups.free], ['Rent', live.groups.rent], ['Buy', live.groups.buy]].filter(([, l]) => l?.length)
+    : null
 
   return (
     <div className="detail-block">
@@ -277,31 +299,70 @@ function WhereToWatch({ providers, region, setRegion, title }) {
           </select>
         )}
       </div>
-      {groupsOf.length === 0 ? (
-        <div className="muted">
-          Nothing listed for {regionName(region)}. JustWatch’s data can be incomplete here, so it may still be streaming.{' '}
-          <a href={justWatch} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-2)' }}>Check on JustWatch ↗</a>
+
+      {/* Manual override — always trusted, set by you */}
+      <div className="ws-manual">
+        <div className="spread" style={{ marginBottom: manual.length || editing ? 8 : 0 }}>
+          <span className="faint">{manual.length ? '✓ You watch this on' : 'Set where you watch this'}</span>
+          <button className="btn sm ghost" onClick={() => setEditing((e) => !e)}>{editing ? 'Done' : manual.length ? 'Edit' : '+ Add'}</button>
         </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {groupsOf.map(([label, list]) => (
+        {!editing && manual.length > 0 && (
+          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+            {manual.map((s) => <span key={s} className="chip active" style={{ background: 'var(--accent)', borderColor: 'var(--accent)', color: 'var(--on-accent)' }}>{s}</span>)}
+          </div>
+        )}
+        {editing && (
+          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+            {SERVICE_LIST.map((s) => (
+              <button key={s} className={`chip ${manual.includes(s) ? 'active' : ''}`}
+                style={manual.includes(s) ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: 'var(--on-accent)' } : undefined}
+                onClick={() => toggleService(s)}>{manual.includes(s) ? '✓ ' : ''}{s}</button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Live availability (preferred) or TMDB fallback */}
+      {liveGroups ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>
+          {liveGroups.map(([label, list]) => (
+            <div key={label}>
+              <div className="faint" style={{ marginBottom: 6 }}>{label}</div>
+              <div className="scroll-x">
+                {list.map((p) => (
+                  <a className="provider" key={`${label}-${p.name}`} title={p.name} href={p.link || justWatch} target="_blank" rel="noreferrer">
+                    {p.logo ? <img src={p.logo} alt={p.name} /> : <span className="faint" style={{ padding: '0 6px', fontSize: 11 }}>{p.name}</span>}
+                  </a>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div className="faint" style={{ fontSize: 12 }}>Live data · {regionName(region)}</div>
+        </div>
+      ) : tmdbGroups.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>
+          {tmdbGroups.map(([label, list]) => (
             <div key={label}>
               <div className="faint" style={{ marginBottom: 6 }}>{label}</div>
               <div className="scroll-x">
                 {list.map((p) => (
                   <div className="provider" key={p.provider_id} title={p.provider_name}>
-                    {IMG.logo(p.logo_path)
-                      ? <img src={IMG.logo(p.logo_path)} alt={p.provider_name} />
-                      : <span className="faint">{p.provider_name}</span>}
+                    {IMG.logo(p.logo_path) ? <img src={IMG.logo(p.logo_path)} alt={p.provider_name} /> : <span className="faint">{p.provider_name}</span>}
                   </div>
                 ))}
               </div>
             </div>
           ))}
         </div>
+      ) : (
+        <div className="muted" style={{ marginTop: 14 }}>
+          Nothing listed for {regionName(region)} yet.{' '}
+          <a href={justWatch} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-2)' }}>Check on JustWatch ↗</a>
+        </div>
       )}
-      <div className="faint" style={{ marginTop: 10 }}>
-        Availability via JustWatch, and can be incomplete for some regions · <a href={justWatch} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-2)' }}>verify on JustWatch ↗</a>
+
+      <div className="faint" style={{ marginTop: 10, fontSize: 12 }}>
+        {liveGroups ? 'Live availability data' : 'Availability via JustWatch, can be incomplete for some regions'} · <a href={justWatch} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-2)' }}>verify on JustWatch ↗</a>
       </div>
     </div>
   )

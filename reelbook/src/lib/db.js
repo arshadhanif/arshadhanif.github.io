@@ -613,6 +613,32 @@ export async function getLoggedTmdbIds() {
   return set
 }
 
+// ---------- Where to watch (manual override + live API) ----------
+
+export async function getTitleServices(titleId) {
+  const { data } = await supabase.from('title_services').select('services').eq('title_id', titleId).limit(1).maybeSingle()
+  return data?.services || []
+}
+
+export async function setTitleServices(titleId, services, profileId) {
+  const { data: hm } = await supabase
+    .from('household_members').select('household_id').eq('profile_id', profileId).limit(1).maybeSingle()
+  if (!hm?.household_id) throw new Error('No household yet')
+  const { error } = await supabase.from('title_services').upsert(
+    { title_id: titleId, household_id: hm.household_id, services, updated_by: profileId, updated_at: new Date().toISOString() },
+    { onConflict: 'title_id,household_id' })
+  if (error) throw error
+}
+
+// Live streaming availability via the `streaming` edge function (Movie of the Night).
+export async function getStreamingAvailability({ tmdbId, mediaType, imdbId, country }) {
+  try {
+    const { data, error } = await supabase.functions.invoke('streaming', { body: { tmdbId, mediaType, imdbId, country } })
+    if (error) return { ok: false }
+    return data
+  } catch { return { ok: false } }
+}
+
 // ---------- Public profile sharing ----------
 
 export async function getMyShare(profileId) {

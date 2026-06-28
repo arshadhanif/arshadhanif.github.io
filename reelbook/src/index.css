@@ -420,6 +420,11 @@ input:focus, select:focus, textarea:focus {
 .fab:active { transform: scale(.92); }
 @media (min-width: 820px) { .fab { bottom: 24px; right: 24px; } }
 
+/* where to watch — manual override */
+.ws-manual { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; }
+.provider { display: inline-flex; }
+a.provider:hover { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 10px; }
+
 /* group comparison */
 .cmp-row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-top: 1px solid var(--border); font-size: 14px; margin-top: 8px; }
 .cmp-row:first-of-type { margin-top: 12px; }
