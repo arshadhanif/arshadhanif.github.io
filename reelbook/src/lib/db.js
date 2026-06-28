@@ -327,7 +327,7 @@ export async function markEpisodesBulk({ titleId, groupId, episodes, createdBy, 
   for (let i = 0; i < rows.length; i += 500) {
     const { error } = await supabase
       .from('episode_watches')
-      // ignoreDuplicates: only add episodes that aren't logged yet — never
+      // ignoreDuplicates: only add episodes that aren't logged yet - never
       // overwrite an existing episode's real watched date or rating.
       .upsert(rows.slice(i, i + 500), { onConflict: 'title_id,group_id,season_number,episode_number', ignoreDuplicates: true })
     if (error) throw error
@@ -347,7 +347,7 @@ export async function markSeason({ titleId, groupId, season, episodes, watchedOn
   if (error) throw error
 }
 
-// Shows with episodes ticked off but not yet complete — for "Continue watching".
+// Shows with episodes ticked off but not yet complete - for "Continue watching".
 export async function listInProgressShows() {
   const { data, error } = await supabase
     .from('episode_watches')
@@ -687,7 +687,7 @@ export async function saveNotifBaselines(map) {
   if (error) throw error
 }
 
-// Set of TMDB ids the household has logged (watched or watchlisted) — used to
+// Set of TMDB ids the household has logged (watched or watchlisted) - used to
 // badge titles you've seen on person / discovery pages.
 export async function getLoggedTmdbIds() {
   const [{ data: w }, { data: wl }] = await Promise.all([

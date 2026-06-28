@@ -60,7 +60,7 @@ export default function TasteMatch() {
   return (
     <div className="page" style={{ maxWidth: 820 }}>
       <h1>Taste Match</h1>
-      <p className="sub">How {headline}’s tastes line up — based on titles you’ve both rated.</p>
+      <p className="sub">How {headline}’s tastes line up, based on titles you’ve both rated.</p>
 
       {data.count === 0 ? (
         <Empty icon="❤️">Rate some of the same titles and your match score, shared loves and clashes will show up here.</Empty>

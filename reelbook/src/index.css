@@ -2,7 +2,7 @@
   --bg: #0e1018;
   --bg-grad: radial-gradient(1100px 640px at 85% -10%, #46266e 0%, transparent 58%), radial-gradient(1000px 620px at -10% 4%, #103a63 0%, transparent 55%), radial-gradient(900px 620px at 50% 116%, #2a1656 0%, transparent 62%);
   --accent-grad: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-  /* Vibrant signature gradient that never passes through grey — for brand & hero accents */
+  /* Vibrant signature gradient that never passes through grey - for brand & hero accents */
   --brand-grad: linear-gradient(100deg, #ff9d4d 0%, #ff5c8a 48%, #b46bff 100%);
   --card-grad: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 60%);
   --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -16,7 +16,7 @@
   --text-dim: #9aa3b4;
   --text-faint: #69718390;
   --text-faint-solid: #697183;
-  --accent: #e8a838;       /* warm gold — groups / brand */
+  --accent: #e8a838;       /* warm gold - groups / brand */
   --accent-soft: #e8a83822;
   --accent-2: #5b9aff;     /* blue */
   --pink: #ff6b9d;
@@ -58,7 +58,7 @@ html[data-theme="light"] {
 }
 html[data-theme="light"] body { color-scheme: light; }
 
-/* OLED — true black, for AMOLED screens */
+/* OLED - true black, for AMOLED screens */
 html[data-theme="oled"] {
   --bg: #000000;
   --bg-grad: radial-gradient(1000px 600px at 86% -10%, #2a0f44 0%, transparent 56%), radial-gradient(900px 560px at -10% 6%, #06243f 0%, transparent 54%);
@@ -68,7 +68,7 @@ html[data-theme="oled"] {
   --shadow: 0 8px 30px rgba(0,0,0,0.6); --shadow-sm: 0 4px 14px rgba(0,0,0,0.5);
   --topbar-bg: rgba(0,0,0,0.72); --tabbar-bg: rgba(0,0,0,0.94);
 }
-/* Slate — cool blue-grey dark */
+/* Slate - cool blue-grey dark */
 html[data-theme="slate"] {
   --bg: #0f172a;
   --bg-grad: radial-gradient(1000px 600px at 86% -10%, #1e3a5f 0%, transparent 56%), radial-gradient(900px 560px at -10% 6%, #243b53 0%, transparent 54%);
@@ -78,7 +78,7 @@ html[data-theme="slate"] {
   --shadow: 0 8px 30px rgba(0,0,0,0.42); --shadow-sm: 0 4px 14px rgba(0,0,0,0.3);
   --topbar-bg: rgba(15,23,42,0.72); --tabbar-bg: rgba(15,23,42,0.94);
 }
-/* Mocha — warm dark */
+/* Mocha - warm dark */
 html[data-theme="mocha"] {
   --bg: #1c1714;
   --bg-grad: radial-gradient(1000px 600px at 86% -10%, #4a2f22 0%, transparent 56%), radial-gradient(900px 560px at -10% 6%, #3a2a40 0%, transparent 54%);
@@ -88,7 +88,7 @@ html[data-theme="mocha"] {
   --shadow: 0 8px 30px rgba(0,0,0,0.45); --shadow-sm: 0 4px 14px rgba(0,0,0,0.32);
   --topbar-bg: rgba(28,23,20,0.72); --tabbar-bg: rgba(28,23,20,0.94);
 }
-/* Sepia — warm cream light */
+/* Sepia - warm cream light */
 html[data-theme="sepia"] {
   --bg: #f4ecd8;
   --bg-grad: radial-gradient(1000px 600px at 86% -10%, #f0e0c0 0%, transparent 56%), radial-gradient(900px 560px at -10% 6%, #efe2cf 0%, transparent 54%);
@@ -497,7 +497,7 @@ input:focus, select:focus, textarea:focus {
 .imdb-rating { display: inline-flex; align-items: center; gap: 4px; background: #f5c518; color: #0b0d12; font-weight: 800; font-size: 13px; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
 .imdb-rating.sm { font-size: 11px; padding: 1px 6px; }
 
-/* where to watch — manual override */
+/* where to watch - manual override */
 .ws-manual { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; }
 .provider { display: inline-flex; }
 a.provider:hover { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 10px; }

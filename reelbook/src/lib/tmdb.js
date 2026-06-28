@@ -76,7 +76,7 @@ export async function searchMulti(query, page = 1) {
     .filter((r) => r.title)
 }
 
-// Look up a TMDB title from an IMDb id (tt0123456) — used by the IMDb importer.
+// Look up a TMDB title from an IMDb id (tt0123456) - used by the IMDb importer.
 export async function findByImdbId(imdbId) {
   const data = await tmdb(`/find/${imdbId}`, { external_source: 'imdb_id' })
   const hit = (data.movie_results || [])[0] || (data.tv_results || [])[0]
@@ -151,7 +151,7 @@ export async function discoverByProviders(mediaType, providerIds, region, page =
   return (data.results || []).map((r) => normalizeResult({ ...r, media_type: mediaType })).filter(Boolean).filter((r) => r.poster_path)
 }
 
-// Trending this week (movies + TV) — shown on the Discover screen before searching.
+// Trending this week (movies + TV) - shown on the Discover screen before searching.
 export async function getTrending() {
   const data = await tmdb('/trending/all/week')
   return (data.results || [])
@@ -339,7 +339,7 @@ export async function getSeason(tmdbId, seasonNumber) {
   }))
 }
 
-// IMDb id for a single episode (fetched lazily when a row is expanded —
+// IMDb id for a single episode (fetched lazily when a row is expanded -
 // the season endpoint doesn't carry per-episode external ids).
 export async function getEpisodeExternalIds(tmdbId, season, episode) {
   try {

@@ -1,5 +1,5 @@
 // Centralised date formatting. We use day-month-year with a short month name
-// (e.g. 01-Jan-2026) everywhere — unambiguous and easy to read across regions.
+// (e.g. 01-Jan-2026) everywhere - unambiguous and easy to read across regions.
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 function toDate(dateStr) {

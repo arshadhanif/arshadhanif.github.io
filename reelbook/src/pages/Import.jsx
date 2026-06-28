@@ -343,7 +343,7 @@ export default function Import() {
           const tid = map.get(keyOf(m.seed)); if (!tid || seen.has(tid)) continue; seen.add(tid)
           const s = m.it.score ? Math.max(1, Math.min(10, Math.round(Number(m.it.score)))) : null
           if (snap.watches.has(tid)) {
-            // already logged — but did the rating change?
+            // already logged - but did the rating change?
             const prev = snap.ratings.get(tid)
             if (profileId && s != null && prev && prev.score !== s) ratingUpdates.push({ watchId: prev.watchId, score: s })
             else alreadyWatches++
@@ -544,7 +544,7 @@ export default function Import() {
       {batches.length > 0 && (
         <div style={{ marginTop: 28 }}>
           <div className="section-head"><h2 style={{ fontSize: 18 }}>Import history</h2></div>
-          <p className="faint" style={{ margin: '0 0 12px' }}>Each import is tracked here. “Undo” removes exactly what that import added — handy if you imported into the wrong group or by mistake.</p>
+          <p className="faint" style={{ margin: '0 0 12px' }}>Each import is tracked here. “Undo” removes exactly what that import added, so you can fix an import into the wrong group or by mistake.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {batches.map((b) => {
               const parts = [
@@ -636,12 +636,12 @@ function PlanPreview({ plan, cats, setCats, isTv }) {
   )
   return (
     <div className="card" style={{ marginBottom: 12 }}>
-      <strong>Import preview — incremental</strong>
+      <strong>Import preview (incremental)</strong>
       <p className="faint" style={{ margin: '4px 0 8px' }}>Only new items are added; existing ones are skipped. Rewatches and changed ratings are updated in place.</p>
-      <Row color="var(--green)" label="✨ New — will be added" value={news.length ? news.join(' · ') : 'nothing new'} />
+      <Row color="var(--green)" label="✨ New (will be added)" value={news.length ? news.join(' · ') : 'nothing new'} />
       {updates.length > 0 && (<><div style={{ borderTop: '1px solid var(--border)' }} /><Row color="var(--accent)" label="🔁 Updates" value={updates.join(' · ')} /></>)}
       <div style={{ borderTop: '1px solid var(--border)' }} />
-      <Row color="var(--text-dim)" label="⏭️ Already logged — skipped" value={already.length ? already.join(' · ') : 'none'} />
+      <Row color="var(--text-dim)" label="⏭️ Already logged (skipped)" value={already.length ? already.join(' · ') : 'none'} />
       {c.unmatched > 0 && (
         <>
           <div style={{ borderTop: '1px solid var(--border)' }} />

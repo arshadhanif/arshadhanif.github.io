@@ -3,7 +3,7 @@
 // backend can notify this device about new episodes even when the app is closed.
 import { savePushSubscription, deletePushSubscription, sendTestPush } from './db'
 
-// VAPID public key (safe to ship — the private half lives only on the server).
+// VAPID public key (safe to ship - the private half lives only on the server).
 const VAPID_PUBLIC = 'BDKZearvTE-fFUG_IKsXAj_IlkNCOoI4h21k145iHTbtrbGL_CD7_xdzwE7GUSMHIfHqAu4woKeTaQS3T2thjSU'
 
 export function isPushSupported() {

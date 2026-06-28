@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getTrending, IMG } from '../lib/tmdb'
 
-// A cinematic, dimmed collage of this week's trending posters — used as a
+// A cinematic, dimmed collage of this week's trending posters - used as a
 // backdrop on the landing and login screens. Purely decorative.
 export default function PosterWall({ veil = 'hero' }) {
   const [posters, setPosters] = useState([])
