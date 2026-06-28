@@ -578,10 +578,10 @@ a.provider:hover { outline: 2px solid var(--accent); outline-offset: 1px; border
 .select-dot {
   position: absolute; top: 7px; left: 7px; z-index: 3;
   width: 26px; height: 26px; border-radius: 50%;
-  background: rgba(0,0,0,0.6); border: 2px solid #fff; color: #0b0d12;
+  background: rgba(0,0,0,0.6); border: 2px solid #fff; color: #fff;
   font-weight: 900; font-size: 14px; display: grid; place-items: center; backdrop-filter: blur(2px);
 }
-.select-dot.on { background: var(--accent); border-color: var(--accent); }
+.select-dot.on { background: var(--accent); border-color: var(--accent); color: #0b0d12; }
 .selbar {
   position: fixed; left: 0; right: 0; bottom: var(--nav-h); z-index: 40;
   background: var(--bg-elev); border-top: 1px solid var(--border); box-shadow: 0 -8px 24px rgba(0,0,0,.4);
