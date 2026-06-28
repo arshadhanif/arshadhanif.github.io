@@ -3,6 +3,7 @@ import { findByImdbId, findByTitle, findByTvdbId } from '../lib/tmdb'
 import {
   ensureTitlesBulk, insertWatchesBulk, insertRatingsBulk, insertWatchlistBulk, markEpisodesBulk,
   createImportBatch, listImportBatches, revertImportBatch, getGroupImportSnapshot,
+  updateEpisodeRewatches, setRating,
 } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
@@ -153,6 +154,7 @@ export default function Import() {
   const [reverting, setReverting] = useState(null)
   const [plan, setPlan] = useState(null)
   const [analyzing, setAnalyzing] = useState(false)
+  const [cats, setCats] = useState({ episodes: true, watched: true, watchlist: true })
   const toast = useToast()
 
   const cfg = MODES[mode]
@@ -216,7 +218,7 @@ export default function Import() {
     for (const r of (ep?.objs || [])) (epBySeries[r.series_tvdb_id] ||= []).push(r)
     const epSeries = Object.entries(epBySeries).map(([tvdb, rows]) => {
       const watched = rows.filter((r) => truthy(r.is_watched) && !truthy(r.special))
-        .map((r) => ({ season: Number(r.season), episode: Number(r.episode), watchedOn: normDate(r.watched_at) }))
+        .map((r) => ({ season: Number(r.season), episode: Number(r.episode), watchedOn: normDate(r.watched_at), rewatchCount: Number(r.rewatch_count) || 0 }))
         .filter((e) => Number.isFinite(e.season) && Number.isFinite(e.episode))
       return { tvdb, title: rows[0]?.title, watched }
     }).filter((s) => s.watched.length)
@@ -248,18 +250,20 @@ export default function Import() {
 
       const map = await ensureTitlesBulk([...epR, ...wlR, ...mvR].map((x) => x.seed).filter(Boolean))
 
-      const episodeRows = [], watchRows = [], watchlistRows = []
-      let newEpisodes = 0, alreadyEpisodes = 0, alreadyWatches = 0, alreadyWatchlist = 0
+      const episodeRows = [], episodeUpdates = [], watchRows = [], watchlistRows = []
+      let newEpisodes = 0, alreadyEpisodes = 0, rewatchEpisodes = 0, alreadyWatches = 0, alreadyWatchlist = 0
       const seenW = new Set(), seenWl = new Set()
 
-      // Episodes (incremental: skip episodes already logged) + per-show diary entry for new shows
+      // Episodes (incremental): new ones to add, rewatch bumps to update, rest skipped
       for (const { s, seed } of epR) {
         const tid = seed && map.get(keyOf(seed)); if (!tid) continue
-        const fresh = s.watched.filter((e) => {
+        const fresh = []
+        for (const e of s.watched) {
           const k = `${tid}-${e.season}-${e.episode}`
-          if (snap.episodes.has(k)) { alreadyEpisodes++; return false }
-          newEpisodes++; return true
-        })
+          if (!snap.episodes.has(k)) { newEpisodes++; fresh.push(e) }
+          else if (e.rewatchCount > (snap.episodes.get(k) || 0)) { rewatchEpisodes++; episodeUpdates.push({ titleId: tid, groupId, season: e.season, episode: e.episode, rewatchCount: e.rewatchCount }) }
+          else alreadyEpisodes++
+        }
         if (fresh.length) episodeRows.push({ titleId: tid, episodes: fresh })
         if (!snap.watches.has(tid) && !seenW.has(tid)) {
           seenW.add(tid)
@@ -275,7 +279,8 @@ export default function Import() {
           if (snap.watches.has(tid) || seenW.has(tid)) { alreadyWatches++; continue }
           seenW.add(tid)
           const wd = normDate(r.watched_at) || normDate(r.created_at)
-          watchRows.push({ title_id: tid, group_id: groupId, watched_on: wd || null, date_precision: wd ? 'day' : null, created_by: user.id, visibility: 'private' })
+          const rc = Number(r.rewatch_count) || 0
+          watchRows.push({ title_id: tid, group_id: groupId, watched_on: wd || null, date_precision: wd ? 'day' : null, created_by: user.id, visibility: 'private', rewatch_count: rc, is_rewatch: rc > 0 })
         } else {
           if (snap.watchlist.has(tid) || seenWl.has(tid)) { alreadyWatchlist++; continue }
           seenWl.add(tid); watchlistRows.push({ title_id: tid, group_id: groupId, added_by: user.id })
@@ -294,8 +299,8 @@ export default function Import() {
       }
 
       setPlan({
-        batchKind: 'TV Time', episodeRows, watchRows, watchlistRows,
-        counts: { newWatches: watchRows.length, alreadyWatches, newEpisodes, alreadyEpisodes, newWatchlist: watchlistRows.length, alreadyWatchlist, unmatched: unmatchedTitles.length },
+        batchKind: 'TV Time', episodeRows, episodeUpdates, watchRows, watchlistRows,
+        counts: { newWatches: watchRows.length, alreadyWatches, newEpisodes, alreadyEpisodes, rewatchEpisodes, newWatchlist: watchlistRows.length, alreadyWatchlist, unmatched: unmatchedTitles.length },
         unmatchedTitles,
       })
     } catch (e) {
@@ -309,11 +314,10 @@ export default function Import() {
   async function analyzeImport() {
     if (!groupId) { setStatus({ type: 'error', text: 'Pick a group first.' }); return }
     setAnalyzing(true); setStatus(null)
-    const batchId = newId()
     let done = 0
     setProgress({ done: 0, total: items.length, ok: 0, skipped: 0 })
     try {
-      const snap = await getGroupImportSnapshot(groupId)
+      const snap = await getGroupImportSnapshot(groupId, cfg.needsPerson ? profileId : null)
       const resolved = await pool(items, async (it) => {
         let seed = it.imdbId ? await findByImdbId(it.imdbId) : null
         if (!seed) seed = await findByTitle(it.title, it.year, it.mediaHint)
@@ -334,15 +338,21 @@ export default function Import() {
         }
         setPlan({ batchKind: cfg.label, watchlistRows, counts: { newWatchlist: watchlistRows.length, alreadyWatchlist, unmatched: unmatchedTitles.length }, unmatchedTitles })
       } else {
-        const watchRows = []; let alreadyWatches = 0
+        const watchRows = [], ratingUpdates = []; let alreadyWatches = 0
         for (const m of matched) {
           const tid = map.get(keyOf(m.seed)); if (!tid || seen.has(tid)) continue; seen.add(tid)
-          if (snap.watches.has(tid)) { alreadyWatches++; continue }
-          const wd = normDate(m.it.date)
           const s = m.it.score ? Math.max(1, Math.min(10, Math.round(Number(m.it.score)))) : null
+          if (snap.watches.has(tid)) {
+            // already logged — but did the rating change?
+            const prev = snap.ratings.get(tid)
+            if (profileId && s != null && prev && prev.score !== s) ratingUpdates.push({ watchId: prev.watchId, score: s })
+            else alreadyWatches++
+            continue
+          }
+          const wd = normDate(m.it.date)
           watchRows.push({ title_id: tid, group_id: groupId, watched_on: wd || null, date_precision: wd ? 'day' : null, created_by: user.id, visibility: 'private', _score: profileId ? s : null })
         }
-        setPlan({ batchKind: cfg.label, watchRows, counts: { newWatches: watchRows.length, alreadyWatches, unmatched: unmatchedTitles.length }, unmatchedTitles })
+        setPlan({ batchKind: cfg.label, watchRows, ratingUpdates, counts: { newWatches: watchRows.length, alreadyWatches, ratingChanged: ratingUpdates.length, unmatched: unmatchedTitles.length }, unmatchedTitles })
       }
     } catch (e) {
       console.error('analyze', e)
@@ -352,18 +362,22 @@ export default function Import() {
     }
   }
 
-  // Apply the computed plan: write only the new rows, tag them with a batch.
+  // Apply the computed plan: write only the new rows (honouring category
+  // toggles), bump rewatch counts, update changed ratings, tag with a batch.
   async function applyPlan() {
     if (!plan || !groupId) return
     setRunning(true); setStatus(null)
     const batchId = newId()
     try {
-      let watches = 0, episodes = 0, watchlist = 0
-      for (const er of (plan.episodeRows || [])) {
-        await markEpisodesBulk({ titleId: er.titleId, groupId, episodes: er.episodes, createdBy: user.id, importBatch: batchId })
-        episodes += er.episodes.length
+      let watches = 0, episodes = 0, watchlist = 0, updated = 0
+      if (cats.episodes) {
+        for (const er of (plan.episodeRows || [])) {
+          await markEpisodesBulk({ titleId: er.titleId, groupId, episodes: er.episodes, createdBy: user.id, importBatch: batchId })
+          episodes += er.episodes.length
+        }
+        if (plan.episodeUpdates?.length) { await updateEpisodeRewatches(plan.episodeUpdates); updated += plan.episodeUpdates.length }
       }
-      if (plan.watchRows?.length) {
+      if (cats.watched && plan.watchRows?.length) {
         const rows = plan.watchRows.map(({ _score, ...rest }) => ({ ...rest, import_batch: batchId }))
         const ids = await insertWatchesBulk(rows)
         watches = ids.length
@@ -371,7 +385,10 @@ export default function Import() {
         ids.forEach((wid, i) => { const s = plan.watchRows[i]._score; if (wid && s) ratingRows.push({ watch_id: wid, profile_id: profileId, score: s }) })
         if (ratingRows.length) await insertRatingsBulk(ratingRows)
       }
-      if (plan.watchlistRows?.length) {
+      if (cats.watched && plan.ratingUpdates?.length) {
+        for (const u of plan.ratingUpdates) { await setRating(u.watchId, profileId, u.score); updated++ }
+      }
+      if (cats.watchlist && plan.watchlistRows?.length) {
         await insertWatchlistBulk(plan.watchlistRows.map((r) => ({ ...r, import_batch: batchId })))
         watchlist = plan.watchlistRows.length
       }
@@ -379,7 +396,7 @@ export default function Import() {
         await createImportBatch({ id: batchId, ownerId: user.id, kind: plan.batchKind, groupId, profileId: cfg.needsPerson ? profileId : null, filename: cfg.multi ? tvFiles.map((f) => f.name).join(', ') : filename, watches, episodes, watchlist }).catch(() => {})
         loadBatches()
       }
-      setStatus({ type: 'ok', text: `Imported ${watches} watched · ${episodes} episodes · ${watchlist} to watchlist.` })
+      setStatus({ type: 'ok', text: `Imported ${watches} watched · ${episodes} episodes · ${watchlist} to watchlist${updated ? ` · ${updated} updated` : ''}.` })
       setPlan(null); setItems([]); setTvFiles([])
     } catch (e) {
       console.error('apply', e)
@@ -463,12 +480,12 @@ export default function Import() {
             </div>
           )}
           {analyzing && <AnalyzeBar progress={progress} />}
-          <PlanPreview plan={plan} />
+          <PlanPreview plan={plan} cats={cats} setCats={setCats} isTv />
           {tvFiles.some((f) => f.type !== 'unknown') ? (
             plan ? (
               <div className="row" style={{ gap: 8 }}>
-                <button className="btn primary" style={{ flex: 1 }} disabled={running || !planHasNew(plan)} onClick={applyPlan}>
-                  {running ? 'Importing…' : planHasNew(plan) ? `Import ${planNewTotal(plan)} new item${planNewTotal(plan) === 1 ? '' : 's'}` : 'Nothing new to import'}
+                <button className="btn primary" style={{ flex: 1 }} disabled={running || planActions(plan, cats) === 0} onClick={applyPlan}>
+                  {running ? 'Importing…' : planActions(plan, cats) > 0 ? `Import ${planActions(plan, cats)} item${planActions(plan, cats) === 1 ? '' : 's'}` : 'Nothing to import'}
                 </button>
                 <button className="btn ghost" disabled={running} onClick={() => setPlan(null)}>Re-analyze</button>
               </div>
@@ -491,12 +508,12 @@ export default function Import() {
           </div>
 
           {analyzing && <AnalyzeBar progress={progress} />}
-          <PlanPreview plan={plan} />
+          <PlanPreview plan={plan} cats={cats} setCats={setCats} />
 
           {plan ? (
             <div className="row" style={{ gap: 8 }}>
-              <button className="btn primary" style={{ flex: 1 }} disabled={running || !planHasNew(plan)} onClick={applyPlan}>
-                {running ? 'Importing…' : planHasNew(plan) ? `Import ${planNewTotal(plan)} new item${planNewTotal(plan) === 1 ? '' : 's'}` : 'Nothing new to import'}
+              <button className="btn primary" style={{ flex: 1 }} disabled={running || planActions(plan, cats) === 0} onClick={applyPlan}>
+                {running ? 'Importing…' : planActions(plan, cats) > 0 ? `Import ${planActions(plan, cats)} item${planActions(plan, cats) === 1 ? '' : 's'}` : 'Nothing to import'}
               </button>
               <button className="btn ghost" disabled={running} onClick={() => setPlan(null)}>Re-analyze</button>
             </div>
@@ -556,8 +573,23 @@ export default function Import() {
   )
 }
 
-const planNewTotal = (p) => (p?.counts?.newWatches || 0) + (p?.counts?.newEpisodes || 0) + (p?.counts?.newWatchlist || 0)
-const planHasNew = (p) => planNewTotal(p) > 0
+const num = (n) => n || 0
+function planActions(p, cats) {
+  if (!p) return 0
+  const c = p.counts; let t = 0
+  if (!cats || cats.episodes) t += num(c.newEpisodes) + num(c.rewatchEpisodes)
+  if (!cats || cats.watched) t += num(c.newWatches) + num(c.ratingChanged)
+  if (!cats || cats.watchlist) t += num(c.newWatchlist)
+  return t
+}
+
+function exportUnmatched(titles) {
+  const blob = new Blob([(titles || []).join('\n')], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = 'reelbook-unmatched.txt'; a.click()
+  URL.revokeObjectURL(url)
+}
 
 function AnalyzeBar({ progress }) {
   const pct = progress.total ? (progress.done / progress.total) * 100 : 0
@@ -571,32 +603,43 @@ function AnalyzeBar({ progress }) {
   )
 }
 
-// Incremental import breakdown: what's new vs already logged vs unmatched.
-function PlanPreview({ plan }) {
+// Incremental import breakdown + per-category toggles + unmatched export.
+function PlanPreview({ plan, cats, setCats, isTv }) {
   const [showUnmatched, setShowUnmatched] = useState(false)
   if (!plan) return null
   const c = plan.counts
   const news = [
-    c.newWatches ? `${c.newWatches} new ${c.newEpisodes != null ? 'shows/movies' : 'titles'}` : '',
+    c.newWatches ? `${c.newWatches} new ${isTv ? 'shows/movies' : 'titles'}` : '',
     c.newEpisodes ? `${c.newEpisodes} new episodes` : '',
     c.newWatchlist ? `${c.newWatchlist} new to watchlist` : '',
+  ].filter(Boolean)
+  const updates = [
+    c.rewatchEpisodes ? `${c.rewatchEpisodes} episode rewatches` : '',
+    c.ratingChanged ? `${c.ratingChanged} rating changes` : '',
   ].filter(Boolean)
   const already = [
     c.alreadyWatches ? `${c.alreadyWatches} watched` : '',
     c.alreadyEpisodes ? `${c.alreadyEpisodes} episodes` : '',
     c.alreadyWatchlist ? `${c.alreadyWatchlist} watchlist` : '',
   ].filter(Boolean)
-  const Row = ({ color, dot, label, value }) => (
+  const Row = ({ color, label, value }) => (
     <div className="spread" style={{ padding: '6px 0' }}>
       <span className="row" style={{ gap: 8 }}><span style={{ width: 9, height: 9, borderRadius: 9, background: color }} />{label}</span>
       <strong style={{ color }}>{value}</strong>
     </div>
   )
+  const Toggle = ({ k, label, n }) => (
+    <label className="row" style={{ gap: 6, opacity: n ? 1 : 0.5 }}>
+      <input type="checkbox" checked={cats[k]} disabled={!n} onChange={(e) => setCats((s) => ({ ...s, [k]: e.target.checked }))} />
+      {label} <span className="faint">({n})</span>
+    </label>
+  )
   return (
     <div className="card" style={{ marginBottom: 12 }}>
       <strong>Import preview — incremental</strong>
-      <p className="faint" style={{ margin: '4px 0 8px' }}>Only new items will be added. Anything already in this group is skipped.</p>
+      <p className="faint" style={{ margin: '4px 0 8px' }}>Only new items are added; existing ones are skipped. Rewatches and changed ratings are updated in place.</p>
       <Row color="var(--green)" label="✨ New — will be added" value={news.length ? news.join(' · ') : 'nothing new'} />
+      {updates.length > 0 && (<><div style={{ borderTop: '1px solid var(--border)' }} /><Row color="var(--accent)" label="🔁 Updates" value={updates.join(' · ')} /></>)}
       <div style={{ borderTop: '1px solid var(--border)' }} />
       <Row color="var(--text-dim)" label="⏭️ Already logged — skipped" value={already.length ? already.join(' · ') : 'none'} />
       {c.unmatched > 0 && (
@@ -604,7 +647,10 @@ function PlanPreview({ plan }) {
           <div style={{ borderTop: '1px solid var(--border)' }} />
           <div className="spread" style={{ padding: '6px 0' }}>
             <span className="row" style={{ gap: 8 }}><span style={{ width: 9, height: 9, borderRadius: 9, background: 'var(--pink)' }} />🔍 Couldn’t match on TMDB</span>
-            <button className="linklike" onClick={() => setShowUnmatched((s) => !s)}><strong style={{ color: 'var(--pink)' }}>{c.unmatched}</strong> {showUnmatched ? '▲' : '▼'}</button>
+            <span className="row" style={{ gap: 10 }}>
+              <button className="linklike" onClick={() => exportUnmatched(plan.unmatchedTitles)}>Export</button>
+              <button className="linklike" onClick={() => setShowUnmatched((s) => !s)}><strong style={{ color: 'var(--pink)' }}>{c.unmatched}</strong> {showUnmatched ? '▲' : '▼'}</button>
+            </span>
           </div>
           {showUnmatched && (
             <div className="faint" style={{ maxHeight: 160, overflow: 'auto', fontSize: 13 }}>
@@ -612,6 +658,16 @@ function PlanPreview({ plan }) {
             </div>
           )}
         </>
+      )}
+      {isTv && (
+        <div style={{ borderTop: '1px solid var(--border)', marginTop: 6, paddingTop: 10 }}>
+          <div className="faint" style={{ marginBottom: 6 }}>Include:</div>
+          <div className="row" style={{ gap: 16, flexWrap: 'wrap' }}>
+            <Toggle k="episodes" label="Episodes" n={num(c.newEpisodes) + num(c.rewatchEpisodes)} />
+            <Toggle k="watched" label="Watched shows/movies" n={num(c.newWatches)} />
+            <Toggle k="watchlist" label="Watchlist" n={num(c.newWatchlist)} />
+          </div>
+        </div>
       )}
     </div>
   )

@@ -51,8 +51,8 @@ export default function Insights() {
   const [goalEps, setGoalEps] = useState(getPref('goalEps', 100))
 
   // Lifetime watch-time (all watches + episodes, unaffected by filters).
-  const lifeMin = entries.filter((e) => e.titles?.media_type !== 'tv').reduce((a, e) => a + (e.titles?.runtime || 115), 0)
-    + eps.reduce((a, e) => a + (e.titles?.runtime || 40), 0)
+  const lifeMin = entries.filter((e) => e.titles?.media_type !== 'tv').reduce((a, e) => a + (e.titles?.runtime || 115) * (1 + (e.rewatch_count || 0)), 0)
+    + eps.reduce((a, e) => a + (e.titles?.runtime || 40) * (1 + (e.rewatch_count || 0)), 0)
   const lifeHours = Math.round(lifeMin / 60)
   const lifeDays = (lifeMin / 1440).toFixed(1)
 
@@ -439,7 +439,7 @@ function computeStreaks(diary, eps) {
 function computeEpisodes(eps) {
   const now = new Date()
   let minutes = 0
-  for (const e of eps) minutes += e.titles?.runtime || 40
+  for (const e of eps) minutes += (e.titles?.runtime || 40) * (1 + (e.rewatch_count || 0))
   const hours = Math.round(minutes / 60)
 
   // last 12 months
@@ -487,7 +487,7 @@ function compute(entries, profiles, groups) {
   for (const e of entries) {
     const t = e.titles
     if (t?.media_type === 'tv') { tv++; episodes += e.episodes_watched || 0; minutes += (e.episodes_watched || 0) * (t?.runtime || 40) }
-    else { movies++; minutes += t?.runtime || 115 }
+    else { movies++; minutes += (t?.runtime || 115) * (1 + (e.rewatch_count || 0)) }
     if (e.watched_on && new Date(e.watched_on).getFullYear() === year) thisYear++
   }
   const hours = Math.round(minutes / 60)

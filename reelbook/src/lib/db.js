@@ -161,7 +161,7 @@ export async function insertWatchlistBulk(rows) {
 
 // Snapshot of what a group already contains, so an import can compute an
 // incremental diff (paginates past the 1000-row API cap).
-export async function getGroupImportSnapshot(groupId) {
+export async function getGroupImportSnapshot(groupId, profileId = null) {
   async function fetchAll(table, cols) {
     const out = []
     for (let from = 0; ; from += 1000) {
@@ -173,14 +173,41 @@ export async function getGroupImportSnapshot(groupId) {
     return out
   }
   const [w, e, wl] = await Promise.all([
-    fetchAll('watches', 'title_id'),
-    fetchAll('episode_watches', 'title_id, season_number, episode_number'),
+    fetchAll('watches', 'id, title_id'),
+    fetchAll('episode_watches', 'title_id, season_number, episode_number, rewatch_count'),
     fetchAll('watchlist', 'title_id'),
   ])
+  const episodes = new Map()
+  for (const r of e) episodes.set(`${r.title_id}-${r.season_number}-${r.episode_number}`, r.rewatch_count || 0)
+
+  // The importing profile's existing ratings, keyed by title (for "rating changed" detection).
+  const ratings = new Map()
+  if (profileId) {
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabase.from('ratings')
+        .select('watch_id, score, watches!inner(title_id, group_id)')
+        .eq('profile_id', profileId).eq('watches.group_id', groupId).range(from, from + 999)
+      if (error) throw error
+      for (const r of (data || [])) ratings.set(r.watches.title_id, { watchId: r.watch_id, score: r.score })
+      if (!data || data.length < 1000) break
+    }
+  }
   return {
     watches: new Set(w.map((r) => r.title_id)),
-    episodes: new Set(e.map((r) => `${r.title_id}-${r.season_number}-${r.episode_number}`)),
+    episodes,
     watchlist: new Set(wl.map((r) => r.title_id)),
+    ratings,
+  }
+}
+
+// Bump rewatch_count on episodes already logged (used by incremental imports).
+export async function updateEpisodeRewatches(updates) {
+  for (const u of updates) {
+    const { error } = await supabase.from('episode_watches')
+      .update({ rewatch_count: u.rewatchCount })
+      .eq('title_id', u.titleId).eq('group_id', u.groupId)
+      .eq('season_number', u.season).eq('episode_number', u.episode)
+    if (error) throw error
   }
 }
 
@@ -295,6 +322,7 @@ export async function markEpisodesBulk({ titleId, groupId, episodes, createdBy, 
     title_id: titleId, group_id: groupId,
     season_number: e.season, episode_number: e.episode,
     watched_on: e.watchedOn || null, created_by: createdBy, import_batch: importBatch,
+    rewatch_count: e.rewatchCount || 0,
   }))
   for (let i = 0; i < rows.length; i += 500) {
     const { error } = await supabase
@@ -553,7 +581,7 @@ export async function listDiary({ groupId = null, limit = 200 } = {}) {
   let q = supabase
     .from('watches')
     .select(
-      'id, watched_on, date_precision, note, episodes_watched, where_watched, service, group_id, created_by, created_at, tags, is_rewatch, ' +
+      'id, watched_on, date_precision, note, episodes_watched, where_watched, service, group_id, created_by, created_at, tags, is_rewatch, rewatch_count, ' +
         'titles(*), groups(id, name, color), ratings(id, profile_id, score)'
     )
     .order('watched_on', { ascending: false })
@@ -569,7 +597,7 @@ export async function listDiary({ groupId = null, limit = 200 } = {}) {
 export async function listEpisodeDiary({ groupId = null, limit = 400 } = {}) {
   let q = supabase
     .from('episode_watches')
-    .select('id, season_number, episode_number, watched_on, rating, created_at, group_id, ' +
+    .select('id, season_number, episode_number, watched_on, rating, rewatch_count, created_at, group_id, ' +
       'titles(id, tmdb_id, title, media_type, poster_path, year, runtime), groups(id, name, color)')
     .order('watched_on', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
