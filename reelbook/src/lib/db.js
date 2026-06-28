@@ -152,7 +152,10 @@ export async function insertRatingsBulk(rows) {
 
 export async function insertWatchlistBulk(rows) {
   for (let i = 0; i < rows.length; i += 500) {
-    const { error } = await supabase.from('watchlist').insert(rows.slice(i, i + 500))
+    // Upsert + ignoreDuplicates so a title already on the list (any source) is
+    // skipped at the DB level. A unique (group_id, title_id) constraint backs this.
+    const { error } = await supabase.from('watchlist')
+      .upsert(rows.slice(i, i + 500), { onConflict: 'group_id,title_id', ignoreDuplicates: true })
     if (error) throw error
   }
 }
