@@ -1,5 +1,6 @@
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import PosterWall from '../components/PosterWall'
 
 const FEATURES = [
   { icon: '👥', color: '#ff6b9d', title: 'Tag who watched', body: 'Every watch is logged to a group: “Just us”, “Family”, “The crew”. Your lists are filtered views, never duplicates.' },
@@ -22,6 +23,7 @@ export default function Landing() {
       </header>
 
       <section className="landing-hero">
+        <PosterWall veil="hero" />
         <div className="landing-hero-grad" />
         <div className="landing-hero-inner">
           <h1>The movie &amp; TV diary<br />you keep <span>together</span>.</h1>
