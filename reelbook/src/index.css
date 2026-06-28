@@ -88,7 +88,9 @@ input:focus, select:focus, textarea:focus {
 .topbar {
   position: sticky; top: 0; z-index: 30;
   display: flex; align-items: center; justify-content: space-between;
-  height: var(--nav-h); padding: 0 16px;
+  /* Pad for the iPhone status bar / notch so the bar's buttons aren't underneath it. */
+  height: calc(var(--nav-h) + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) max(16px, env(safe-area-inset-left)) 0 max(16px, env(safe-area-inset-right));
   background: var(--topbar-bg);
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
