@@ -2,7 +2,10 @@ import React, { Suspense, lazy } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './index.css'
+import { initAppearance } from './lib/theme'
 import { AuthProvider, useAuth } from './context/AuthContext'
+
+initAppearance()
 import { AppDataProvider } from './context/AppData'
 import { ToastProvider } from './context/Toast'
 import { Spinner } from './components/ui'

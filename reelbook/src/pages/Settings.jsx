@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useAppData } from '../context/AppData'
 import { useToast } from '../context/Toast'
 import { getPref, setPref, REGIONS, regionName, DEFAULT_REGION } from '../lib/prefs'
+import { ACCENTS, setTheme, setAccent } from '../lib/theme'
 import { isPushSupported, getPushState, enablePush, disablePush, sendTestPush } from '../lib/push'
 import { downloadJsonBackup, downloadDiaryCsv, downloadEpisodesCsv } from '../lib/backup'
 import { listFavorites, getMyShare, setShareEnabled } from '../lib/db'
@@ -26,6 +27,8 @@ export default function Settings() {
   const [name, setName] = useState(profile?.name || '')
   const [color, setColor] = useState(profile?.color || COLORS[0])
   const [savingP, setSavingP] = useState(false)
+  const [theme, setThemeState] = useState(getPref('theme', 'dark'))
+  const [accent, setAccentState] = useState(getPref('accent', 'gold'))
   const [region, setRegion] = useState(getPref('region', DEFAULT_REGION))
   const [defaultGroup, setDefaultGroup] = useState(getPref('defaultGroupId', '') || '')
   const [push, setPush] = useState('off')   // unsupported | denied | on | off
@@ -113,6 +116,27 @@ export default function Settings() {
           </div>
         </div>
         <button className="btn primary" disabled={savingP} onClick={saveProfile}>{savingP ? 'Saving…' : 'Save profile'}</button>
+      </div>
+
+      <div className="card" style={{ marginBottom: 18 }}>
+        <strong>Appearance</strong>
+        <div className="field" style={{ marginTop: 12 }}>
+          <label>Theme</label>
+          <div className="seg">
+            {[['system', 'System'], ['light', 'Light'], ['dark', 'Dark']].map(([v, l]) => (
+              <button key={v} className={theme === v ? 'on' : ''} onClick={() => { setThemeState(v); setTheme(v) }}>{l}</button>
+            ))}
+          </div>
+        </div>
+        <div className="field">
+          <label>Accent colour</label>
+          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+            {Object.entries(ACCENTS).map(([name, c]) => (
+              <button key={name} type="button" title={name} onClick={() => { setAccentState(name); setAccent(name) }}
+                style={{ width: 30, height: 30, borderRadius: '50%', background: c, border: accent === name ? '3px solid var(--text)' : '3px solid transparent' }} />
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="card" style={{ marginBottom: 18 }}>

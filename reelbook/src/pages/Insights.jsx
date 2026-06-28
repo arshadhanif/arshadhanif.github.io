@@ -3,6 +3,7 @@ import { listDiary, listEpisodeDiary } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { Spinner, Empty, GroupChips, Poster, TitleLink, DualScore, Modal } from '../components/ui'
 import { formatWatched, fmtDate } from '../lib/dates'
+import { getPref, setPref } from '../lib/prefs'
 
 export default function Insights() {
   const { profiles, groups } = useAppData()
@@ -40,11 +41,29 @@ export default function Insights() {
   const s = useMemo(() => compute(data, profiles, groups), [data, profiles, groups])
   const streaks = useMemo(() => computeStreaks(data, epData), [data, epData])
 
+  // Yearly goals (personal, unaffected by filters; targets stored locally).
+  const year = new Date().getFullYear()
+  const ys = String(year)
+  const yearMovies = entries.filter((e) => e.titles?.media_type !== 'tv' && String(e.watched_on || '').slice(0, 4) === ys).length
+  const yearEps = eps.filter((e) => String(e.watched_on || '').slice(0, 4) === ys).length
+  const [goalFilms, setGoalFilms] = useState(getPref('goalFilms', 50))
+  const [goalEps, setGoalEps] = useState(getPref('goalEps', 100))
+
   if (loading) return <div className="page"><Spinner label="Crunching your numbers…" /></div>
 
   return (
     <div className="page">
       <h1>Insights</h1>
+
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="spread" style={{ marginBottom: 12 }}><strong>🎯 {year} goals</strong></div>
+        <div className="goal-grid">
+          <GoalBar label="Films" current={yearMovies} target={goalFilms}
+            onSet={(v) => { setGoalFilms(v); setPref('goalFilms', v) }} />
+          <GoalBar label="Episodes" current={yearEps} target={goalEps}
+            onSet={(v) => { setGoalEps(v); setPref('goalEps', v) }} />
+        </div>
+      </div>
 
       {/* filter bar */}
       <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
@@ -255,6 +274,26 @@ function YearHeatmap({ days, year, onPick }) {
           <button key={c.key} className={`heat-cell l${lvl(c.count)}`} title={`${fmtDate(c.key)}: ${c.count} episode${c.count === 1 ? '' : 's'}`}
             onClick={() => onPick(c.key, c.list)} />
         ))}
+      </div>
+    </div>
+  )
+}
+
+function GoalBar({ label, current, target, onSet }) {
+  const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0
+  const done = target > 0 && current >= target
+  return (
+    <div className="goal">
+      <div className="spread" style={{ marginBottom: 6 }}>
+        <span style={{ fontWeight: 700 }}>{label}</span>
+        <span className="faint">
+          {current} / <input className="goal-input" type="number" min="0" value={target}
+            onChange={(e) => onSet(Math.max(0, Number(e.target.value) || 0))} /> {done && '✓'}
+        </span>
+      </div>
+      <div className="progress-track"><div className="progress-fill" style={{ width: `${pct}%`, background: done ? 'var(--green)' : 'var(--accent)' }} /></div>
+      <div className="faint" style={{ marginTop: 5, fontSize: 12 }}>
+        {done ? `Goal smashed! ${current - target} over` : target > 0 ? `${pct}% · ${target - current} to go` : 'Set a target'}
       </div>
     </div>
   )
