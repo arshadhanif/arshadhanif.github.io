@@ -1,11 +1,12 @@
 [
   {
-    "id": "oracle-fusion-reporting-toolkit",
-    "title": "Oracle Fusion Reporting Toolkit",
-    "description": "A complete set of OTBI and BI Publisher report templates for Oracle Fusion Financials, covering GL, AP, AR and FA. Plug in and go.",
-    "price": "$79",
-    "category": "Report Packages",
-    "gumroadUrl": "https://gumroad.com/l/placeholder-fusion-reporting",
+    "id": "excel-finance-dashboard-kit",
+    "title": "Excel Finance Dashboard Kit",
+    "description": "Build board-ready dashboards in minutes. P&L, cash flow and KPI templates with dynamic charts and a reusable design system.",
+    "price": "$39",
+    "category": "Templates",
+    "tags": ["Excel", "Dashboards"],
+    "gumroadUrl": "https://gumroad.com/l/placeholder-excel-dashboard",
     "featured": true
   },
   {
@@ -14,7 +15,78 @@
     "description": "An Excel workbook that turns your close into a controlled, repeatable process. Task owners, dependencies, status dashboards and a reconciliation log.",
     "price": "$29",
     "category": "Templates",
+    "tags": ["Excel", "Finance"],
     "gumroadUrl": "https://gumroad.com/l/placeholder-month-end-close",
+    "featured": true
+  },
+  {
+    "id": "excel-3-statement-model",
+    "title": "3-Statement Financial Model",
+    "description": "A fully linked income statement, balance sheet and cash flow model in Excel, with assumptions, scenarios and checks built in.",
+    "price": "$49",
+    "category": "Templates",
+    "tags": ["Excel", "Financial Modelling"],
+    "gumroadUrl": "https://gumroad.com/l/placeholder-3-statement-model",
+    "featured": false
+  },
+  {
+    "id": "excel-13-week-cashflow",
+    "title": "13-Week Cash Flow Model",
+    "description": "A rolling short-term cash flow forecast in Excel for treasury and FP&A. Weekly inflows, outflows, and a live liquidity view.",
+    "price": "$29",
+    "category": "Templates",
+    "tags": ["Excel", "Financial Modelling"],
+    "gumroadUrl": "https://gumroad.com/l/placeholder-13-week-cashflow",
+    "featured": false
+  },
+  {
+    "id": "excel-budgeting-pack",
+    "title": "Budgeting & Forecasting Template Pack",
+    "description": "A set of Excel templates for annual budgets, rolling forecasts and variance analysis, with clean inputs and ready-made charts.",
+    "price": "$45",
+    "category": "Templates",
+    "tags": ["Excel", "Budgeting"],
+    "gumroadUrl": "https://gumroad.com/l/placeholder-budgeting-pack",
+    "featured": false
+  },
+  {
+    "id": "excel-reconciliation-bundle",
+    "title": "Reconciliation Templates Bundle",
+    "description": "Bank, intercompany, AP and AR reconciliation templates in Excel, designed to make month-end tie-outs fast and auditable.",
+    "price": "$25",
+    "category": "Templates",
+    "tags": ["Excel", "Finance"],
+    "gumroadUrl": "https://gumroad.com/l/placeholder-reconciliation-bundle",
+    "featured": false
+  },
+  {
+    "id": "excel-for-finance-course",
+    "title": "Excel for Finance: From Basics to Dashboards",
+    "description": "A practical video course that takes you from core formulas to clean, automated finance dashboards, using real finance examples throughout.",
+    "price": "$149",
+    "category": "Courses",
+    "tags": ["Excel", "Course"],
+    "gumroadUrl": "https://gumroad.com/l/placeholder-excel-finance-course",
+    "featured": false
+  },
+  {
+    "id": "excel-formulas-masterclass",
+    "title": "Excel Formulas Masterclass for Finance",
+    "description": "Master the formulas that matter in finance: XLOOKUP, SUMIFS, INDEX/MATCH, dynamic arrays and LET, taught with hands-on workbooks.",
+    "price": "$99",
+    "category": "Courses",
+    "tags": ["Excel", "Course"],
+    "gumroadUrl": "https://gumroad.com/l/placeholder-excel-formulas-course",
+    "featured": false
+  },
+  {
+    "id": "oracle-fusion-reporting-toolkit",
+    "title": "Oracle Fusion Reporting Toolkit",
+    "description": "A complete set of OTBI and BI Publisher report templates for Oracle Fusion Financials, covering GL, AP, AR and FA. Plug in and go.",
+    "price": "$79",
+    "category": "Report Packages",
+    "tags": ["Oracle Fusion", "Reporting"],
+    "gumroadUrl": "https://gumroad.com/l/placeholder-fusion-reporting",
     "featured": true
   },
   {
@@ -23,16 +95,8 @@
     "description": "Every document you need to run a clean ERP implementation: BRD, fit-gap analysis, test scripts (SIT/UAT), cutover plan, and a go-live runbook.",
     "price": "$119",
     "category": "Document Packs",
+    "tags": ["ERP"],
     "gumroadUrl": "https://gumroad.com/l/placeholder-erp-docs",
-    "featured": true
-  },
-  {
-    "id": "excel-finance-dashboard-kit",
-    "title": "Excel Finance Dashboard Kit",
-    "description": "Build board-ready dashboards in minutes. Includes P&L, cash flow, and KPI templates with dynamic charts and a reusable design system.",
-    "price": "$39",
-    "category": "Templates",
-    "gumroadUrl": "https://gumroad.com/l/placeholder-excel-dashboard",
     "featured": false
   },
   {
@@ -41,6 +105,7 @@
     "description": "A hands-on video course covering the Oracle Fusion Financials modules consultants actually get asked about, with real-world configuration walkthroughs.",
     "price": "$249",
     "category": "Courses",
+    "tags": ["Oracle Fusion", "Course"],
     "gumroadUrl": "https://gumroad.com/l/placeholder-fusion-course",
     "featured": false
   }

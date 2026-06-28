@@ -38,6 +38,18 @@ export default function Footer() {
               </Link>
             ))}
             <Link
+              href="/tools/excel-formula-generator"
+              className="text-sm text-muted transition-colors hover:text-accent"
+            >
+              Free Tools
+            </Link>
+            <Link
+              href="/watch"
+              className="text-sm text-muted transition-colors hover:text-accent"
+            >
+              Watch
+            </Link>
+            <Link
               href="/newsletter"
               className="text-sm text-muted transition-colors hover:text-accent"
             >
@@ -72,6 +84,17 @@ export default function Footer() {
                   <circle cx="12" cy="12" r="10" />
                   <path d="M2 12h20" />
                   <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                </svg>
+              </a>
+              <a
+                href={SOCIAL.youtube}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="YouTube"
+                className="grid h-10 w-10 place-items-center rounded-lg border border-border text-muted transition-colors hover:border-accent hover:text-accent"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M23 12s0-3.2-.4-4.7a2.5 2.5 0 0 0-1.77-1.77C19.34 5.1 12 5.1 12 5.1s-7.34 0-8.83.43A2.5 2.5 0 0 0 1.4 7.3C1 8.8 1 12 1 12s0 3.2.4 4.7a2.5 2.5 0 0 0 1.77 1.77c1.49.43 8.83.43 8.83.43s7.34 0 8.83-.43a2.5 2.5 0 0 0 1.77-1.77C23 15.2 23 12 23 12zM9.75 15.02V8.98L15.5 12l-5.75 3.02z" />
                 </svg>
               </a>
             </div>

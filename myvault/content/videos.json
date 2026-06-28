@@ -1,0 +1,20 @@
+[
+  {
+    "id": "excel-dashboard-walkthrough",
+    "title": "Build a finance dashboard in Excel",
+    "description": "A step-by-step walkthrough of building a clean, automated finance dashboard from raw data.",
+    "youtubeId": ""
+  },
+  {
+    "id": "xlookup-for-finance",
+    "title": "XLOOKUP for finance, explained",
+    "description": "Replace VLOOKUP for good and handle real finance lookups the modern way.",
+    "youtubeId": ""
+  },
+  {
+    "id": "otbi-reporting-basics",
+    "title": "Oracle Fusion OTBI reporting basics",
+    "description": "How to get your first useful report out of Oracle Fusion OTBI in minutes.",
+    "youtubeId": ""
+  }
+]

@@ -51,6 +51,8 @@ export const FOUNDER = {
 export const SOCIAL = {
   linkedin: 'https://www.linkedin.com/in/arshad-hanif-acca-erp/',
   website: 'https://arshadhanif.github.io/',
+  // Placeholder YouTube channel. Replace with the real handle once it exists.
+  youtube: 'https://www.youtube.com/@erpfinancepro',
 };
 
 // Blog categories (used for filter tags and badge styling).
@@ -77,7 +79,8 @@ export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 export const NAV_LINKS = [
   { href: '/blog', label: 'Articles' },
   { href: '/store', label: 'Store' },
-  { href: '/resources', label: 'Free Resources' },
+  { href: '/excel', label: 'Excel' },
+  { href: '/resources', label: 'Resources' },
   { href: '/services', label: 'Services' },
   { href: '/about', label: 'About' },
 ];
