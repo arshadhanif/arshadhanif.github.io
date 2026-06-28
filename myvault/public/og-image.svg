@@ -9,8 +9,8 @@
   <rect width="1200" height="630" fill="url(#g)"/>
   <g transform="translate(90, 250)">
     <rect width="84" height="84" rx="18" fill="#00D4AA"/>
-    <text x="42" y="60" font-family="Inter, Arial, sans-serif" font-size="52" font-weight="800" text-anchor="middle" fill="#0A0A0A">M</text>
-    <text x="108" y="58" font-family="Inter, Arial, sans-serif" font-size="56" font-weight="800" fill="#F5F5F5">MyVault</text>
+    <text x="42" y="60" font-family="Inter, Arial, sans-serif" font-size="52" font-weight="800" text-anchor="middle" fill="#0A0A0A">E</text>
+    <text x="108" y="58" font-family="Inter, Arial, sans-serif" font-size="56" font-weight="800" fill="#F5F5F5">ERP Finance Pro</text>
   </g>
   <text x="90" y="410" font-family="Inter, Arial, sans-serif" font-size="44" font-weight="700" fill="#F5F5F5">The go-to resource for ERP and</text>
   <text x="90" y="466" font-family="Inter, Arial, sans-serif" font-size="44" font-weight="700" fill="#F5F5F5">finance professionals</text>

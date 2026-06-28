@@ -5,11 +5,11 @@ import { SITE_NAME } from '@/lib/constants';
 export const metadata: Metadata = {
   title: 'Newsletter',
   description:
-    'Join the MyVault newsletter for practical ERP, Oracle Fusion, Excel and finance career insights, plus the free starter kit.',
+    'Join the ERP Finance Pro newsletter for practical ERP, Oracle Fusion, Excel and finance career insights, plus the free starter kit.',
   openGraph: {
     title: 'Newsletter',
     description:
-      'Join the MyVault newsletter for practical ERP, Oracle Fusion, Excel and finance career insights.',
+      'Join the ERP Finance Pro newsletter for practical ERP, Oracle Fusion, Excel and finance career insights.',
   },
 };
 

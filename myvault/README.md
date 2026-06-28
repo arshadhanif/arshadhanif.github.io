@@ -1,13 +1,13 @@
-# MyVault
+# ERP Finance Pro
 
 > **The go-to resource for ERP and finance professionals.**
 
 A Next.js 14 finance and ERP resource brand (blog, store, services and
 newsletter) built as a fully static site for GitHub Pages.
 
-> **`MyVault` is a placeholder name.** It lives in a single constant
-> (`SITE_NAME` in [`lib/constants.ts`](lib/constants.ts)) so it can be
-> renamed globally in one edit.
+> The brand name lives in a single constant (`SITE_NAME` in
+> [`lib/constants.ts`](lib/constants.ts)) so it can be changed globally in one
+> edit. The source folder and URL path are still `myvault/` and `/myvault`.
 
 ## Tech stack
 
@@ -75,21 +75,20 @@ Set `published: false` to keep a draft out of the build.
 Edit `content/products.json`. Categories: `Templates`, `Report Packages`,
 `Document Packs`, `Courses`. The Gumroad URLs and prices are placeholders.
 
-## Placeholders to replace before launch
+## Still to replace before full launch
 
-- **`SITE_NAME`** in `lib/constants.ts` (currently `"MyVault"`)
 - **Gumroad URLs** in `content/products.json`
-- **Newsletter form**: `components/NewsletterSignup.tsx` is a local placeholder.
-  Wire it to your Mailchimp or Beehiiv embed.
-- **Social links** (`SOCIAL`) and **email** (`FOUNDER.email`) in `lib/constants.ts`
+- **Real download files** in `public/downloads/` (current ones are placeholders)
+- **Newsletter form**: wired to Beehiiv via `components/BeehiivForm.tsx`
+  (`BEEHIIV_FORM_ID` in `lib/constants.ts`)
 
 ## Deployment (GitHub Pages)
 
-MyVault lives in the `myvault/` folder of the `arshadhanif.github.io` repo and is
-served at `https://arshadhanif.github.io/myvault/`. The repo root keeps the
-portfolio. The workflow at `.github/workflows/pages.yml` (repo root) builds
-MyVault with `BASE_PATH=/myvault` and publishes it alongside the portfolio in a
-single Pages artifact on every push to `main`.
+ERP Finance Pro lives in the `myvault/` folder of the `arshadhanif.github.io`
+repo and is served at `https://arshadhanif.github.io/myvault/`. The repo root
+keeps the portfolio. The workflow at `.github/workflows/pages.yml` (repo root)
+builds it with `BASE_PATH=/myvault` and publishes it alongside the portfolio in
+a single Pages artifact on every push to `main`.
 
 To run the site under a different sub-path, change `BASE_PATH` in that workflow.
 See [`next.config.js`](next.config.js) for how `basePath` is wired.

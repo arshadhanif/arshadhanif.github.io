@@ -7,11 +7,11 @@ import { FOUNDER, SITE_NAME } from '@/lib/constants';
 export const metadata: Metadata = {
   title: 'Services',
   description:
-    'Advisory calls, career coaching and Oracle Fusion consulting from MyVault, for teams and professionals who want a faster result.',
+    'Advisory calls, career coaching and Oracle Fusion consulting from ERP Finance Pro, for teams and professionals who want a faster result.',
   openGraph: {
     title: 'Services',
     description:
-      'Advisory calls, career coaching and Oracle Fusion consulting from MyVault.',
+      'Advisory calls, career coaching and Oracle Fusion consulting from ERP Finance Pro.',
   },
 };
 

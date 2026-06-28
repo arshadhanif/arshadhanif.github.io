@@ -1,11 +1,11 @@
 /**
  * Brand and site-wide configuration.
  *
- * SITE_NAME is the single source of truth. "MyVault" is a placeholder, so
- * change it here once and it updates everywhere (metadata, navbar, footer,
- * structured data and so on).
+ * SITE_NAME is the single source of truth for the brand name. Change it here
+ * once and it updates everywhere (metadata, navbar, footer, structured data
+ * and so on).
  */
-export const SITE_NAME = 'MyVault';
+export const SITE_NAME = 'ERP Finance Pro';
 
 export const SITE_TAGLINE =
   'The go-to resource for ERP and finance professionals';
@@ -20,14 +20,14 @@ export const SITE_URL = 'https://arshadhanif.github.io';
 export const OG_IMAGE = '/og-image.svg';
 
 // The person behind the brand. This shows up on the About page, not the
-// homepage. MyVault is the entity; this is the credibility behind it.
+// homepage. The brand is the entity; this is the credibility behind it.
 export const FOUNDER = {
   name: 'Arshad Hanif',
-  title: 'Founder of MyVault, Oracle Fusion Cloud consultant and ACCA member',
+  title: 'Founder of ERP Finance Pro, Oracle Fusion Cloud consultant and ACCA member',
   location: 'Riyadh, Saudi Arabia',
   portfolioUrl: 'https://arshadhanif.github.io/',
   shortBio:
-    'Arshad is an ACCA member and Oracle Fusion Cloud consultant with 7+ years delivering end-to-end ERP implementations and finance transformation for clients across the UAE, USA, Saudi Arabia, Canada, Australia and Pakistan. He started MyVault to share the templates and know-how he uses on real projects.',
+    'Arshad is an ACCA member and Oracle Fusion Cloud consultant with 7+ years delivering end-to-end ERP implementations and finance transformation for clients across the UAE, USA, Saudi Arabia, Canada, Australia and Pakistan. He started ERP Finance Pro to share the templates and know-how he uses on real projects.',
   credentials: [
     'ACCA member (Association of Chartered Certified Accountants)',
     'Oracle Financials Certified Foundations Associate',

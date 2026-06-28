@@ -5,11 +5,11 @@ import { FOUNDER, SITE_NAME, SOCIAL } from '@/lib/constants';
 export const metadata: Metadata = {
   title: 'About',
   description:
-    'What MyVault is, who it is for, and the founder behind it: Arshad Hanif, ACCA member and Oracle Fusion Cloud consultant.',
+    'What ERP Finance Pro is, who it is for, and the founder behind it: Arshad Hanif, ACCA member and Oracle Fusion Cloud consultant.',
   openGraph: {
     title: 'About',
     description:
-      'What MyVault is, who it is for, and the founder behind it.',
+      'What ERP Finance Pro is, who it is for, and the founder behind it.',
   },
 };
 

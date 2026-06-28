@@ -9,10 +9,10 @@ import { SITE_NAME } from '@/lib/constants';
 export const metadata: Metadata = {
   title: 'Start Here',
   description:
-    'New to MyVault? Here is the quickest way to get value: the best articles to read first, the free resources to grab, and where to go next.',
+    'New to ERP Finance Pro? Here is the quickest way to get value: the best articles to read first, the free resources to grab, and where to go next.',
   openGraph: {
     title: 'Start Here',
-    description: 'New to MyVault? Here is the quickest way to get value.',
+    description: 'New to ERP Finance Pro? Here is the quickest way to get value.',
   },
 };
 
