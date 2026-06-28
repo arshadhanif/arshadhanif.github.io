@@ -49,6 +49,15 @@ export default function Insights() {
   const [goalFilms, setGoalFilms] = useState(getPref('goalFilms', 50))
   const [goalEps, setGoalEps] = useState(getPref('goalEps', 100))
 
+  // Decade challenge: which decades you've watched a title from.
+  const decadeChallenge = useMemo(() => {
+    const covered = new Set(entries.map((e) => e.titles?.year).filter(Boolean).map((y) => Math.floor(y / 10) * 10))
+    const nowDec = Math.floor(year / 10) * 10
+    const all = []
+    for (let d = 1950; d <= nowDec; d += 10) all.push({ d, on: covered.has(d) })
+    return { all, done: all.filter((x) => x.on).length }
+  }, [entries, year])
+
   if (loading) return <div className="page"><Spinner label="Crunching your numbers…" /></div>
 
   return (
@@ -185,6 +194,17 @@ export default function Insights() {
               </div>
             </Section>
           )}
+
+          <Section title={`🕰️ Decade challenge · ${decadeChallenge.done}/${decadeChallenge.all.length}`}>
+            <div className="card">
+              <div className="faint" style={{ marginBottom: 10 }}>Watch a title from every decade.</div>
+              <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                {decadeChallenge.all.map(({ d, on }) => (
+                  <span key={d} className={`decade-chip ${on ? 'on' : ''}`}>{on ? '✓ ' : ''}{d}s</span>
+                ))}
+              </div>
+            </div>
+          </Section>
 
           <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(280px,1fr))' }}>
             {s.genres.length > 0 && <Section title="Top genres"><div className="card"><Bars items={s.genres} onPick={setDrill} /></div></Section>}

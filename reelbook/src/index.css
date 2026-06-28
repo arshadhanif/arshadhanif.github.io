@@ -392,6 +392,24 @@ input:focus, select:focus, textarea:focus {
 .ep2-facts dt { font-size: 11px; color: var(--text-faint-solid); text-transform: uppercase; letter-spacing: .4px; }
 .ep2-facts dd { margin: 1px 0 0; font-size: 13px; font-weight: 600; }
 
+/* decade challenge */
+.decade-chip { padding: 7px 13px; border-radius: 999px; font-weight: 800; font-size: 13px; background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text-faint-solid); }
+.decade-chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+/* quick-add floating button */
+.fab {
+  position: fixed; right: 18px; z-index: 35;
+  bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom));
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--accent); color: var(--on-accent);
+  font-size: 30px; font-weight: 400; line-height: 1;
+  box-shadow: var(--shadow); display: grid; place-items: center;
+  transition: transform .12s, filter .15s;
+}
+.fab:hover { filter: brightness(1.08); }
+.fab:active { transform: scale(.92); }
+@media (min-width: 820px) { .fab { bottom: 24px; right: 24px; } }
+
 /* yearly goals */
 .goal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
 .goal-input { width: 56px; padding: 2px 6px; font-size: 13px; text-align: center; display: inline-block; }
