@@ -718,18 +718,18 @@ export async function reorderFavorites(orderedIds) {
 export async function listSubscriptions() {
   const { data, error } = await supabase
     .from('subscriptions')
-    .select('id, name, cost, currency, cycle, active, owner_id, created_at')
+    .select('id, name, cost, currency, cycle, active, note, owner_id, created_at')
     .order('created_at', { ascending: true })
   if (error) throw error
   return data || []
 }
 
-export async function createSubscription({ name, cost, currency, cycle, ownerId }) {
+export async function createSubscription({ name, cost, currency, cycle, note, ownerId }) {
   const { data: hm } = await supabase
     .from('household_members').select('household_id').eq('profile_id', ownerId).limit(1).maybeSingle()
   const { error } = await supabase.from('subscriptions').insert({
-    name, cost: Number(cost) || 0, currency: currency || 'USD', cycle: cycle || 'monthly',
-    owner_id: ownerId, household_id: hm?.household_id || null,
+    name, cost: cycle === 'free' ? 0 : Number(cost) || 0, currency: currency || 'USD', cycle: cycle || 'monthly',
+    note: note || null, owner_id: ownerId, household_id: hm?.household_id || null,
   })
   if (error) throw error
 }
