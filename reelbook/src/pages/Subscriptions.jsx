@@ -6,16 +6,14 @@ import { getPref, setPref } from '../lib/prefs'
 import { getRates, convert } from '../lib/fx'
 import { Spinner, Empty } from '../components/ui'
 
-// Lists of values for the add form
+// Lists of values for the form
 const SERVICES = ['Netflix', 'OSN+', 'Prime Video', 'Disney+', 'Apple TV+', 'Shahid VIP', 'StarzPlay', 'Max', 'Hulu', 'YouTube Premium', 'Spotify', 'Crunchyroll']
 const CURRENCIES = ['PKR', 'SAR', 'AED', 'USD', 'GBP', 'EUR', 'INR', 'QAR']
 const CATEGORIES = ['Video streaming', 'Music', 'Sports', 'News & reading', 'Cloud & storage', 'Gaming', 'Other']
 const PLANS = ['Basic', 'Standard', 'Premium', 'Family', 'Mobile', 'Ad-supported', '4K Ultra HD', 'Annual', 'Other']
-// Telecom / fibre / app-store bundles, across the regions we use
 const PROVIDERS = ['STC', 'Mobily', 'Zain', 'Salam', 'e& (Etisalat)', 'du', 'PTCL', 'Jazz', 'Zong', 'Ufone', 'Nayatel', 'StormFiber', 'Apple App Store', 'Google Play', 'Direct (app / website)', 'Gift card']
 const OTHER = 'Other…'
 
-// Billing cycles — including the free variants
 const CYCLES = [
   ['monthly', 'Monthly'],
   ['yearly', 'Yearly'],
@@ -27,41 +25,31 @@ const FREE_CYCLES = ['free', 'trial', 'tier', 'bundle']
 const isFreeCycle = (c) => FREE_CYCLES.includes(c)
 const FREE_BADGE = { trial: 'Free trial', tier: 'Free tier', bundle: 'Bundled', free: 'Free' }
 
+// Split a stored value into a [dropdown value, custom text] pair.
+function splitOther(value, options) {
+  if (!value) return ['', '']
+  if (options.includes(value)) return [value, '']
+  return [OTHER, value]
+}
+
 export default function Subscriptions() {
   const { user } = useAuth()
   const toast = useToast()
   const [subs, setSubs] = useState([])
-  const [people, setPeople] = useState([])   // names: household members + friends
+  const [people, setPeople] = useState([])
   const [loading, setLoading] = useState(true)
   const [rates, setRates] = useState(null)
-  const [display, setDisplay] = useState(getPref('currency', 'PKR')) // display/convert target, or 'ALL'
-  const [filter, setFilter] = useState('all')                         // all | active | paused
+  const [display, setDisplay] = useState(getPref('currency', 'PKR'))
+  const [filter, setFilter] = useState('all')
+  const [editing, setEditing] = useState(null)   // id being edited
+  const [formKey, setFormKey] = useState(0)       // bump to reset the add form
 
-  // add form
-  const [service, setService] = useState('')
-  const [serviceOther, setServiceOther] = useState('')
-  const [cost, setCost] = useState('')
-  const [cur, setCur] = useState(getPref('currency', 'PKR') === 'ALL' ? 'PKR' : getPref('currency', 'PKR'))
-  const [cycle, setCycle] = useState('monthly')
-  const [category, setCategory] = useState('')
-  const [plan, setPlan] = useState('')
-  const [provider, setProvider] = useState('')
-  const [providerOther, setProviderOther] = useState('')
-  const [paidBy, setPaidBy] = useState('')
-  const [paidByOther, setPaidByOther] = useState('')
-  const [note, setNote] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  const isFree = isFreeCycle(cycle)
-  const name = (service === OTHER ? serviceOther : service).trim()
-  const providerVal = (provider === OTHER ? providerOther : provider).trim()
-  const paidByVal = (paidBy === OTHER ? paidByOther : paidBy).trim()
+  const defCur = getPref('currency', 'PKR') === 'ALL' ? 'PKR' : getPref('currency', 'PKR')
 
   async function load() { setLoading(true); try { setSubs(await listSubscriptions()) } finally { setLoading(false) } }
   useEffect(() => {
     load()
     getRates().then(setRates).catch(() => {})
-    // Build the "Paid by" people list from the household + accepted friends
     Promise.all([listProfiles().catch(() => []), listFriends().catch(() => [])]).then(([profs, friends]) => {
       const names = [
         ...profs.map((p) => p.name).filter(Boolean),
@@ -87,22 +75,22 @@ export default function Subscriptions() {
     return { month: m, year: m * 12, count: active.length, free, missing }
   }, [subs, display, rates])
 
-  async function add(e) {
-    e.preventDefault()
-    if (!name || (!isFree && !cost)) return
-    setBusy(true)
-    try {
-      await createSubscription({
-        name, cost, currency: cur, cycle, note: note.trim(),
-        category: category || null, plan: plan || null,
-        provider: providerVal || null, paidBy: paidByVal || null,
-        ownerId: user.id,
-      })
-      setService(''); setServiceOther(''); setCost(''); setCycle('monthly')
-      setCategory(''); setPlan(''); setProvider(''); setProviderOther('')
-      setPaidBy(''); setPaidByOther(''); setNote('')
-      await load(); toast('Subscription added')
-    } catch (e2) { toast(e2.message || 'Could not add', 'err') } finally { setBusy(false) }
+  const peopleOptions = [...new Set([...people, 'Shared', 'Family', 'Work'])]
+
+  async function addNew(values) {
+    await createSubscription({ ...values, ownerId: user.id })
+    setFormKey((k) => k + 1)
+    await load(); toast('Subscription added')
+  }
+  async function saveEdit(id, values) {
+    const free = isFreeCycle(values.cycle)
+    await updateSubscription(id, {
+      name: values.name, cost: free ? 0 : Number(values.cost) || 0,
+      currency: values.currency, cycle: values.cycle,
+      category: values.category || null, plan: values.plan || null,
+      provider: values.provider || null, paid_by: values.paidBy || null, note: values.note || null,
+    })
+    setEditing(null); await load(); toast('Saved')
   }
   async function toggle(s) { await updateSubscription(s.id, { active: !s.active }); load() }
   async function remove(s) { if (!confirm(`Remove ${s.name}?`)) return; await deleteSubscription(s.id); load() }
@@ -110,7 +98,6 @@ export default function Subscriptions() {
   const fmt = (n, c) => `${c} ${Number(n).toLocaleString(undefined, { maximumFractionDigits: n < 100 ? 2 : 0 })}`
 
   const view = subs.filter((s) => filter === 'all' || (filter === 'active' ? s.active : !s.active))
-  const peopleOptions = [...new Set([...people, 'Shared', 'Family', 'Work'])]
 
   return (
     <div className="page" style={{ maxWidth: 680 }}>
@@ -135,85 +122,11 @@ export default function Subscriptions() {
         <Stat v={totals.count} l="Active services" s={totals.free ? `${totals.free} free/included` : undefined} />
       </div>
 
-      <form className="card" style={{ marginBottom: 18 }} onSubmit={add}>
+      {/* Add */}
+      <div className="card" style={{ marginBottom: 18 }}>
         <strong>Add a subscription</strong>
-
-        <Field label="Service">
-          <select value={service} onChange={(e) => setService(e.target.value)}>
-            <option value="" disabled>Choose a service…</option>
-            {SERVICES.map((s) => <option key={s} value={s}>{s}</option>)}
-            <option value={OTHER}>{OTHER}</option>
-          </select>
-          {service === OTHER && (
-            <input value={serviceOther} onChange={(e) => setServiceOther(e.target.value)} autoFocus
-              placeholder="Type the service name" style={{ marginTop: 8 }} />
-          )}
-        </Field>
-
-        <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <Field label="Cost" flex="1 1 90px">
-            <input type="number" min="0" step="0.01" value={isFree ? '' : cost} disabled={isFree}
-              onChange={(e) => setCost(e.target.value)} placeholder={isFree ? 'Free' : '0.00'} />
-          </Field>
-          <Field label="Currency" flex="1 1 90px">
-            <select value={cur} onChange={(e) => setCur(e.target.value)} disabled={isFree}>
-              {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </Field>
-          <Field label="Billing" flex="1 1 150px">
-            <select value={cycle} onChange={(e) => setCycle(e.target.value)}>
-              {CYCLES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-            </select>
-          </Field>
-        </div>
-
-        <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <Field label="Category" flex="1 1 150px">
-            <select value={category} onChange={(e) => setCategory(e.target.value)}>
-              <option value="">Select category…</option>
-              {CATEGORIES.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </Field>
-          <Field label="Plan / tier" flex="1 1 130px">
-            <select value={plan} onChange={(e) => setPlan(e.target.value)}>
-              <option value="">Select plan…</option>
-              {PLANS.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </Field>
-        </div>
-
-        <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-          <Field label="Provided / bundled via" flex="1 1 180px">
-            <select value={provider} onChange={(e) => setProvider(e.target.value)}>
-              <option value="">Select provider…</option>
-              {PROVIDERS.map((o) => <option key={o} value={o}>{o}</option>)}
-              <option value={OTHER}>{OTHER}</option>
-            </select>
-            {provider === OTHER && (
-              <input value={providerOther} onChange={(e) => setProviderOther(e.target.value)}
-                placeholder="Type the provider" style={{ marginTop: 8 }} />
-            )}
-          </Field>
-          <Field label="Paid by" flex="1 1 150px">
-            <select value={paidBy} onChange={(e) => setPaidBy(e.target.value)}>
-              <option value="">Select who pays…</option>
-              {peopleOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-              <option value={OTHER}>{OTHER}</option>
-            </select>
-            {paidBy === OTHER && (
-              <input value={paidByOther} onChange={(e) => setPaidByOther(e.target.value)}
-                placeholder="Type a name" style={{ marginTop: 8 }} />
-            )}
-          </Field>
-        </div>
-
-        <Field label="Note">
-          <input value={note} onChange={(e) => setNote(e.target.value)}
-            placeholder={isFree ? 'e.g. “trial ends 12-Jul” or “Muneeza’s account, I share it”' : 'Optional note'} />
-        </Field>
-
-        <button className="btn primary" style={{ marginTop: 12 }} disabled={busy || !name || (!isFree && !cost)}>Add</button>
-      </form>
+        <SubForm key={`add-${formKey}`} people={peopleOptions} defaultCur={defCur} submitLabel="Add" onSubmit={addNew} />
+      </div>
 
       {subs.length > 0 && (
         <div className="seg" style={{ marginBottom: 14 }}>
@@ -228,6 +141,26 @@ export default function Subscriptions() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {view.map((s) => {
+            if (editing === s.id) {
+              return (
+                <div className="card" key={s.id}>
+                  <strong>Edit {s.name}</strong>
+                  <SubForm
+                    people={peopleOptions}
+                    defaultCur={s.currency || defCur}
+                    initial={{
+                      name: s.name, cost: isFreeCycle(s.cycle) ? '' : String(s.cost ?? ''),
+                      currency: s.currency || defCur, cycle: s.cycle || 'monthly',
+                      category: s.category || '', plan: s.plan || '',
+                      provider: s.provider || '', paidBy: s.paid_by || '', note: s.note || '',
+                    }}
+                    submitLabel="Save"
+                    onSubmit={(v) => saveEdit(s.id, v)}
+                    onCancel={() => setEditing(null)}
+                  />
+                </div>
+              )
+            }
             const c = s.currency || 'USD'
             const free = isFreeCycle(s.cycle)
             const conv = display !== 'ALL' && c !== display && !free ? monthlyIn(s, display) : null
@@ -252,6 +185,7 @@ export default function Subscriptions() {
                         </>}
                   </div>
                 </div>
+                <button className="btn sm" onClick={() => setEditing(s.id)}>Edit</button>
                 <button className="btn sm" onClick={() => toggle(s)}>{s.active ? 'Pause' : 'Resume'}</button>
                 <button className="btn sm ghost" onClick={() => remove(s)} title="Remove">✕</button>
               </div>
@@ -267,8 +201,125 @@ export default function Subscriptions() {
   )
 }
 
-// Labelled field: a heading sits above the control so the dropdown's own
-// placeholder never has to double as the label.
+// Shared add/edit form. Reports resolved values via onSubmit.
+function SubForm({ initial, people, defaultCur, submitLabel, onSubmit, onCancel }) {
+  const init = initial || {}
+  const [svcSel, svcOtherInit] = splitOther(init.name || '', SERVICES)
+  const [provSel, provOtherInit] = splitOther(init.provider || '', PROVIDERS)
+  const [paidSel, paidOtherInit] = splitOther(init.paidBy || '', people)
+
+  const [service, setService] = useState(svcSel)
+  const [serviceOther, setServiceOther] = useState(svcOtherInit)
+  const [cost, setCost] = useState(init.cost || '')
+  const [cur, setCur] = useState(init.currency || defaultCur)
+  const [cycle, setCycle] = useState(init.cycle || 'monthly')
+  const [category, setCategory] = useState(init.category || '')
+  const [plan, setPlan] = useState(init.plan || '')
+  const [provider, setProvider] = useState(provSel)
+  const [providerOther, setProviderOther] = useState(provOtherInit)
+  const [paidBy, setPaidBy] = useState(paidSel)
+  const [paidByOther, setPaidByOther] = useState(paidOtherInit)
+  const [note, setNote] = useState(init.note || '')
+  const [busy, setBusy] = useState(false)
+
+  const isFree = isFreeCycle(cycle)
+  const name = (service === OTHER ? serviceOther : service).trim()
+  const providerVal = (provider === OTHER ? providerOther : provider).trim()
+  const paidByVal = (paidBy === OTHER ? paidByOther : paidBy).trim()
+
+  async function submit(e) {
+    e.preventDefault()
+    if (!name || (!isFree && !cost)) return
+    setBusy(true)
+    try {
+      await onSubmit({ name, cost, currency: cur, cycle, category, plan, provider: providerVal, paidBy: paidByVal, note: note.trim() })
+    } catch (e2) { setBusy(false) }
+  }
+
+  return (
+    <form onSubmit={submit}>
+      <Field label="Service">
+        <select value={service} onChange={(e) => setService(e.target.value)}>
+          <option value="" disabled>Choose a service…</option>
+          {SERVICES.map((s) => <option key={s} value={s}>{s}</option>)}
+          <option value={OTHER}>{OTHER}</option>
+        </select>
+        {service === OTHER && (
+          <input value={serviceOther} onChange={(e) => setServiceOther(e.target.value)} autoFocus
+            placeholder="Type the service name" style={{ marginTop: 8 }} />
+        )}
+      </Field>
+
+      <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <Field label="Cost" flex="1 1 90px">
+          <input type="number" min="0" step="0.01" value={isFree ? '' : cost} disabled={isFree}
+            onChange={(e) => setCost(e.target.value)} placeholder={isFree ? 'Free' : '0.00'} />
+        </Field>
+        <Field label="Currency" flex="1 1 90px">
+          <select value={cur} onChange={(e) => setCur(e.target.value)} disabled={isFree}>
+            {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </Field>
+        <Field label="Billing" flex="1 1 150px">
+          <select value={cycle} onChange={(e) => setCycle(e.target.value)}>
+            {CYCLES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </Field>
+      </div>
+
+      <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <Field label="Category" flex="1 1 150px">
+          <select value={category} onChange={(e) => setCategory(e.target.value)}>
+            <option value="">Select category…</option>
+            {CATEGORIES.map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </Field>
+        <Field label="Plan / tier" flex="1 1 130px">
+          <select value={plan} onChange={(e) => setPlan(e.target.value)}>
+            <option value="">Select plan…</option>
+            {PLANS.map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </Field>
+      </div>
+
+      <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        <Field label="Provided / bundled via" flex="1 1 180px">
+          <select value={provider} onChange={(e) => setProvider(e.target.value)}>
+            <option value="">Select provider…</option>
+            {PROVIDERS.map((o) => <option key={o} value={o}>{o}</option>)}
+            <option value={OTHER}>{OTHER}</option>
+          </select>
+          {provider === OTHER && (
+            <input value={providerOther} onChange={(e) => setProviderOther(e.target.value)}
+              placeholder="Type the provider" style={{ marginTop: 8 }} />
+          )}
+        </Field>
+        <Field label="Paid by" flex="1 1 150px">
+          <select value={paidBy} onChange={(e) => setPaidBy(e.target.value)}>
+            <option value="">Select who pays…</option>
+            {people.map((o) => <option key={o} value={o}>{o}</option>)}
+            <option value={OTHER}>{OTHER}</option>
+          </select>
+          {paidBy === OTHER && (
+            <input value={paidByOther} onChange={(e) => setPaidByOther(e.target.value)}
+              placeholder="Type a name" style={{ marginTop: 8 }} />
+          )}
+        </Field>
+      </div>
+
+      <Field label="Note">
+        <input value={note} onChange={(e) => setNote(e.target.value)}
+          placeholder={isFree ? 'e.g. “trial ends 12-Jul” or “Muneeza’s account, I share it”' : 'Optional note'} />
+      </Field>
+
+      <div className="row" style={{ gap: 8, marginTop: 12 }}>
+        <button className="btn primary" disabled={busy || !name || (!isFree && !cost)}>{submitLabel}</button>
+        {onCancel && <button type="button" className="btn" onClick={onCancel}>Cancel</button>}
+      </div>
+    </form>
+  )
+}
+
 function Field({ label, children, flex }) {
   return (
     <label style={{ display: 'block', marginTop: 12, flex: flex || undefined, minWidth: 0 }}>
