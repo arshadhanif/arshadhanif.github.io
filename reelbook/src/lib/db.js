@@ -228,6 +228,16 @@ export async function listImportBatches() {
   return data || []
 }
 
+// Clear an import from history WITHOUT deleting any data: unlink the rows it
+// tagged, then drop the history record. Watches, episodes and ratings stay.
+export async function dismissImportBatch(id) {
+  await supabase.from('watches').update({ import_batch: null }).eq('import_batch', id)
+  await supabase.from('episode_watches').update({ import_batch: null }).eq('import_batch', id)
+  await supabase.from('watchlist').update({ import_batch: null }).eq('import_batch', id)
+  const { error } = await supabase.from('import_batches').delete().eq('id', id)
+  if (error) throw error
+}
+
 // Undo an import: remove every row it created (ratings cascade with watches).
 export async function revertImportBatch(id) {
   // ratings have a FK to watches; delete them explicitly first to be safe
