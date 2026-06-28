@@ -639,6 +639,26 @@ export async function getStreamingAvailability({ tmdbId, mediaType, imdbId, coun
   } catch { return { ok: false } }
 }
 
+// ---------- IMDb ratings (via OMDb, proxied + cached server-side) ----------
+
+export async function getImdbRating(imdbId) {
+  if (!imdbId) return null
+  try {
+    const { data, error } = await supabase.functions.invoke('imdb', { body: { type: 'title', imdbId } })
+    if (error || !data?.ok) return null
+    return { rating: data.rating, votes: data.votes }
+  } catch { return null }
+}
+
+export async function getImdbSeasonRatings(imdbId, season) {
+  if (!imdbId) return {}
+  try {
+    const { data, error } = await supabase.functions.invoke('imdb', { body: { type: 'season', imdbId, season } })
+    if (error || !data?.ok) return {}
+    return data.episodes || {}
+  } catch { return {} }
+}
+
 // ---------- Public profile sharing ----------
 
 export async function getMyShare(profileId) {

@@ -5,6 +5,7 @@ import {
   ensureTitleFromFull, getWatchesForTitle, addToWatchlist,
   listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, markEpisodesBulk, unmarkAllEpisodes, setEpisodeRating,
   getTitleServices, setTitleServices, getStreamingAvailability,
+  getImdbRating, getImdbSeasonRatings,
 } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
@@ -33,6 +34,7 @@ export default function TitleDetail() {
   const [region, setRegion] = useState(preferred)
   const [recs, setRecs] = useState([])
   const [showTrailer, setShowTrailer] = useState(false)
+  const [imdb, setImdb] = useState(null)
 
   const loadWatches = useCallback(async (tid) => {
     try { setWatches(await getWatchesForTitle(tid)) } catch (e) { console.warn(e) }
@@ -40,11 +42,12 @@ export default function TitleDetail() {
 
   useEffect(() => {
     let alive = true
-    setLoading(true); setErr(null)
+    setLoading(true); setErr(null); setImdb(null)
     getFullDetail(Number(id), media)
       .then(async (f) => {
         if (!alive) return
         setFull(f)
+        if (f.imdb_id) getImdbRating(f.imdb_id).then((r) => alive && setImdb(r)).catch(() => {})
         const regions = providerRegions(f.providers)
         setRegion(regions.includes(preferred) ? preferred : regions.includes('US') ? 'US' : regions[0] || preferred)
         try {
@@ -87,6 +90,7 @@ export default function TitleDetail() {
               {full.runtime ? <span>{full.runtime} min{isTv ? '/ep' : ''}</span> : null}
               {isTv && full.number_of_seasons ? <span>{full.number_of_seasons} season{full.number_of_seasons > 1 ? 's' : ''}</span> : null}
               {full.total_episodes ? <span>{full.total_episodes} episodes</span> : null}
+              {imdb?.rating ? <span className="imdb-rating">★ {imdb.rating} IMDb</span> : null}
               {full.vote_average ? <span className="tmdb-rating">★ {full.vote_average} TMDB</span> : null}
             </div>
             <div className="scroll-x" style={{ margin: '4px 0 14px' }}>
@@ -149,7 +153,7 @@ export default function TitleDetail() {
         )}
 
         {isTv && titleId && (
-          <Episodes tmdbId={Number(id)} titleId={titleId} seasons={full.seasons} groups={groups} userId={user.id} />
+          <Episodes tmdbId={Number(id)} titleId={titleId} seasons={full.seasons} groups={groups} userId={user.id} imdbId={full.imdb_id} />
         )}
 
         {recs.length > 0 && (
@@ -373,7 +377,7 @@ function regionName(code) {
   catch { return code }
 }
 
-function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
+function Episodes({ tmdbId, titleId, seasons, groups, userId, imdbId }) {
   const toast = useToast()
   const [trackGroupId, setTrackGroupId] = useState(groups[0]?.id || '')
   const [watched, setWatched] = useState(new Set())   // "s-e"
@@ -381,6 +385,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
   const [epDates, setEpDates] = useState({})           // "s-e" -> watched_on
   const [openSeason, setOpenSeason] = useState(seasons[0]?.season_number ?? null)
   const [episodesBySeason, setEpisodesBySeason] = useState({})
+  const [imdbBySeason, setImdbBySeason] = useState({})  // season -> { epNum: imdbRating }
   const [expanded, setExpanded] = useState(null)       // "s-e"
   const [epImdb, setEpImdb] = useState({})             // "s-e" -> imdb_id | null (fetched lazily)
   const [desc, setDesc] = useState(false)              // newest episode first
@@ -417,6 +422,14 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
       .then((eps) => setEpisodesBySeason((m) => ({ ...m, [openSeason]: eps })))
       .catch(() => {})
   }, [openSeason, tmdbId, episodesBySeason])
+
+  // IMDb ratings for the open season (one OMDb call per season, cached server-side).
+  useEffect(() => {
+    if (openSeason == null || !imdbId || imdbBySeason[openSeason]) return
+    getImdbSeasonRatings(imdbId, openSeason)
+      .then((m) => setImdbBySeason((prev) => ({ ...prev, [openSeason]: m || {} })))
+      .catch(() => {})
+  }, [openSeason, imdbId, imdbBySeason])
 
   async function toggle(season, ep) {
     const key = `${season}-${ep}`
@@ -507,6 +520,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
                         const key = `${s.season_number}-${e.episode_number}`
                         const on = watched.has(key)
                         const rt = epRatings[key]
+                        const imdbRt = imdbBySeason[s.season_number]?.[e.episode_number]
                         const isExp = expanded === key
                         return (
                           <div className={`ep2 ${on ? 'on' : ''}`} key={e.episode_number}>
@@ -518,6 +532,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId }) {
                             <div className="ep2-body" onClick={() => openRow(s.season_number, e.episode_number, key)}>
                               <div className="ep2-title">
                                 <strong>{e.episode_number}. {e.name}</strong>
+                                {imdbRt ? <span className="imdb-rating sm">IMDb {imdbRt}</span> : null}
                                 {rt ? <span className="ep2-rt">★ {rt}</span> : null}
                               </div>
                               <div className="faint ep2-meta">

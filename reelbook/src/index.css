@@ -422,6 +422,10 @@ input:focus, select:focus, textarea:focus {
 .fab:active { transform: scale(.92); }
 @media (min-width: 820px) { .fab { bottom: 24px; right: 24px; } }
 
+/* IMDb rating badge */
+.imdb-rating { display: inline-flex; align-items: center; gap: 4px; background: #f5c518; color: #0b0d12; font-weight: 800; font-size: 13px; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+.imdb-rating.sm { font-size: 11px; padding: 1px 6px; }
+
 /* where to watch — manual override */
 .ws-manual { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; }
 .provider { display: inline-flex; }
