@@ -9,6 +9,7 @@ import ShareButtons from '@/components/ShareButtons';
 import ArticleCard from '@/components/ArticleCard';
 import LeadMagnet from '@/components/LeadMagnet';
 import JsonLd from '@/components/JsonLd';
+import ReadingProgress from '@/components/ReadingProgress';
 import { categorySlug } from '@/lib/categories';
 import { SITE_NAME, FOUNDER, LEAD_MAGNET, SITE_URL, OG_IMAGE } from '@/lib/constants';
 
@@ -94,6 +95,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
 
   return (
     <article className="container-page max-w-3xl py-16">
+      <ReadingProgress />
       <JsonLd data={articleSchema} />
       <JsonLd data={breadcrumbSchema} />
       <Link

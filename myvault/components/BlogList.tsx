@@ -9,6 +9,7 @@ const ALL = 'All';
 
 export default function BlogList({ posts }: { posts: PostMeta[] }) {
   const [active, setActive] = useState<string>(ALL);
+  const [query, setQuery] = useState('');
 
   // Build the tag list from categories actually present in the posts.
   const categories = useMemo(() => {
@@ -16,11 +17,35 @@ export default function BlogList({ posts }: { posts: PostMeta[] }) {
     return [ALL, ...Array.from(set)];
   }, [posts]);
 
-  const filtered =
-    active === ALL ? posts : posts.filter((p) => p.category === active);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return posts.filter((p) => {
+      const matchesCategory = active === ALL || p.category === active;
+      const matchesQuery =
+        q === '' ||
+        p.title.toLowerCase().includes(q) ||
+        p.excerpt.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q);
+      return matchesCategory && matchesQuery;
+    });
+  }, [posts, active, query]);
 
   return (
     <>
+      <div className="mb-6">
+        <label htmlFor="article-search" className="sr-only">
+          Search articles
+        </label>
+        <input
+          id="article-search"
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search articles"
+          className="w-full max-w-md rounded-md border border-border bg-surface px-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        />
+      </div>
+
       <div className="mb-10 flex flex-wrap gap-2">
         {categories.map((cat) => (
           <CategoryBadge
@@ -40,7 +65,9 @@ export default function BlogList({ posts }: { posts: PostMeta[] }) {
           ))}
         </div>
       ) : (
-        <p className="text-muted">No articles in this category yet.</p>
+        <p className="text-muted">
+          No articles match your search. Try a different term or category.
+        </p>
       )}
     </>
   );

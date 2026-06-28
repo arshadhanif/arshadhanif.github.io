@@ -22,6 +22,12 @@ export default function Footer() {
             <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
               Explore
             </h3>
+            <Link
+              href="/start-here"
+              className="text-sm text-muted transition-colors hover:text-accent"
+            >
+              Start Here
+            </Link>
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
@@ -31,6 +37,12 @@ export default function Footer() {
                 {link.label}
               </Link>
             ))}
+            <Link
+              href="/newsletter"
+              className="text-sm text-muted transition-colors hover:text-accent"
+            >
+              Newsletter
+            </Link>
           </div>
 
           <div className="flex flex-col gap-3">

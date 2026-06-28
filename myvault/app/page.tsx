@@ -58,6 +58,13 @@ export default function HomePage() {
                 Read the articles
               </Link>
             </div>
+            <p className="mt-5 text-sm text-muted">
+              New here?{' '}
+              <Link href="/start-here" className="text-accent hover:opacity-80">
+                Start here
+              </Link>
+              .
+            </p>
           </div>
         </div>
       </section>
