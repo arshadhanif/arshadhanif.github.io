@@ -157,6 +157,39 @@ export async function insertWatchlistBulk(rows) {
   }
 }
 
+// ---------- Import history & revert ----------
+export async function createImportBatch({ id, ownerId, householdId = null, kind, groupId = null, profileId = null, filename = null, watches = 0, episodes = 0, watchlist = 0 }) {
+  const { error } = await supabase.from('import_batches').insert({
+    id, owner_id: ownerId, household_id: householdId, kind, group_id: groupId, profile_id: profileId,
+    filename, watches_count: watches, episodes_count: episodes, watchlist_count: watchlist,
+  })
+  if (error) throw error
+}
+
+export async function listImportBatches() {
+  const { data, error } = await supabase
+    .from('import_batches')
+    .select('id, kind, filename, watches_count, episodes_count, watchlist_count, created_at, groups:group_id(name, color), profiles:profile_id(name)')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data || []
+}
+
+// Undo an import: remove every row it created (ratings cascade with watches).
+export async function revertImportBatch(id) {
+  // ratings have a FK to watches; delete them explicitly first to be safe
+  const { data: ws } = await supabase.from('watches').select('id').eq('import_batch', id)
+  const ids = (ws || []).map((w) => w.id)
+  for (let i = 0; i < ids.length; i += 300) {
+    await supabase.from('ratings').delete().in('watch_id', ids.slice(i, i + 300))
+  }
+  await supabase.from('watches').delete().eq('import_batch', id)
+  await supabase.from('episode_watches').delete().eq('import_batch', id)
+  await supabase.from('watchlist').delete().eq('import_batch', id)
+  const { error } = await supabase.from('import_batches').delete().eq('id', id)
+  if (error) throw error
+}
+
 // All logged watches for a title (with group + ratings), newest first.
 export async function getWatchesForTitle(titleId) {
   const { data, error } = await supabase
@@ -231,11 +264,11 @@ export async function unmarkAllEpisodes({ titleId, groupId }) {
 }
 
 // Bulk upsert episode watches, each with its own watched date (for imports).
-export async function markEpisodesBulk({ titleId, groupId, episodes, createdBy }) {
+export async function markEpisodesBulk({ titleId, groupId, episodes, createdBy, importBatch = null }) {
   const rows = episodes.map((e) => ({
     title_id: titleId, group_id: groupId,
     season_number: e.season, episode_number: e.episode,
-    watched_on: e.watchedOn || null, created_by: createdBy,
+    watched_on: e.watchedOn || null, created_by: createdBy, import_batch: importBatch,
   }))
   for (let i = 0; i < rows.length; i += 500) {
     const { error } = await supabase
