@@ -528,7 +528,7 @@ function EpisodeRatingGraph({ epRatings }) {
         })}
       </div>
       <div className="faint" style={{ marginTop: 6, fontSize: 11 }}>
-        {seasons.length > 1 ? `Seasons ${seasons[0]}–${seasons[seasons.length - 1]} · oldest to newest` : 'oldest to newest'}
+        {seasons.length > 1 ? `Seasons ${seasons[0]} to ${seasons[seasons.length - 1]} · oldest to newest` : 'oldest to newest'}
       </div>
     </div>
   )

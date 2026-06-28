@@ -34,7 +34,7 @@ export default function PublicProfile() {
 
       <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', maxWidth: 360, margin: '20px 0' }}>
         <div className="stat"><div className="v">{p.ratings_count || 0}</div><div className="l">Titles rated</div></div>
-        <div className="stat"><div className="v">{p.avg_score ?? '—'}</div><div className="l">Average score</div></div>
+        <div className="stat"><div className="v">{p.avg_score ?? 'N/A'}</div><div className="l">Average score</div></div>
       </div>
 
       {p.favorites?.length > 0 && (

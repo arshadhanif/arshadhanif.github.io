@@ -28,7 +28,7 @@ export default function Wrapped() {
   if (loading) return <div className="page"><Spinner label="Wrapping up your year…" /></div>
 
   async function share() {
-    const txt = `My ${year} in ReelBook: ${w.titles} titles, ${w.episodes} episodes, ~${w.hours} hours. Top: ${w.topMovie?.title || w.topShow?.title || '—'}.`
+    const txt = `My ${year} in ReelBook: ${w.titles} titles, ${w.episodes} episodes, ~${w.hours} hours. Top: ${w.topMovie?.title || w.topShow?.title || 'N/A'}.`
     try {
       if (navigator.share) await navigator.share({ title: `My ${year} in ReelBook`, text: txt })
       else { await navigator.clipboard.writeText(txt); alert('Summary copied. Screenshot the card to share the visuals.') }

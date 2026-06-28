@@ -140,6 +140,6 @@ function lifeLine(p) {
   const end = p.deathday ? new Date(p.deathday + 'T00:00:00') : new Date()
   let age = end.getFullYear() - born.getFullYear()
   if (end.getMonth() < born.getMonth() || (end.getMonth() === born.getMonth() && end.getDate() < born.getDate())) age--
-  if (p.deathday) return `${fmtDate(p.birthday)} – ${fmtDate(p.deathday)} (aged ${age})`
+  if (p.deathday) return `${fmtDate(p.birthday)} to ${fmtDate(p.deathday)} (aged ${age})`
   return `Born ${fmtDate(p.birthday)} (age ${age})`
 }
