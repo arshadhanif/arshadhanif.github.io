@@ -1,0 +1,23 @@
+[
+  {
+    "id": "t1",
+    "quote": "Arshad's templates saved our finance team weeks during our Oracle Fusion rollout. The reporting pack alone paid for itself in the first month.",
+    "name": "Finance Transformation Lead",
+    "role": "Manufacturing sector",
+    "company": ""
+  },
+  {
+    "id": "t2",
+    "quote": "Clear, practical, and genuinely expert. The advisory call cut through a problem we'd been stuck on for weeks.",
+    "name": "ERP Programme Manager",
+    "role": "Professional services",
+    "company": ""
+  },
+  {
+    "id": "t3",
+    "quote": "The career coaching reshaped how I positioned myself. I landed an Oracle consulting role within two months.",
+    "name": "Aspiring ERP Consultant",
+    "role": "Career switcher",
+    "company": ""
+  }
+]

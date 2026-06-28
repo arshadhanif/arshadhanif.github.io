@@ -55,7 +55,17 @@ export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 export const NAV_LINKS = [
   { href: '/blog', label: 'Blog' },
   { href: '/store', label: 'Store' },
+  { href: '/resources', label: 'Free Resources' },
   { href: '/services', label: 'Services' },
   { href: '/about', label: 'About' },
-  { href: '/newsletter', label: 'Newsletter' },
 ];
+
+// The headline lead magnet — the free offer used to grow the email list.
+// Swap the title/file once the real guide exists.
+export const LEAD_MAGNET = {
+  title: "The ERP Finance Professional's Toolkit",
+  description:
+    'A free starter kit: a month-end close checklist, an OTBI reporting cheat sheet, and a finance dashboard template — everything to get a quick win this week.',
+  // Placeholder download (served from /public). Replace with the real asset.
+  fileUrl: '/downloads/erp-finance-toolkit.pdf',
+};
