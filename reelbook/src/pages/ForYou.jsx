@@ -4,7 +4,8 @@ import { recommendFromHistory, recommendRails, keyOf } from '../lib/recommend'
 import { IMG } from '../lib/tmdb'
 import { useAppData } from '../context/AppData'
 import { Poster, Spinner, Empty, GroupChips, TitleLink, GridSkeleton } from '../components/ui'
-import { Shuffle } from 'lucide-react'
+import { Shuffle, Settings2 } from 'lucide-react'
+import Roulette from '../components/Roulette'
 
 export default function ForYou() {
   const { groups } = useAppData()
@@ -16,7 +17,8 @@ export default function ForYou() {
   const [loadingRecs, setLoadingRecs] = useState(true)
   const [groupId, setGroupId] = useState(null)
   const [type, setType] = useState('all')
-  const [spin, setSpin] = useState(0)
+  const [pickIdx, setPickIdx] = useState(0)
+  const [rouletteOpen, setRouletteOpen] = useState(false)
   const [friendsLoved, setFriendsLoved] = useState([])
 
   useEffect(() => {
@@ -83,12 +85,23 @@ export default function ForYou() {
 
   const pick = useMemo(() => {
     if (wlPool.length) {
-      const w = wlPool[spin % wlPool.length]
+      const w = wlPool[pickIdx % wlPool.length]
       return { t: w.titles, source: 'watchlist', group: w.groups }
     }
-    if (recs.length) return { t: recs[spin % recs.length], source: 'recommended' }
+    if (recs.length) return { t: recs[pickIdx % recs.length], source: 'recommended' }
     return null
-  }, [wlPool, recs, spin])
+  }, [wlPool, recs, pickIdx])
+
+  // Land on a random pick to start (and whenever the pool changes), not always the first.
+  const poolLen = wlPool.length || recs.length
+  useEffect(() => { if (poolLen) setPickIdx(Math.floor(Math.random() * poolLen)) }, [poolLen, groupId, type])
+
+  function spinAgain() {
+    if (poolLen <= 1) return
+    let n = Math.floor(Math.random() * poolLen)
+    if (n === pickIdx % poolLen) n = (n + 1) % poolLen
+    setPickIdx(n)
+  }
 
   if (loadingData) return <div className="page"><Spinner label="Thinking of what you'd love…" /></div>
 
@@ -127,11 +140,16 @@ export default function ForYou() {
               <div className="faint">{pick.t.year || ''}{pick.t.genre ? ` · ${pick.t.genre.split(',')[0]}` : ''}</div>
               <div className="row" style={{ gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                 <TitleLink className="btn primary" tmdbId={pick.t.tmdb_id} media={pick.t.media_type}>Open</TitleLink>
-                <button className="btn" onClick={() => setSpin((s) => s + 1)}><Shuffle size={16} /> Spin again</button>
+                <button className="btn" onClick={spinAgain}><Shuffle size={16} /> Spin again</button>
+                <button className="btn" onClick={() => setRouletteOpen(true)}><Settings2 size={16} /> Options</button>
               </div>
             </div>
           </div>
         </div>
+      )}
+
+      {rouletteOpen && (
+        <Roulette pool={wlPool} onClose={() => setRouletteOpen(false)} />
       )}
 
       {friendsLoved.length > 0 && (
