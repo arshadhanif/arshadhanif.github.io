@@ -20,7 +20,10 @@ const STATIC_PAGES: SearchItem[] = [
   { type: 'Tool', title: 'Depreciation Calculator', excerpt: 'Straight line and reducing balance with a full schedule.', href: '/tools/depreciation-calculator', meta: 'Free tool' },
   { type: 'Tool', title: 'Loan & Lease Amortization', excerpt: 'Payment, total interest and a payment schedule.', href: '/tools/lease-amortization-calculator', meta: 'Free tool' },
   { type: 'Tool', title: 'Financial Ratio Calculator', excerpt: 'Liquidity, leverage and profitability ratios.', href: '/tools/financial-ratio-calculator', meta: 'Free tool' },
+  { type: 'Tool', title: 'NPV & IRR Calculator', excerpt: 'Net present value, internal rate of return, payback.', href: '/tools/npv-irr-calculator', meta: 'Free tool' },
   { type: 'Page', title: 'Glossary', excerpt: 'Oracle Fusion and finance terms, explained simply.', href: '/glossary' },
+  { type: 'Page', title: 'FAQ', excerpt: 'Answers on products, downloads, the newsletter and services.', href: '/faq' },
+  { type: 'Page', title: 'Contact', excerpt: 'Advisory, consulting, support or a general enquiry.', href: '/contact' },
 ];
 
 export default function SearchPage() {

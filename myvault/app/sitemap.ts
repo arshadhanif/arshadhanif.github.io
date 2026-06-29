@@ -23,6 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/tools/depreciation-calculator',
     '/tools/lease-amortization-calculator',
     '/tools/financial-ratio-calculator',
+    '/tools/npv-irr-calculator',
     '/watch',
     '/resources',
     '/solutions',

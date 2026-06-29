@@ -42,6 +42,13 @@ const TOOLS = [
       'Liquidity, leverage and profitability ratios from a few balance sheet and P&L inputs.',
     tag: 'Analysis',
   },
+  {
+    href: '/tools/npv-irr-calculator',
+    title: 'NPV & IRR Calculator',
+    description:
+      'Appraise a project: net present value, internal rate of return, profitability index and payback.',
+    tag: 'Appraisal',
+  },
 ];
 
 export default function ToolsPage() {
