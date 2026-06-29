@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { listDiary, listWatchlist } from '../lib/db'
+import { listDiary, listWatchlist, listAllSeasonRatings } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { Poster, Spinner, Empty, TitleLink, initials } from '../components/ui'
 
@@ -9,13 +9,32 @@ export default function TasteMatch() {
   const { profiles } = useAppData()
   const [entries, setEntries] = useState([])
   const [watchlist, setWatchlist] = useState([])
+  const [seasonR, setSeasonR] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([listDiary({ limit: 2000 }), listWatchlist()])
       .then(([d, w]) => { setEntries(d); setWatchlist(w) })
       .finally(() => setLoading(false))
+    listAllSeasonRatings().then(setSeasonR).catch(() => {})
   }, [])
+
+  // Season-level clashes: same season rated by 2+ people with a 3+ gap.
+  const seasonClashes = useMemo(() => {
+    const m = new Map()
+    for (const r of seasonR) {
+      const t = r.titles; if (!t) continue
+      const k = `${t.id}-${r.season_number}`
+      if (!m.has(k)) m.set(k, { t, season: r.season_number, scores: [] })
+      m.get(k).scores.push({ name: r.profiles?.name, score: r.score })
+    }
+    return [...m.values()]
+      .filter((x) => x.scores.length >= 2)
+      .map((x) => { const v = x.scores.map((s) => s.score); return { ...x, gap: Math.max(...v) - Math.min(...v) } })
+      .filter((x) => x.gap >= 3)
+      .sort((a, b) => b.gap - a.gap)
+      .slice(0, 8)
+  }, [seasonR])
 
   const data = useMemo(() => {
     // entries where at least two people rated
@@ -114,6 +133,27 @@ export default function TasteMatch() {
                       </div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0, color: 'var(--pink)', fontWeight: 800 }}>{gap} apart</div>
+                  </TitleLink>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {seasonClashes.length > 0 && (
+            <Section title="📺 Season clashes">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {seasonClashes.map((x) => (
+                  <TitleLink key={`${x.t.id}-${x.season}`} className="card row" tmdbId={x.t.tmdb_id} media={x.t.media_type} style={{ gap: 12, alignItems: 'center' }}>
+                    <div style={{ width: 42, flexShrink: 0 }}>
+                      <Poster title={x.t.title} mediaType={x.t.media_type} posterPath={x.t.poster_path} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <strong>{x.t.title} <span className="faint">· Season {x.season}</span></strong>
+                      <div className="row" style={{ gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
+                        {x.scores.map((s, idx) => <span key={idx} className="faint">{s.name}: <strong style={{ color: 'var(--text)' }}>{s.score}</strong></span>)}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0, color: 'var(--pink)', fontWeight: 800 }}>{x.gap} apart</div>
                   </TitleLink>
                 ))}
               </div>
