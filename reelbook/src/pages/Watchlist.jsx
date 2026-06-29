@@ -42,7 +42,7 @@ export default function Watchlist() {
     <div className="page">
       <div className="page-head">
         <h1>Watchlist</h1>
-        {items.length > 0 && <button className="btn sm primary" onClick={() => setRoulette(true)}>🎲 Surprise me</button>}
+        <button className="btn sm primary" onClick={() => setRoulette(true)}>🎲 Surprise me</button>
       </div>
       <GroupChips groups={groups} value={groupId} onChange={setGroupId} />
       <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
