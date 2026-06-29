@@ -518,6 +518,29 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
 
       <EpisodeRatingGraph epRatings={epRatings} />
 
+      {(() => {
+        const bars = seasons.map((s) => {
+          const r = seasonRatings[s.season_number]
+          if (!r) return null
+          const vals = Object.values(r)
+          return { n: s.season_number, avg: vals.reduce((a, b) => a + b, 0) / vals.length }
+        }).filter(Boolean)
+        if (bars.length < 2) return null
+        return (
+          <div className="card" style={{ marginBottom: 8 }}>
+            <div className="faint" style={{ marginBottom: 8 }}>Your season scores</div>
+            <div className="cols">
+              {bars.map((b) => (
+                <button className="col" key={b.n} title={`Season ${b.n}: ${b.avg.toFixed(1)}/10`} onClick={() => setOpenSeason(b.n)}>
+                  <div className="fill" style={{ height: `${b.avg * 10}%`, background: b.avg >= 8 ? 'var(--green)' : b.avg >= 6 ? 'var(--accent)' : 'var(--pink)' }} />
+                  <span className="cl">S{b.n}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {seasons.map((s) => {
           const raw = episodesBySeason[s.season_number] || []
