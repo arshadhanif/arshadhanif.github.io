@@ -4,6 +4,7 @@ import { getAllPosts } from '@/lib/posts';
 import { getFeaturedResources } from '@/lib/resources';
 import ArticleCard from '@/components/ArticleCard';
 import ResourceCard from '@/components/ResourceCard';
+import PageHeader from '@/components/PageHeader';
 import { SITE_NAME } from '@/lib/constants';
 
 export const metadata: Metadata = {
@@ -40,29 +41,23 @@ export default function StartHerePage() {
 
   return (
     <div className="container-page py-16">
-      <header className="mb-12 max-w-2xl">
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-          Start here
-        </h1>
-        <p className="mt-4 text-lg text-muted">
-          New to {SITE_NAME}? This is the short version. {SITE_NAME} is a resource
-          hub for ERP and finance professionals: templates, guides and tools that
-          help you work faster and report cleaner. Here is how to get value from
-          it today.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="New here?"
+        title="Start here"
+        intro={`This is the short version. ${SITE_NAME} is a resource hub for ERP and finance professionals: templates, guides and tools that help you work faster and report cleaner. Here is how to get value from it today.`}
+      />
 
       {/* Steps */}
       <div className="mb-16 grid gap-6 md:grid-cols-3">
         {STEPS.map((step) => (
           <div
             key={step.n}
-            className="rounded-xl border border-border bg-surface p-6"
+            className="rounded-2xl border border-border bg-surface p-6"
           >
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-sm font-bold text-background">
-              {step.n}
+            <div className="font-display text-4xl font-bold text-accent">
+              {String(step.n).padStart(2, '0')}
             </div>
-            <h2 className="mt-4 text-lg font-semibold">{step.title}</h2>
+            <h2 className="mt-3 font-display text-lg font-bold tracking-tight">{step.title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted">{step.body}</p>
           </div>
         ))}
@@ -70,13 +65,13 @@ export default function StartHerePage() {
 
       {/* Read first */}
       <section className="mb-16">
-        <div className="mb-6 flex items-end justify-between">
-          <h2 className="text-2xl font-bold tracking-tight">Read these first</h2>
+        <div className="mb-8 flex items-end justify-between border-b-2 border-foreground pb-4">
+          <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Read these first</h2>
           <Link
             href="/blog"
-            className="text-sm font-medium text-accent hover:opacity-80"
+            className="text-sm font-bold underline decoration-2 underline-offset-4 hover:text-accent"
           >
-            All articles →
+            All articles
           </Link>
         </div>
         <div className="grid gap-6 md:grid-cols-3">
@@ -88,13 +83,13 @@ export default function StartHerePage() {
 
       {/* Free resources */}
       <section className="mb-16">
-        <div className="mb-6 flex items-end justify-between">
-          <h2 className="text-2xl font-bold tracking-tight">Grab a free resource</h2>
+        <div className="mb-8 flex items-end justify-between border-b-2 border-foreground pb-4">
+          <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Grab a free resource</h2>
           <Link
             href="/resources"
-            className="text-sm font-medium text-accent hover:opacity-80"
+            className="text-sm font-bold underline decoration-2 underline-offset-4 hover:text-accent"
           >
-            All resources →
+            All resources
           </Link>
         </div>
         <div className="grid gap-6 sm:grid-cols-2">

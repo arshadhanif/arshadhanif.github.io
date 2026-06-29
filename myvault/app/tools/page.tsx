@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import PageHeader from '@/components/PageHeader';
 import { SITE_NAME } from '@/lib/constants';
 
 export const metadata: Metadata = {
@@ -25,27 +26,23 @@ const TOOLS = [
 export default function ToolsPage() {
   return (
     <div className="container-page py-16">
-      <header className="mb-10 max-w-2xl">
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-          Free Tools
-        </h1>
-        <p className="mt-4 text-lg text-muted">
-          Quick, free tools to make finance and ERP work easier. No sign-up, no
-          installs, they run right in your browser. More on the way.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Run in your browser"
+        title="Free Tools"
+        intro="Quick, free tools to make finance and ERP work easier. No sign-up, no installs, they run right in your browser. More on the way."
+      />
 
       <div className="grid gap-6 sm:grid-cols-2">
         {TOOLS.map((tool) => (
           <Link
             key={tool.href}
             href={tool.href}
-            className="group flex h-full flex-col rounded-xl border border-border bg-surface p-6 transition-colors hover:border-accent/50"
+            className="group flex h-full flex-col rounded-2xl border border-border bg-surface p-6 transition-colors hover:border-accent/50"
           >
-            <span className="text-xs font-semibold uppercase tracking-wider text-accent">
+            <span className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-accent">
               {tool.tag}
             </span>
-            <h2 className="mt-3 text-lg font-semibold group-hover:text-accent">
+            <h2 className="mt-3 font-display text-lg font-bold tracking-tight group-hover:text-accent">
               {tool.title}
             </h2>
             <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">

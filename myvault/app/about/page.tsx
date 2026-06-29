@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import PageHeader from '@/components/PageHeader';
 import { FOUNDER, SITE_NAME, SOCIAL } from '@/lib/constants';
 
 export const metadata: Metadata = {
@@ -37,16 +38,11 @@ export default function AboutPage() {
 
   return (
     <div className="container-page max-w-3xl py-16">
-      <header className="mb-10">
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-          About {SITE_NAME}
-        </h1>
-        <p className="mt-4 text-lg text-muted">
-          {SITE_NAME} is a resource hub for ERP and finance professionals. It is
-          the place to find templates, report packs and straight answers on
-          Oracle Fusion, Excel and running a finance function.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="About"
+        title={`About ${SITE_NAME}`}
+        intro={`${SITE_NAME} is a resource hub for ERP and finance professionals. It is the place to find templates, report packs and straight answers on Oracle Fusion, Excel and running a finance function.`}
+      />
 
       <section className="prose-article">
         <h2>Why {SITE_NAME} exists</h2>
@@ -136,14 +132,11 @@ export default function AboutPage() {
         </div>
 
         {/* Stats */}
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-4">
           {TRUST_SIGNALS.map((t) => (
-            <div
-              key={t.label}
-              className="rounded-xl border border-border bg-surface p-5 text-center"
-            >
-              <div className="text-2xl font-extrabold text-accent">{t.stat}</div>
-              <div className="mt-1 text-xs text-muted">{t.label}</div>
+            <div key={t.label} className="bg-surface p-5 text-center">
+              <div className="font-display text-3xl font-bold text-accent">{t.stat}</div>
+              <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted">{t.label}</div>
             </div>
           ))}
         </div>

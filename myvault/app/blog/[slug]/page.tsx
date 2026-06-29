@@ -105,19 +105,19 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         ← Back to blog
       </Link>
 
-      <header className="mt-6">
+      <header className="mt-6 border-b-2 border-foreground pb-8">
         <div className="flex items-center gap-3">
           <CategoryBadge
             category={post.category}
             as="link"
             href={`/blog/category/${categorySlug(post.category)}`}
           />
-          <span className="text-sm text-muted">{post.readTime}</span>
+          <span className="font-mono text-xs uppercase tracking-wider text-muted">{post.readTime}</span>
         </div>
-        <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+        <h1 className="mt-4 font-display text-3xl font-bold leading-[1.05] tracking-tight sm:text-5xl">
           {post.title}
         </h1>
-        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+        <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-wider text-muted">
           <span>By {FOUNDER.name}</span>
           <span aria-hidden="true">·</span>
           <time dateTime={post.date}>{formatDate(post.date)}</time>
@@ -148,7 +148,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
 
       {related.length > 0 && (
         <section className="mt-14">
-          <h2 className="mb-6 text-2xl font-bold tracking-tight">Keep reading</h2>
+          <h2 className="mb-8 border-b-2 border-foreground pb-4 font-display text-2xl font-bold tracking-tight sm:text-3xl">Keep reading</h2>
           <div className="grid gap-6 sm:grid-cols-2">
             {related.map((r) => (
               <ArticleCard key={r.slug} post={r} />

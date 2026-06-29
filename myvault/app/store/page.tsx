@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Script from 'next/script';
 import { getAllProducts } from '@/lib/products';
 import StoreList from '@/components/StoreList';
+import PageHeader from '@/components/PageHeader';
 import JsonLd from '@/components/JsonLd';
 import { SITE_URL } from '@/lib/constants';
 
@@ -50,15 +51,11 @@ export default function StorePage() {
           their Gumroad URLs; add the class in ProductCard to enable overlays. */}
       <Script src="https://gumroad.com/js/gumroad.js" strategy="lazyOnload" />
 
-      <header className="mb-10 max-w-2xl">
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-          The Store
-        </h1>
-        <p className="mt-4 text-lg text-muted">
-          Proven templates, report packs and courses, built from real Oracle
-          Fusion and finance work. Filter by category below.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Templates · Report packs · Courses"
+        title="The Store"
+        intro="Proven templates, report packs and courses, built from real Oracle Fusion and finance work. Filter by category below."
+      />
 
       <StoreList products={products} />
     </div>

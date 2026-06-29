@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import JsonLd from '@/components/JsonLd';
 import Testimonials from '@/components/Testimonials';
+import PageHeader from '@/components/PageHeader';
 import { FOUNDER, SITE_NAME } from '@/lib/constants';
 
 export const metadata: Metadata = {
@@ -69,25 +70,24 @@ export default function ServicesPage() {
   return (
     <div className="container-page py-16">
       <JsonLd data={faqSchema} />
-      <header className="mb-12 max-w-2xl">
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-          Services
-        </h1>
-        <p className="mt-4 text-lg text-muted">
-          Sometimes a template is not enough and you want someone in your corner.
-          {' '}
-          {SITE_NAME} offers a few focused services. Pick the one that fits and
-          get in touch.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Work with us"
+        title="Services"
+        intro={`Sometimes a template is not enough and you want someone in your corner. ${SITE_NAME} offers a few focused services. Pick the one that fits and get in touch.`}
+      />
 
       <div className="grid gap-6 md:grid-cols-3">
-        {SERVICES.map((service) => (
+        {SERVICES.map((service, idx) => (
           <div
             key={service.title}
-            className="flex flex-col rounded-xl border border-border bg-surface p-7"
+            className="flex flex-col rounded-2xl border border-border bg-surface p-7"
           >
-            <h2 className="text-xl font-semibold text-accent">{service.title}</h2>
+            <span className="font-mono text-sm text-accent">
+              {String(idx + 1).padStart(2, '0')}
+            </span>
+            <h2 className="mt-3 font-display text-xl font-bold tracking-tight">
+              {service.title}
+            </h2>
             <p className="mt-3 flex-1 text-sm leading-relaxed text-muted">
               {service.description}
             </p>
@@ -95,7 +95,7 @@ export default function ServicesPage() {
               href={`mailto:${FOUNDER.email}?subject=${encodeURIComponent(
                 service.subject
               )}`}
-              className="mt-6 inline-block rounded-md bg-accent px-5 py-2.5 text-center text-sm font-semibold text-background transition-colors hover:bg-accent-dim"
+              className="mt-6 inline-block rounded-full bg-foreground px-5 py-2.5 text-center text-sm font-semibold text-background transition-transform hover:-translate-y-0.5"
             >
               Get in touch
             </a>
@@ -115,8 +115,8 @@ export default function ServicesPage() {
       <Testimonials />
 
       <section className="mt-16 max-w-3xl">
-        <h2 className="text-2xl font-bold tracking-tight">Common questions</h2>
-        <dl className="mt-6 divide-y divide-border border-y border-border">
+        <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Common questions</h2>
+        <dl className="mt-6 divide-y divide-border border-y-2 border-foreground">
           {FAQS.map((faq) => (
             <div key={faq.q} className="py-5">
               <dt className="font-semibold">{faq.q}</dt>

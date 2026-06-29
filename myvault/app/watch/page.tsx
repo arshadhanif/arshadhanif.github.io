@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getAllVideos } from '@/lib/videos';
 import VideoCard from '@/components/VideoCard';
 import NewsletterSignup from '@/components/NewsletterSignup';
+import PageHeader from '@/components/PageHeader';
 import { SITE_NAME, SOCIAL } from '@/lib/constants';
 
 export const metadata: Metadata = {
@@ -19,25 +20,21 @@ export default function WatchPage() {
 
   return (
     <div className="container-page py-16">
-      <header className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="max-w-2xl">
-          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-            Watch
-          </h1>
-          <p className="mt-4 text-lg text-muted">
-            Short, practical video tutorials on Excel, Oracle Fusion and finance.
-            New videos land on the {SITE_NAME} YouTube channel.
-          </p>
-        </div>
-        <a
-          href={SOCIAL.youtube}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block shrink-0 rounded-md bg-accent px-5 py-2.5 text-center text-sm font-semibold text-background transition-colors hover:bg-accent-dim"
-        >
-          Subscribe on YouTube
-        </a>
-      </header>
+      <PageHeader
+        eyebrow="Video tutorials"
+        title="Watch"
+        intro={`Short, practical video tutorials on Excel, Oracle Fusion and finance. New videos land on the ${SITE_NAME} YouTube channel.`}
+        action={
+          <a
+            href={SOCIAL.youtube}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full bg-[#FF0000] px-5 py-2.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+          >
+            Subscribe on YouTube
+          </a>
+        }
+      />
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {videos.map((video) => (

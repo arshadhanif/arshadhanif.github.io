@@ -9,6 +9,7 @@ import ArticleCard from '@/components/ArticleCard';
 import ProductCard from '@/components/ProductCard';
 import ResourceCard from '@/components/ResourceCard';
 import NewsletterSignup from '@/components/NewsletterSignup';
+import PageHeader from '@/components/PageHeader';
 import JsonLd from '@/components/JsonLd';
 import { SITE_URL } from '@/lib/constants';
 
@@ -64,12 +65,7 @@ export default function SolutionPage({
     <div className="container-page py-16">
       <JsonLd data={breadcrumbSchema} />
 
-      <header className="mb-12 max-w-2xl">
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-          {solution.title}
-        </h1>
-        <p className="mt-4 text-lg text-muted">{solution.intro}</p>
-      </header>
+      <PageHeader eyebrow="Solution" title={solution.title} intro={solution.intro} />
 
       <div className="prose-article mb-14 max-w-2xl">
         {solution.body.map((p, i) => (
@@ -84,7 +80,7 @@ export default function SolutionPage({
 
       {articles.length > 0 && (
         <section className="mb-14">
-          <h2 className="mb-6 text-2xl font-bold tracking-tight">Read up</h2>
+          <h2 className="mb-8 border-b-2 border-foreground pb-4 font-display text-2xl font-bold tracking-tight sm:text-3xl">Read up</h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {articles.map((post) => (
               <ArticleCard key={post.slug} post={post} />
@@ -95,7 +91,7 @@ export default function SolutionPage({
 
       {products.length > 0 && (
         <section className="mb-14">
-          <h2 className="mb-6 text-2xl font-bold tracking-tight">Get the tools</h2>
+          <h2 className="mb-8 border-b-2 border-foreground pb-4 font-display text-2xl font-bold tracking-tight sm:text-3xl">Get the tools</h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((p) => (
               <ProductCard key={p.id} product={p} />
@@ -106,7 +102,7 @@ export default function SolutionPage({
 
       {resources.length > 0 && (
         <section className="mb-14">
-          <h2 className="mb-6 text-2xl font-bold tracking-tight">Free resources</h2>
+          <h2 className="mb-8 border-b-2 border-foreground pb-4 font-display text-2xl font-bold tracking-tight sm:text-3xl">Free resources</h2>
           <div className="grid gap-6 sm:grid-cols-2">
             {resources.map((r) => (
               <ResourceCard key={r.id} resource={r} />

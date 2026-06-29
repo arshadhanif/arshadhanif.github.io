@@ -7,6 +7,8 @@ import ProductCard from '@/components/ProductCard';
 import ResourceCard from '@/components/ResourceCard';
 import ArticleCard from '@/components/ArticleCard';
 import NewsletterSignup from '@/components/NewsletterSignup';
+import PageHeader from '@/components/PageHeader';
+import { IconArrowRight } from '@/components/Icons';
 import JsonLd from '@/components/JsonLd';
 import { SITE_NAME, SITE_URL } from '@/lib/constants';
 
@@ -47,48 +49,40 @@ export default function ExcelPage() {
     <div className="container-page py-16">
       <JsonLd data={breadcrumbSchema} />
 
-      {/* Hero */}
-      <header className="mb-12 max-w-2xl">
-        <span className="inline-flex items-center rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-accent">
-          Templates · Courses · Free tools
-        </span>
-        <h1 className="mt-5 text-4xl font-extrabold tracking-tight sm:text-5xl">
-          Excel for finance
-        </h1>
-        <p className="mt-4 text-lg text-muted">
-          The Excel side of {SITE_NAME}: ready-to-use templates, practical
-          courses, and free tools built for real finance work. Stop fighting
-          spreadsheets and start from something that already works.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Templates · Courses · Free tools"
+        title="Excel for finance"
+        intro={`The Excel side of ${SITE_NAME}: ready-to-use templates, practical courses, and free tools built for real finance work. Stop fighting spreadsheets and start from something that already works.`}
+      />
 
-      {/* Free tool callout */}
+      {/* Free tool callout (inverted accent block) */}
       <Link
         href="/tools/excel-formula-generator"
-        className="group mb-16 block rounded-2xl border border-accent/30 bg-accent/5 p-6 transition-colors hover:border-accent/60 sm:p-8"
+        className="group mb-16 block rounded-2xl bg-foreground p-7 text-background transition-transform hover:-translate-y-0.5 sm:p-9"
       >
-        <span className="text-xs font-semibold uppercase tracking-wider text-accent">
+        <span className="font-mono text-xs font-semibold uppercase tracking-[0.25em] text-accent">
           Free tool
         </span>
-        <h2 className="mt-2 text-2xl font-bold tracking-tight">
+        <h2 className="mt-3 font-display text-2xl font-bold tracking-tight sm:text-3xl">
           Excel Formula Generator for Finance
         </h2>
-        <p className="mt-2 max-w-2xl text-muted">
+        <p className="mt-2 max-w-2xl text-background/70">
           Pick a task, fill in your ranges, and copy a ready-made formula:
           XLOOKUP, SUMIFS, EOMONTH, IFERROR and more.
         </p>
-        <span className="mt-4 inline-block text-sm font-semibold text-accent group-hover:opacity-80">
-          Open the free tool →
+        <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-accent">
+          Open the free tool{' '}
+          <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </span>
       </Link>
 
       {/* Templates */}
       {templates.length > 0 && (
         <section className="mb-16">
-          <div className="mb-6 flex items-end justify-between">
-            <h2 className="text-2xl font-bold tracking-tight">Excel templates</h2>
-            <Link href="/store" className="text-sm font-medium text-accent hover:opacity-80">
-              All products →
+          <div className="mb-8 flex items-end justify-between border-b-2 border-foreground pb-4">
+            <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Excel templates</h2>
+            <Link href="/store" className="text-sm font-bold underline decoration-2 underline-offset-4 hover:text-accent">
+              All products
             </Link>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -102,7 +96,7 @@ export default function ExcelPage() {
       {/* Courses */}
       {courses.length > 0 && (
         <section className="mb-16">
-          <h2 className="mb-6 text-2xl font-bold tracking-tight">Excel courses</h2>
+          <h2 className="mb-8 border-b-2 border-foreground pb-4 font-display text-2xl font-bold tracking-tight sm:text-3xl">Excel courses</h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {courses.map((p) => (
               <ProductCard key={p.id} product={p} />
@@ -114,10 +108,10 @@ export default function ExcelPage() {
       {/* Free resources */}
       {excelResources.length > 0 && (
         <section className="mb-16">
-          <div className="mb-6 flex items-end justify-between">
-            <h2 className="text-2xl font-bold tracking-tight">Free Excel resources</h2>
-            <Link href="/resources" className="text-sm font-medium text-accent hover:opacity-80">
-              All resources →
+          <div className="mb-8 flex items-end justify-between border-b-2 border-foreground pb-4">
+            <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Free Excel resources</h2>
+            <Link href="/resources" className="text-sm font-bold underline decoration-2 underline-offset-4 hover:text-accent">
+              All resources
             </Link>
           </div>
           <div className="grid gap-6 sm:grid-cols-2">
@@ -131,13 +125,13 @@ export default function ExcelPage() {
       {/* Articles */}
       {excelArticles.length > 0 && (
         <section className="mb-16">
-          <div className="mb-6 flex items-end justify-between">
-            <h2 className="text-2xl font-bold tracking-tight">Excel articles</h2>
+          <div className="mb-8 flex items-end justify-between border-b-2 border-foreground pb-4">
+            <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Excel articles</h2>
             <Link
               href="/blog/category/excel"
-              className="text-sm font-medium text-accent hover:opacity-80"
+              className="text-sm font-bold underline decoration-2 underline-offset-4 hover:text-accent"
             >
-              All Excel articles →
+              All Excel articles
             </Link>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

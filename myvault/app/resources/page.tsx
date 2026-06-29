@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getAllResources } from '@/lib/resources';
 import ResourceCard from '@/components/ResourceCard';
 import NewsletterSignup from '@/components/NewsletterSignup';
+import PageHeader from '@/components/PageHeader';
 import { SITE_NAME } from '@/lib/constants';
 
 export const metadata: Metadata = {
@@ -21,16 +22,11 @@ export default function ResourcesPage() {
 
   return (
     <div className="container-page py-16">
-      <header className="mb-10 max-w-2xl">
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-          Free Resources
-        </h1>
-        <p className="mt-4 text-lg text-muted">
-          Useful things you can grab for free: checklists, cheat sheets and
-          templates built for real finance and ERP work. No email required, just
-          download and go.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Free downloads"
+        title="Free Resources"
+        intro="Useful things you can grab for free: checklists, cheat sheets and templates built for real finance and ERP work. No email required, just download and go."
+      />
 
       <div className="grid gap-6 sm:grid-cols-2">
         {resources.map((resource) => (
