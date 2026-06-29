@@ -9,6 +9,12 @@ export const metadata: Metadata = {
 
 const OPTIONS = [
   {
+    href: '/preview/hybrid',
+    label: 'Editorial + Data (the mix)',
+    note: 'recommended',
+    desc: 'Bold editorial type and the moving topic banner, fused with the finance terminal\'s KPI panels, ticker and charts, on a warm light palette instead of dark.',
+  },
+  {
     href: '/',
     label: 'Clean premium',
     note: 'Notion / Vercel · currently live',

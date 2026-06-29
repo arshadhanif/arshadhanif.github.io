@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 const STYLES = [
+  { href: '/preview/hybrid', label: 'Editorial + Data', note: 'the mix' },
   { href: '/', label: 'Clean premium', note: 'Notion / Vercel · live' },
   { href: '/preview/stripe', label: 'Vivid SaaS', note: 'Stripe / Linear' },
   { href: '/preview/editorial', label: 'Bold editorial', note: 'Magazine' },
