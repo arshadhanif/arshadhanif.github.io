@@ -298,6 +298,39 @@ export async function setEpisodeRating({ titleId, groupId, season, episode, rati
   if (error) throw error
 }
 
+// ---------- Per-season ratings (dual: one row per profile per season) ----------
+export async function getSeasonRatings(titleId, groupId) {
+  let q = supabase.from('season_ratings').select('season_number, profile_id, score').eq('title_id', titleId)
+  q = groupId ? q.eq('group_id', groupId) : q.is('group_id', null)
+  const { data, error } = await q
+  if (error) throw error
+  return data || []
+}
+
+export async function setSeasonRating({ titleId, groupId, profileId, season, score, createdBy }) {
+  if (score == null) {
+    let del = supabase.from('season_ratings').delete()
+      .eq('title_id', titleId).eq('profile_id', profileId).eq('season_number', season)
+    del = groupId ? del.eq('group_id', groupId) : del.is('group_id', null)
+    const { error } = await del
+    if (error) throw error
+    return
+  }
+  const { error } = await supabase.from('season_ratings').upsert(
+    { title_id: titleId, group_id: groupId, profile_id: profileId, season_number: season, score, created_by: createdBy },
+    { onConflict: 'title_id,group_id,profile_id,season_number' },
+  )
+  if (error) throw error
+}
+
+// All season ratings across the household, with title + profile, for analytics.
+export async function listAllSeasonRatings() {
+  const { data, error } = await supabase.from('season_ratings')
+    .select('season_number, score, profile_id, titles(id, tmdb_id, title, media_type, poster_path), profiles(name, color)')
+  if (error) throw error
+  return data || []
+}
+
 export async function markEpisode({ titleId, groupId, season, episode, watchedOn, createdBy }) {
   const { error } = await supabase.from('episode_watches').upsert(
     {
