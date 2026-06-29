@@ -21,6 +21,27 @@ const TOOLS = [
       'Build the Excel formulas finance teams use most. Pick a task, fill in the blanks, copy the formula.',
     tag: 'Excel',
   },
+  {
+    href: '/tools/depreciation-calculator',
+    title: 'Depreciation Calculator',
+    description:
+      'Straight line or reducing balance, with a full year-by-year schedule of depreciation and book value.',
+    tag: 'Fixed Assets',
+  },
+  {
+    href: '/tools/lease-amortization-calculator',
+    title: 'Loan & Lease Amortization',
+    description:
+      'Monthly payment, total interest and a payment schedule for loans and leases.',
+    tag: 'Finance',
+  },
+  {
+    href: '/tools/financial-ratio-calculator',
+    title: 'Financial Ratio Calculator',
+    description:
+      'Liquidity, leverage and profitability ratios from a few balance sheet and P&L inputs.',
+    tag: 'Analysis',
+  },
 ];
 
 export default function ToolsPage() {

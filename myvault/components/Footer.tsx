@@ -17,7 +17,7 @@ const LINK_GROUPS = [
     links: [
       { href: '/resources', label: 'Resources' },
       { href: '/solutions', label: 'Solutions' },
-      { href: '/tools/excel-formula-generator', label: 'Free Tools' },
+      { href: '/tools', label: 'Free Tools' },
       { href: '/watch', label: 'Watch' },
     ],
   },

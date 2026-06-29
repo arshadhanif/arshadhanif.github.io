@@ -7,6 +7,7 @@ import {
   getProductsByTag,
 } from '@/lib/products';
 import ProductCard from '@/components/ProductCard';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import JsonLd from '@/components/JsonLd';
 import { SITE_NAME, SITE_URL } from '@/lib/constants';
 
@@ -61,34 +62,45 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         .slice(0, 3)
     : [];
 
+  const faqSchema =
+    product.faqs && product.faqs.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: product.faqs.map((f) => ({
+            '@type': 'Question',
+            name: f.q,
+            acceptedAnswer: { '@type': 'Answer', text: f.a },
+          })),
+        }
+      : null;
+
   return (
     <div className="container-page max-w-3xl py-16">
       <JsonLd data={productSchema} />
+      {faqSchema && <JsonLd data={faqSchema} />}
 
-      <nav className="text-sm text-muted">
-        <Link href="/store" className="hover:text-accent">
-          Store
-        </Link>
-        <span className="px-2" aria-hidden="true">
-          /
-        </span>
-        <span className="text-foreground">{product.title}</span>
-      </nav>
+      <Breadcrumbs
+        items={[
+          { label: 'Store', href: '/store' },
+          { label: product.title },
+        ]}
+      />
 
-      <header className="mt-4">
-        <span className="text-xs font-semibold uppercase tracking-wider text-accent">
+      <header className="mt-5 border-b-2 border-foreground pb-8">
+        <span className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-accent">
           {product.category}
         </span>
-        <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
+        <h1 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-5xl">
           {product.title}
         </h1>
         <div className="mt-5 flex flex-wrap items-center gap-4">
-          <span className="text-3xl font-bold">{product.price}</span>
+          <span className="font-display text-3xl font-bold">{product.price}</span>
           <a
             href={product.gumroadUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-md bg-accent px-6 py-3 font-semibold text-background transition-colors hover:bg-accent-dim"
+            className="rounded-full bg-foreground px-6 py-3 font-semibold text-background transition-transform hover:-translate-y-0.5"
           >
             Get it now
           </a>
@@ -101,7 +113,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
 
       {product.whatsInside && product.whatsInside.length > 0 && (
         <section className="mt-10">
-          <h2 className="text-xl font-bold tracking-tight">What's inside</h2>
+          <h2 className="font-display text-xl font-bold tracking-tight sm:text-2xl">What&apos;s inside</h2>
           <ul className="mt-4 space-y-2.5">
             {product.whatsInside.map((item) => (
               <li key={item} className="flex items-start gap-3 text-muted">
@@ -117,8 +129,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
 
       {product.faqs && product.faqs.length > 0 && (
         <section className="mt-10">
-          <h2 className="text-xl font-bold tracking-tight">Questions</h2>
-          <dl className="mt-4 divide-y divide-border border-y border-border">
+          <h2 className="font-display text-xl font-bold tracking-tight sm:text-2xl">Questions</h2>
+          <dl className="mt-4 divide-y divide-border border-y-2 border-foreground">
             {product.faqs.map((faq) => (
               <div key={faq.q} className="py-4">
                 <dt className="font-semibold">{faq.q}</dt>
@@ -146,7 +158,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
 
       {related.length > 0 && (
         <section className="mt-14">
-          <h2 className="mb-6 text-2xl font-bold tracking-tight">
+          <h2 className="mb-8 border-b-2 border-foreground pb-4 font-display text-2xl font-bold tracking-tight sm:text-3xl">
             You might also like
           </h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

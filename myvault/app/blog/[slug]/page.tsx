@@ -10,6 +10,9 @@ import ArticleCard from '@/components/ArticleCard';
 import LeadMagnet from '@/components/LeadMagnet';
 import JsonLd from '@/components/JsonLd';
 import ReadingProgress from '@/components/ReadingProgress';
+import Breadcrumbs from '@/components/Breadcrumbs';
+import TableOfContents from '@/components/TableOfContents';
+import { extractHeadings, slugify } from '@/lib/toc';
 import { categorySlug } from '@/lib/categories';
 import { SITE_NAME, FOUNDER, LEAD_MAGNET, SITE_URL, OG_IMAGE } from '@/lib/constants';
 
@@ -54,11 +57,28 @@ function formatDate(date: string) {
   });
 }
 
+// Pull plain text out of MDX heading children so anchors match the TOC slugs.
+function childText(children: React.ReactNode): string {
+  if (typeof children === 'string') return children;
+  if (Array.isArray(children)) return children.map(childText).join('');
+  return '';
+}
+
+const mdxComponents = {
+  h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h2 id={slugify(childText(props.children))} className="scroll-mt-24" {...props} />
+  ),
+  h3: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h3 id={slugify(childText(props.children))} className="scroll-mt-24" {...props} />
+  ),
+};
+
 export default function ArticlePage({ params }: { params: { slug: string } }) {
   const post = getPostBySlug(params.slug);
   if (!post) notFound();
 
   const related = getRelatedPosts(post.slug, 2);
+  const headings = extractHeadings(post.content);
 
   const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
   const siteBase = `${SITE_URL}${base}`;
@@ -98,14 +118,15 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
       <ReadingProgress />
       <JsonLd data={articleSchema} />
       <JsonLd data={breadcrumbSchema} />
-      <Link
-        href="/blog"
-        className="text-sm text-muted transition-colors hover:text-accent"
-      >
-        ← Back to blog
-      </Link>
+      <Breadcrumbs
+        items={[
+          { label: 'Articles', href: '/blog' },
+          { label: post.category, href: `/blog/category/${categorySlug(post.category)}` },
+          { label: post.title },
+        ]}
+      />
 
-      <header className="mt-6 border-b-2 border-foreground pb-8">
+      <header className="mt-5 border-b-2 border-foreground pb-8">
         <div className="flex items-center gap-3">
           <CategoryBadge
             category={post.category}
@@ -124,8 +145,10 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         </div>
       </header>
 
+      <TableOfContents headings={headings} />
+
       <div className="prose-article mt-10">
-        <MDXRemote source={post.content} />
+        <MDXRemote source={post.content} components={mdxComponents} />
       </div>
 
       {/* Content upgrade: turn a reader into a subscriber */}

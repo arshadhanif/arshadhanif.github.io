@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import ExcelFormulaGenerator from '@/components/ExcelFormulaGenerator';
 import NewsletterSignup from '@/components/NewsletterSignup';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { SITE_NAME } from '@/lib/constants';
 
 export const metadata: Metadata = {
@@ -18,21 +19,18 @@ export const metadata: Metadata = {
 export default function ExcelFormulaGeneratorPage() {
   return (
     <div className="container-page max-w-3xl py-16">
-      <nav className="text-sm text-muted">
-        <Link href="/excel" className="hover:text-accent">
-          Excel
-        </Link>
-        <span className="px-2" aria-hidden="true">
-          /
-        </span>
-        <span className="text-foreground">Formula Generator</span>
-      </nav>
+      <Breadcrumbs
+        items={[
+          { label: 'Tools', href: '/tools' },
+          { label: 'Excel Formula Generator' },
+        ]}
+      />
 
-      <header className="mb-8 mt-4">
-        <span className="inline-flex items-center rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-accent">
+      <header className="mb-8 mt-5 border-b-2 border-foreground pb-8">
+        <p className="font-mono text-xs font-semibold uppercase tracking-[0.25em] text-accent">
           Free tool
-        </span>
-        <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">
+        </p>
+        <h1 className="mt-3 font-display text-4xl font-bold tracking-tight sm:text-5xl">
           Excel Formula Generator for Finance
         </h1>
         <p className="mt-4 text-lg text-muted">
