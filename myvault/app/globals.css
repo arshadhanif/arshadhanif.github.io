@@ -8,6 +8,18 @@
  * data-theme="..." on <html> (handled by the ThemeSwitcher component).
  */
 :root,
+[data-theme='paper'] {
+  color-scheme: light;
+  --background: 246 244 238;
+  --foreground: 22 21 15;
+  --muted: 106 102 90;
+  --surface: 255 255 255;
+  --surface-alt: 239 236 228;
+  --border: 224 219 206;
+  --accent: 15 138 114;
+  --accent-dim: 12 110 92;
+}
+
 [data-theme='midnight'] {
   color-scheme: dark;
   --background: 10 10 10;

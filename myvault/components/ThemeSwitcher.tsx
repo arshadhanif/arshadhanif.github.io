@@ -10,7 +10,8 @@ interface ThemeOption {
 }
 
 export const THEMES: ThemeOption[] = [
-  { id: 'midnight', label: 'Midnight', swatch: '#00D4AA', bg: '#0A0A0A' },
+  { id: 'paper', label: 'Paper', swatch: '#0F8A72', bg: '#F6F4EE' },
+  { id: 'paper', label: 'Midnight', swatch: '#00D4AA', bg: '#0A0A0A' },
   { id: 'slate', label: 'Slate', swatch: '#38BDF8', bg: '#0F172A' },
   { id: 'royal', label: 'Royal', swatch: '#A78BFA', bg: '#17102B' },
   { id: 'ember', label: 'Ember', swatch: '#F59E0B', bg: '#120E0A' },
@@ -19,11 +20,11 @@ export const THEMES: ThemeOption[] = [
 
 export default function ThemeSwitcher() {
   const [open, setOpen] = useState(false);
-  const [theme, setTheme] = useState('midnight');
+  const [theme, setTheme] = useState('paper');
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setTheme(document.documentElement.getAttribute('data-theme') || 'midnight');
+    setTheme(document.documentElement.getAttribute('data-theme') || 'paper');
   }, []);
 
   useEffect(() => {
