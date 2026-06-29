@@ -18,6 +18,7 @@ const LINK_GROUPS = [
       { href: '/resources', label: 'Resources' },
       { href: '/solutions', label: 'Solutions' },
       { href: '/tools', label: 'Free Tools' },
+      { href: '/glossary', label: 'Glossary' },
       { href: '/watch', label: 'Watch' },
     ],
   },
@@ -26,6 +27,8 @@ const LINK_GROUPS = [
     links: [
       { href: '/services', label: 'Services' },
       { href: '/about', label: 'About' },
+      { href: '/contact', label: 'Contact' },
+      { href: '/faq', label: 'FAQ' },
       { href: '/newsletter', label: 'Newsletter' },
     ],
   },
@@ -136,7 +139,14 @@ export default function Footer() {
 
         <div className="mt-12 flex flex-col gap-3 border-t border-border pt-6 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
           <span>© {year} {SITE_NAME}. All rights reserved.</span>
-          <span>Oracle Fusion · Excel · Finance reporting</span>
+          <div className="flex items-center gap-5">
+            <Link href="/privacy" className="transition-colors hover:text-accent">
+              Privacy
+            </Link>
+            <Link href="/terms" className="transition-colors hover:text-accent">
+              Terms
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
