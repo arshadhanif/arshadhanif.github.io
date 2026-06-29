@@ -23,6 +23,13 @@ module.exports = {
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: [
+          'var(--font-display)',
+          'var(--font-inter)',
+          'ui-sans-serif',
+          'system-ui',
+          'sans-serif',
+        ],
       },
       screens: {
         '3xl': '1920px',
@@ -51,13 +58,28 @@ module.exports = {
           '0%, 100%': { opacity: '0.45' },
           '50%': { opacity: '0.9' },
         },
+        'float-slow': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-14px)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '200% 0' },
+          '100%': { backgroundPosition: '-200% 0' },
+        },
+        marquee: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
       },
       animation: {
         'fade-up': 'fade-up 0.6s ease-out both',
         'fade-in': 'fade-in 0.8s ease-out both',
         'scale-in': 'scale-in 0.5s ease-out both',
         float: 'float 6s ease-in-out infinite',
+        'float-slow': 'float-slow 9s ease-in-out infinite',
         'glow-pulse': 'glow-pulse 6s ease-in-out infinite',
+        shimmer: 'shimmer 6s linear infinite',
+        marquee: 'marquee 30s linear infinite',
       },
     },
   },

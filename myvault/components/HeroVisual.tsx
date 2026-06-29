@@ -1,89 +1,98 @@
-import { IconChart, IconArrowRight, IconCheck } from '@/components/Icons';
+import { IconChart, IconCheck, IconBolt } from '@/components/Icons';
 
 /**
- * A hand-built faux reporting dashboard used as the hero graphic. Pure markup
- * and theme tokens, so it recolours with every theme and needs no image asset.
+ * A layered, glassy reporting composition used as the hero graphic. Built from
+ * markup and theme tokens, so it recolours with every theme and ships no image
+ * asset. A main dashboard panel sits behind two floating accent cards for depth.
  */
 export default function HeroVisual() {
-  const bars = [42, 65, 38, 80, 54, 72, 48];
+  const bars = [38, 58, 44, 72, 52, 84, 66];
 
   return (
-    <div className="relative">
-      {/* Glow behind the panel */}
-      <div className="blob blob-accent -right-10 -top-10 h-48 w-48" />
-      <div className="blob blob-accent -bottom-12 -left-6 h-40 w-40 opacity-30" />
+    <div className="relative mx-auto max-w-md lg:max-w-none">
+      {/* Ambient glow behind the stack */}
+      <div className="blob blob-accent -right-8 -top-10 h-52 w-52" />
+      <div className="blob blob-accent -bottom-10 -left-6 h-40 w-40 opacity-30" />
 
-      <div className="relative animate-float rounded-2xl border border-border bg-surface shadow-2xl shadow-black/30">
-        {/* Window bar */}
-        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-          <span className="h-3 w-3 rounded-full bg-red-400/70" />
-          <span className="h-3 w-3 rounded-full bg-yellow-400/70" />
-          <span className="h-3 w-3 rounded-full bg-green-400/70" />
-          <span className="ml-3 text-xs text-muted">monthly-close.xlsx</span>
-          <span className="ml-auto inline-flex items-center gap-1 rounded-md bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">
-            <IconCheck className="h-3 w-3" /> Reconciled
-          </span>
-        </div>
-
-        <div className="space-y-5 p-5">
-          {/* KPI tiles */}
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: 'Revenue', value: '$4.82M', delta: '+12%' },
-              { label: 'Margin', value: '38.4%', delta: '+2.1pt' },
-              { label: 'Variance', value: '0.3%', delta: 'within' },
-            ].map((kpi) => (
-              <div
-                key={kpi.label}
-                className="rounded-lg border border-border bg-surface-alt p-3"
-              >
-                <p className="text-[11px] uppercase tracking-wide text-muted">
-                  {kpi.label}
-                </p>
-                <p className="mt-1 text-lg font-bold">{kpi.value}</p>
-                <p className="text-[11px] font-medium text-accent">{kpi.delta}</p>
-              </div>
-            ))}
+      {/* Main panel */}
+      <div className="relative animate-float-slow rounded-2xl border border-border/80 bg-surface/80 p-1 shadow-2xl shadow-black/30 backdrop-blur-xl ring-1 ring-white/5">
+        <div className="rounded-xl border border-border bg-surface">
+          {/* Window bar */}
+          <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+            <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
+            <span className="h-2.5 w-2.5 rounded-full bg-yellow-400/70" />
+            <span className="h-2.5 w-2.5 rounded-full bg-green-400/70" />
+            <span className="ml-3 text-xs text-muted">monthly-close.xlsx</span>
           </div>
 
-          {/* Chart */}
-          <div className="rounded-lg border border-border bg-surface-alt p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 text-sm font-medium">
-                <IconChart className="h-4 w-4 text-accent" /> Cash by month
-              </span>
-              <span className="text-xs text-muted">FY26</span>
-            </div>
-            <div className="flex h-24 items-end gap-2">
-              {bars.map((h, i) => (
+          <div className="space-y-4 p-4 sm:p-5">
+            {/* KPI tiles */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'Revenue', value: '$4.82M', delta: '+12%' },
+                { label: 'Margin', value: '38.4%', delta: '+2.1pt' },
+                { label: 'Variance', value: '0.3%', delta: 'in band' },
+              ].map((kpi) => (
                 <div
-                  key={i}
-                  className="flex-1 rounded-t bg-gradient-to-t from-accent/40 to-accent"
-                  style={{ height: `${h}%` }}
-                />
+                  key={kpi.label}
+                  className="rounded-lg border border-border bg-surface-alt p-3"
+                >
+                  <p className="text-[10px] uppercase tracking-wide text-muted">
+                    {kpi.label}
+                  </p>
+                  <p className="mt-1 text-base font-bold sm:text-lg">
+                    {kpi.value}
+                  </p>
+                  <p className="text-[10px] font-medium text-accent">
+                    {kpi.delta}
+                  </p>
+                </div>
               ))}
             </div>
-          </div>
 
-          {/* Table rows */}
-          <div className="space-y-2">
-            {[
-              ['GL · Trial balance', 'Tied out'],
-              ['AP · Accruals', 'Posted'],
-              ['FA · Depreciation', 'Run'],
-            ].map(([row, status]) => (
-              <div
-                key={row}
-                className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <IconArrowRight className="h-3.5 w-3.5 text-accent" />
-                  {row}
+            {/* Chart */}
+            <div className="rounded-lg border border-border bg-gradient-to-b from-surface-alt to-surface p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium">
+                  <IconChart className="h-4 w-4 text-accent" /> Cash by month
                 </span>
-                <span className="text-xs font-medium text-muted">{status}</span>
+                <span className="rounded-md bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+                  FY26
+                </span>
               </div>
-            ))}
+              <div className="flex h-24 items-end gap-2">
+                {bars.map((h, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 rounded-t bg-gradient-to-t from-accent/30 to-accent"
+                    style={{ height: `${h}%` }}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* Floating: reconciled card (top-right) */}
+      <div className="absolute -right-3 top-10 hidden animate-float rounded-xl border border-border bg-surface/90 px-3 py-2.5 shadow-xl shadow-black/20 backdrop-blur-xl sm:flex sm:items-center sm:gap-2.5">
+        <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent/15 text-accent">
+          <IconCheck className="h-4 w-4" />
+        </span>
+        <div>
+          <p className="text-xs font-semibold leading-tight">Books reconciled</p>
+          <p className="text-[10px] text-muted">GL · AP · AR · FA</p>
+        </div>
+      </div>
+
+      {/* Floating: time-saved chip (bottom-left) */}
+      <div className="absolute -bottom-4 left-2 hidden animate-float-slow items-center gap-2.5 rounded-xl border border-border bg-surface/90 px-3 py-2.5 shadow-xl shadow-black/20 backdrop-blur-xl sm:flex">
+        <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent/15 text-accent">
+          <IconBolt className="h-4 w-4" />
+        </span>
+        <div>
+          <p className="text-xs font-semibold leading-tight">Close cut to 3 days</p>
+          <p className="text-[10px] text-muted">from 8, same team</p>
         </div>
       </div>
     </div>

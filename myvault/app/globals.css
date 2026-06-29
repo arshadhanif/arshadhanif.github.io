@@ -58,12 +58,12 @@
 
 [data-theme='daylight'] {
   color-scheme: light;
-  --background: 255 255 255;
-  --foreground: 17 24 39;
-  --muted: 100 116 139;
-  --surface: 248 250 252;
-  --surface-alt: 241 245 249;
-  --border: 226 232 240;
+  --background: 252 252 253;
+  --foreground: 13 17 23;
+  --muted: 88 96 110;
+  --surface: 255 255 255;
+  --surface-alt: 244 246 249;
+  --border: 224 228 234;
   --accent: 13 148 136;
   --accent-dim: 15 118 110;
 }
@@ -76,6 +76,20 @@
   body {
     @apply bg-background text-foreground antialiased;
     transition: background-color 0.3s ease, color 0.3s ease;
+    /* Soft accent wash anchored top-centre, for depth instead of a flat fill. */
+    background-image: radial-gradient(
+      1100px 520px at 50% -10%,
+      rgb(var(--accent) / 0.08),
+      transparent 70%
+    );
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: theme('fontFamily.display');
+    letter-spacing: -0.02em;
   }
 
   ::selection {
@@ -91,19 +105,17 @@
 
   /* Themed hero glow that follows the active accent color. */
   .hero-glow {
-    background: radial-gradient(
-      60% 50% at 50% 0%,
-      rgb(var(--accent) / 0.14),
-      transparent
-    );
+    background:
+      radial-gradient(46% 40% at 50% 0%, rgb(var(--accent) / 0.16), transparent 70%),
+      radial-gradient(30% 35% at 85% 10%, rgb(var(--accent) / 0.08), transparent 70%);
   }
 
   /* Accent-tinted text for headline highlights. */
   .text-gradient {
     background-image: linear-gradient(
-      120deg,
+      100deg,
       rgb(var(--accent)),
-      rgb(var(--foreground))
+      rgb(var(--accent-dim))
     );
     -webkit-background-clip: text;
     background-clip: text;
@@ -113,11 +125,19 @@
   /* Faint engineering grid, faded out at the edges. */
   .bg-grid {
     background-image:
-      linear-gradient(rgb(var(--border) / 0.6) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(var(--border) / 0.6) 1px, transparent 1px);
-    background-size: 48px 48px;
-    -webkit-mask-image: radial-gradient(70% 60% at 50% 30%, #000, transparent);
-    mask-image: radial-gradient(70% 60% at 50% 30%, #000, transparent);
+      linear-gradient(rgb(var(--border) / 0.55) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--border) / 0.55) 1px, transparent 1px);
+    background-size: 52px 52px;
+    -webkit-mask-image: radial-gradient(68% 58% at 50% 28%, #000, transparent);
+    mask-image: radial-gradient(68% 58% at 50% 28%, #000, transparent);
+  }
+
+  /* Fine dotted field, an alternative texture to the grid. */
+  .bg-dots {
+    background-image: radial-gradient(rgb(var(--muted) / 0.25) 1px, transparent 1px);
+    background-size: 22px 22px;
+    -webkit-mask-image: radial-gradient(70% 60% at 50% 40%, #000, transparent);
+    mask-image: radial-gradient(70% 60% at 50% 40%, #000, transparent);
   }
 
   /* Soft floating colour blobs for section backgrounds. */
@@ -132,14 +152,73 @@
     background: rgb(var(--accent) / 0.35);
   }
 
-  /* Small pill used for eyebrow labels and tags. */
+  /* Eyebrow pill used for section labels. */
   .pill {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-border bg-surface/70 px-3 py-1 text-xs font-medium backdrop-blur;
   }
 
   /* Icon chip used in feature cards. */
   .icon-chip {
-    @apply grid h-12 w-12 place-items-center rounded-xl border border-accent/30 bg-accent/10 text-accent;
+    @apply grid h-12 w-12 place-items-center rounded-xl border border-accent/20 bg-accent/10 text-accent;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+  }
+
+  /* Very subtle film grain, layered over hero backgrounds for texture. */
+  .noise {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.025;
+  }
+
+  /* Translucent, blurred surface for premium cards. */
+  .glass {
+    @apply border border-border/80 bg-surface/70 backdrop-blur-xl;
+  }
+
+  /*
+   * Card with a subtle gradient hairline border. The gradient sits on the
+   * outer element; an inset background mask leaves only a 1px rim showing.
+   */
+  .card-premium {
+    position: relative;
+    border-radius: 1rem;
+    background: rgb(var(--surface));
+    border: 1px solid rgb(var(--border));
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .card-premium::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      160deg,
+      rgb(var(--accent) / 0.45),
+      transparent 35%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .card-premium:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 40px -20px rgb(var(--accent) / 0.35);
+  }
+  .card-premium:hover::before {
+    opacity: 1;
+  }
+
+  /* Shared button styles. */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3 font-semibold text-background shadow-lg shadow-accent/20 transition-all hover:bg-accent-dim hover:shadow-accent/30;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-surface/50 px-6 py-3 font-semibold text-foreground backdrop-blur transition-all hover:border-accent hover:text-accent;
   }
 
   /* Subtle lift used on cards. */
