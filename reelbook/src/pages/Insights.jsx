@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { listDiary, listEpisodeDiary } from '../lib/db'
+import { listDiary, listEpisodeDiary, listAllSeasonRatings } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { Spinner, Empty, GroupChips, Poster, TitleLink, DualScore, Modal } from '../components/ui'
 import { formatWatched, fmtDate } from '../lib/dates'
@@ -15,12 +15,28 @@ export default function Insights() {
   const [decade, setDecade] = useState('all')
   const [drill, setDrill] = useState(null)     // { title, entries }
   const [epDrill, setEpDrill] = useState(null)  // { title, eps }
+  const [seasonR, setSeasonR] = useState([])
 
   useEffect(() => {
     Promise.all([listDiary({ limit: 4000 }), listEpisodeDiary({ limit: 6000 })])
       .then(([d, e]) => { setEntries(d); setEps(e) })
       .finally(() => setLoading(false))
+    listAllSeasonRatings().then(setSeasonR).catch(() => {})
   }, [])
+
+  // Best & worst rated seasons (averaged across whoever rated each season).
+  const seasons = useMemo(() => {
+    const m = new Map()
+    for (const r of seasonR) {
+      const t = r.titles; if (!t) continue
+      const k = `${t.id}-${r.season_number}`
+      if (!m.has(k)) m.set(k, { t, season: r.season_number, scores: [] })
+      m.get(k).scores.push(r.score)
+    }
+    const arr = [...m.values()].map((x) => ({ ...x, avg: +(x.scores.reduce((a, b) => a + b, 0) / x.scores.length).toFixed(1) }))
+    arr.sort((a, b) => b.avg - a.avg)
+    return arr
+  }, [seasonR])
 
   const epData = useMemo(() => eps.filter((e) => !groupId || e.group_id === groupId), [eps, groupId])
   const es = useMemo(() => computeEpisodes(epData), [epData])
@@ -144,6 +160,27 @@ export default function Insights() {
                 <Stat v={`${s.agreement.agreePct}%`} l="You agree" s="within 1 point" color="var(--green)" />
                 <Stat v={s.agreement.disagreeCount} l="Big splits" s="3+ apart · tap" color="var(--pink)"
                   onClick={s.agreement.disagreeCount ? () => setDrill({ title: 'Biggest disagreements', entries: s.agreement.topEntries }) : undefined} />
+              </div>
+            </Section>
+          )}
+
+          {seasons.length > 0 && (
+            <Section title="🏆 Best & worst seasons">
+              <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px,1fr))' }}>
+                <div className="card">
+                  <strong style={{ color: 'var(--green)' }}>Top rated seasons</strong>
+                  <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {seasons.slice(0, 5).map((x) => <SeasonRow key={`${x.t.id}-${x.season}`} x={x} />)}
+                  </div>
+                </div>
+                {seasons.length > 5 && (
+                  <div className="card">
+                    <strong style={{ color: 'var(--pink)' }}>Lowest rated seasons</strong>
+                    <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {[...seasons].slice(-5).reverse().map((x) => <SeasonRow key={`${x.t.id}-${x.season}`} x={x} />)}
+                    </div>
+                  </div>
+                )}
               </div>
             </Section>
           )}
@@ -351,6 +388,22 @@ function GoalBar({ label, current, target, onSet }) {
 
 function Section({ title, children }) {
   return <div style={{ marginTop: 26 }}><div className="section-head"><h2>{title}</h2></div>{children}</div>
+}
+
+function SeasonRow({ x }) {
+  const color = x.avg >= 8 ? 'var(--green)' : x.avg >= 6 ? 'var(--accent)' : 'var(--pink)'
+  return (
+    <TitleLink className="row" tmdbId={x.t.tmdb_id} media={x.t.media_type} style={{ gap: 10, alignItems: 'center' }}>
+      <div style={{ width: 34, flexShrink: 0 }}>
+        <Poster title={x.t.title} mediaType={x.t.media_type} posterPath={x.t.poster_path} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{x.t.title}</div>
+        <div className="faint" style={{ fontSize: 12 }}>Season {x.season}</div>
+      </div>
+      <span className="score" style={{ borderColor: color, color, flexShrink: 0 }}>{x.avg}</span>
+    </TitleLink>
+  )
 }
 function Stat({ v, l, s, color, onClick }) {
   return (

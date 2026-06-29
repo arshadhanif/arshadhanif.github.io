@@ -5,7 +5,7 @@ import {
   ensureTitleFromFull, getWatchesForTitle, addToWatchlist,
   listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, markEpisodesBulk, unmarkAllEpisodes, setEpisodeRating,
   getTitleServices, setTitleServices, getStreamingAvailability,
-  getImdbRating, getImdbSeasonRatings,
+  getImdbRating, getImdbSeasonRatings, getSeasonRatings, setSeasonRating,
 } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
@@ -153,7 +153,7 @@ export default function TitleDetail() {
         )}
 
         {isTv && titleId && (
-          <Episodes tmdbId={Number(id)} titleId={titleId} seasons={full.seasons} groups={groups} userId={user.id} imdbId={full.imdb_id} />
+          <Episodes tmdbId={Number(id)} titleId={titleId} seasons={full.seasons} groups={groups} profiles={profiles} userId={user.id} imdbId={full.imdb_id} />
         )}
 
         {recs.length > 0 && (
@@ -377,13 +377,14 @@ function regionName(code) {
   catch { return code }
 }
 
-function Episodes({ tmdbId, titleId, seasons, groups, userId, imdbId }) {
+function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }) {
   const toast = useToast()
   const [trackGroupId, setTrackGroupId] = useState(groups[0]?.id || '')
   const [watched, setWatched] = useState(new Set())   // "s-e"
   const [epRatings, setEpRatings] = useState({})       // "s-e" -> rating
   const [epDates, setEpDates] = useState({})           // "s-e" -> watched_on
   const [epRewatch, setEpRewatch] = useState({})       // "s-e" -> rewatch_count
+  const [seasonRatings, setSeasonRatings] = useState({}) // season -> { profileId: score }
   const [openSeason, setOpenSeason] = useState(seasons[0]?.season_number ?? null)
   const [episodesBySeason, setEpisodesBySeason] = useState({})
   const [imdbBySeason, setImdbBySeason] = useState({})  // season -> { epNum: imdbRating }
@@ -406,15 +407,34 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId, imdbId }) {
   }
 
   const reload = useCallback(async () => {
-    if (!trackGroupId) { setWatched(new Set()); setEpRatings({}); setEpDates({}); setEpRewatch({}); return }
+    if (!trackGroupId) { setWatched(new Set()); setEpRatings({}); setEpDates({}); setEpRewatch({}); setSeasonRatings({}); return }
     const rows = await listEpisodeWatches(titleId, trackGroupId)
     setWatched(new Set(rows.map((r) => `${r.season_number}-${r.episode_number}`)))
     setEpRatings(Object.fromEntries(rows.filter((r) => r.rating != null).map((r) => [`${r.season_number}-${r.episode_number}`, r.rating])))
     setEpDates(Object.fromEntries(rows.filter((r) => r.watched_on).map((r) => [`${r.season_number}-${r.episode_number}`, r.watched_on])))
     setEpRewatch(Object.fromEntries(rows.filter((r) => r.rewatch_count > 0).map((r) => [`${r.season_number}-${r.episode_number}`, r.rewatch_count])))
+    try {
+      const sr = await getSeasonRatings(titleId, trackGroupId)
+      const map = {}
+      for (const r of sr) { (map[r.season_number] ||= {})[r.profile_id] = r.score }
+      setSeasonRatings(map)
+    } catch { setSeasonRatings({}) }
   }, [titleId, trackGroupId])
 
   const trackGroup = groups.find((g) => g.id === trackGroupId)
+
+  async function rateSeason(season, profileId, score) {
+    if (!trackGroupId) return
+    // optimistic update
+    setSeasonRatings((m) => {
+      const next = { ...m, [season]: { ...(m[season] || {}) } }
+      if (score == null) delete next[season][profileId]
+      else next[season][profileId] = score
+      return next
+    })
+    try { await setSeasonRating({ titleId, groupId: trackGroupId, profileId, season, score, createdBy: userId }) }
+    catch (e) { toast(e.message || 'Could not save season rating', 'err'); reload() }
+  }
 
   useEffect(() => { reload() }, [reload])
 
@@ -508,7 +528,10 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId, imdbId }) {
             <div className="card" key={s.season_number} style={{ padding: 0, overflow: 'hidden' }}>
               <button className="season-head" onClick={() => setOpenSeason(isOpen ? null : s.season_number)}>
                 <span><strong>{s.name || `Season ${s.season_number}`}</strong> <span className="faint">· {s.episode_count} eps</span></span>
-                <span className="faint">{raw.length ? `${watchedInSeason}/${raw.length} watched` : ''} {isOpen ? '▾' : '▸'}</span>
+                <span className="row" style={{ gap: 10 }}>
+                  {(() => { const arr = Object.entries(seasonRatings[s.season_number] || {}).map(([pid, score]) => ({ profile_id: pid, score })); return arr.length ? <DualScore profiles={profiles} ratings={arr} /> : null })()}
+                  <span className="faint">{raw.length ? `${watchedInSeason}/${raw.length} watched` : ''} {isOpen ? '▾' : '▸'}</span>
+                </span>
               </button>
               {isOpen && (
                 <div className="season-body">
@@ -516,6 +539,18 @@ function Episodes({ tmdbId, titleId, seasons, groups, userId, imdbId }) {
                     <div className="faint" style={{ padding: 12 }}>Loading episodes…</div>
                   ) : (
                     <>
+                      <div className="season-rate" style={{ padding: '0 12px 10px' }}>
+                        <div className="faint" style={{ marginBottom: 6 }}>Rate this season</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {profiles.map((p) => (
+                            <div className="row" key={p.id} style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                              <span style={{ color: p.color, fontWeight: 700, fontSize: 13, minWidth: 70 }}>{p.name}</span>
+                              <StarRating value={seasonRatings[s.season_number]?.[p.id] || null} color={p.color}
+                                onChange={(v) => rateSeason(s.season_number, p.id, v)} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                       <button className="btn sm" style={{ margin: '0 12px 10px' }} disabled={!trackGroupId}
                         onClick={() => markWholeSeason(s.season_number, raw)}>✓ Mark whole season</button>
                       {eps.map((e) => {
