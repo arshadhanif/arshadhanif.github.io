@@ -1,95 +1,62 @@
 # Pending from you (single source of truth)
 
-This is the one list of things only Arshad can provide. Everything else (design,
-pages, tools, copy, SEO, structured data) is built. When an item below is
-supplied, Claude plugs it in and ticks it off here. Do not re-ask for anything
-already filled in.
+Everything that can be built without you is built. This is the short list of
+things only Arshad can do. When an item is done, tick it and tell Claude.
 
-Last refreshed: 2026-06-30.
+Last refreshed: 2026-06-30 (Period Close Accelerator is now the flagship product).
 
 ---
 
-## 1. Blocks real sales (highest priority)
+## 1. Finish the product file (Excel) - quick
 
-> Interim handled: the store now runs in "launching soon" mode (`STORE_LIVE =
-> false` in `lib/constants.ts`). Product buttons capture emails (waitlist)
-> instead of pointing at dead checkout links. When the real Gumroad links are
-> added below, flip `STORE_LIVE` to `true` and the store is live.
->
-> What Gumroad is: a service that hosts a digital file for sale and gives you a
-> checkout link. You (or Claude, guided by you) create a free Gumroad account,
-> upload each product file, set a price, and copy the link it generates. This
-> needs your account and the real product files, so it cannot be done until the
-> files exist.
+- [ ] **Re-protect 5 sheets in the v7 workbook.** They lost sheet protection:
+  Cover, Module Scope, Master Close Tracker, Period Open - Tasks,
+  Period Close - Tasks. In Excel: Review > Protect Sheet > leave password blank >
+  OK, on each. Tick "Use AutoFilter" and "Sort" in that dialog. (The other 4
+  sheets are already protected. Cell lock flags are correct, this just switches
+  protection back on.)
+- [ ] **Final Excel check:** open it, accept no repair prompt, press Ctrl+Alt+F9
+  to recalc, confirm no error cells, and eyeball Cover/Instructions text fits.
 
-- [ ] **Gumroad product links.** Provide the real Gumroad link (or product
-  permalink) for each product. Any format is fine: a list mapping product title
-  to URL. Products live in `content/products.json`.
-  - Excel Finance Dashboard Kit
-  - Month-End Close Checklist
-  - Excel 3-Statement Model
-  - 13-Week Cashflow
-  - Budgeting Pack
-  - Excel Bundle
-  - ERP Implementation Docs
-  - Excel Finance Course
-  - Excel Formulas Course
-  - Oracle Fusion Course
-  - Oracle Fusion Reporting Pack
-  - OTBI + BIP Bundle
-  - Reconciliation Bundle
-  (Exact ids are in `content/products.json`.)
+## 2. Put it on Gumroad and send the link (this is what turns the store live)
 
-## 2. Turns on growth tracking
+- [ ] Create one Gumroad product for the **Oracle Fusion Cloud Period Close
+  Accelerator**, upload the final .xlsx, set the price, publish, copy the product
+  link, and send it to Claude. Step-by-step is in `GUMROAD-GUIDE.md`.
+- [ ] **Confirm the price.** The site currently shows **$89** as a placeholder.
+  Tell Claude if it should be different.
+- Once the link is provided, Claude sets it in `content/products.json` and flips
+  `STORE_LIVE` to true. The "Join the waitlist / Notify me" buttons become a live
+  "Get it" checkout. (Until then the page already gives away the free whitepaper
+  and one-pager and collects emails, so it is working for you now.)
 
-The code is ready and config-driven; it needs one value that can only come from
-your own account. Recommended: Google Analytics 4 (free).
+## 3. Analytics (one value, 2 minutes)
 
-GA4 in 4 steps (about 2 minutes):
-1. Go to analytics.google.com and sign in with your Google account.
-2. Admin (bottom left) -> Create -> set up a property for the site.
-3. Add a "Web" data stream for `https://arshadhanif.github.io`.
-4. Copy the Measurement ID it shows (looks like `G-XXXXXXXXXX`) and send it.
+- [ ] Create a free Google Analytics 4 property and send Claude the **Measurement
+  ID** (`G-XXXXXXXXXX`). Steps: analytics.google.com > Admin > Create > add a Web
+  data stream for https://arshadhanif.github.io > copy the ID. Claude then turns
+  analytics on in `lib/constants.ts`.
 
-- [ ] **GA4 Measurement ID** (`G-XXXXXXXXXX`). Once provided, Claude sets
-  `ANALYTICS.provider = 'ga'` and `gaId` in `lib/constants.ts` and it goes live.
-  (Plausible is an alternative but needs a paid Plausible account.)
-
-## 3. Video / YouTube
-
-- [ ] **Real YouTube channel handle.** Currently a placeholder
-  (`@erpfinancepro`) in `lib/constants.ts` (`SOCIAL.youtube`). Confirm the real
-  handle or full channel URL.
-- [ ] **Video IDs.** The 3 entries in `content/videos.json` have empty
-  `youtubeId`. Send the real YouTube video IDs, or say the word and the Watch
-  page can be hidden until videos exist.
-
-## 4. Real downloadable files
-
-(You already said these are not ready, so this is just the holding list.)
-
-- [ ] Replace the placeholder files in `public/downloads/` with the real ones:
-  - `erp-finance-starter-kit.pdf` (the lead magnet)
-  - `excel-finance-shortcuts.pdf`
-  - `month-end-close-checklist-lite.pdf`
-  - `erp-implementation-raci.xlsx`
-  - (The Oracle SQL and the new-year / user-inactivation checklists are already
-    real content.)
-
-## 5. Optional, not blocking
-
-- [ ] **Custom domain** (e.g. a branded domain instead of the github.io
-  subpath). Only if you want one; the current URL works.
-- [ ] **More testimonials.** Three real Upwork testimonials are in place. Send
-  more any time and they slot into `content/testimonials.json`.
+## 4. Optional, not blocking
+- [ ] Custom domain (only if you want one; the github.io URL works).
+- [ ] Real YouTube channel handle + video IDs (the Watch page is stubbed).
+- [ ] The other 12 store products: their files are not built yet. They sit on the
+  waitlist until you create them. The Period Close Accelerator is the one real,
+  finished product.
 
 ---
 
 ## Already done (so we stop revisiting)
 
-Design system, all pages (home, blog, store, excel, solutions, services, about,
-resources, watch, newsletter, start-here), 4 free calculators, Excel formula
-generator, site search, glossary, contact, FAQ, privacy, terms, breadcrumbs,
-article table of contents, RSS, sitemap, robots, structured data (Organization,
-Product, FAQ, BlogPosting, Breadcrumb, DefinedTermSet), Beehiiv newsletter +
-welcome and 5-day course automations, branded footer, theme switcher.
+Full editorial site and design system; all pages (home, blog + categories +
+articles, store + product pages, excel, solutions + hubs, services, about,
+resources, watch, newsletter, start-here, contact, FAQ, glossary, privacy,
+terms, search, 404); 4 finance calculators + Excel formula generator;
+breadcrumbs; article table of contents; structured data; Beehiiv newsletter with
+welcome + 5-day course automations; branded footer; themes.
+
+**Flagship product is fully built around the real file:** the Period Close
+Accelerator is the lead product (featured on home and the month-end-close hub),
+with accurate copy from the actual workbook, FAQs, and the real whitepaper and
+one-pager hosted as free downloads. An SEO article on the Oracle Fusion close
+funnels to it. Only the Gumroad link (item 2) is needed to start selling.
