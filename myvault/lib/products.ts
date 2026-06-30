@@ -19,6 +19,8 @@ export interface Product {
   longDescription?: string;
   whatsInside?: string[];
   faqs?: ProductFaq[];
+  // Free collateral (whitepaper, one-pager) offered on the product page.
+  freeDownloads?: { label: string; url: string; format: string }[];
 }
 
 export function getAllProducts(): Product[] {

@@ -1,5 +1,36 @@
 [
   {
+    "id": "oracle-fusion-period-close-accelerator",
+    "title": "Oracle Fusion Cloud Period Close Accelerator",
+    "description": "A reusable Excel framework that runs the Oracle Fusion Cloud month-end close end to end: 159 sequenced tasks across 12 modules, scope automation, a live tracker and a 115-report reference.",
+    "price": "$89",
+    "category": "Templates",
+    "tags": ["Oracle Fusion", "Finance", "Close"],
+    "gumroadUrl": "https://gumroad.com/l/placeholder-period-close-accelerator",
+    "featured": true,
+    "longDescription": "The Period Close Accelerator turns the Oracle Fusion Cloud month-end close into a controlled, repeatable routine. A consultant configures it once per client, then the team runs it every period. It maps 159 sequenced close tasks across the 12 Financials and SCM modules, each with the exact Oracle ESS job or process name and clear recommendations, and rolls progress up into a live Master Close Tracker. Mark a module Out of Scope and its rows grey out across every sheet automatically. It is a plain .xlsx: no macros, native Excel formulas, data validation and conditional formatting only.",
+    "whatsInside": [
+      "Master Close Tracker that rolls up percent complete and status per module from a single status column",
+      "159 sequenced close tasks across 12 modules: Procurement & Receipt Accounting, Inventory, Cost Accounting, Cash Management, Receivables, Expenses, Payables, Fixed Assets, Lease Accounting, Intercompany, General Ledger and Budgetary Control",
+      "Each task with its exact Oracle ESS job or process name and practical recommendations",
+      "Scope automation: set a module In or Out of Scope once and every sheet updates",
+      "Period Open tasks plus a Known Issues and dependency-traps sheet",
+      "A 115-report reference of standard Oracle reports, tagged by module and purpose",
+      "A Custom Reports Register that flows your client reports into the listing automatically",
+      "Plain .xlsx, no macros; sheets protected with formulas locked and input cells open"
+    ],
+    "faqs": [
+      { "q": "Does it need macros?", "a": "No. It is a plain .xlsx that works in any modern Excel. All automation is native: formulas, data validation and conditional formatting. Nothing to enable, and nothing blocked by security policies." },
+      { "q": "How does it work across different clients?", "a": "It is a configurable template. Set each module In or Out of Scope on the control sheet, adjust the close sequence if needed, and the whole pack adapts. Out-of-scope modules grey out and drop out of the roll-up." },
+      { "q": "Do I need to be an Oracle expert to use it?", "a": "No. Each task names the exact Oracle process to run and explains why, so a finance team can follow it. A consultant can also tailor it once and hand it over." },
+      { "q": "Can the whole team use it during the close?", "a": "Yes. Keep it on SharePoint or OneDrive for shared editing. Standard guidance is locked so it cannot be changed by accident; only the input cells (status, owners, dates, scope) are open." }
+    ],
+    "freeDownloads": [
+      { "label": "Read the free whitepaper", "url": "/downloads/period-close-accelerator-whitepaper.pdf", "format": "PDF" },
+      { "label": "Download the one-pager", "url": "/downloads/period-close-accelerator-one-pager.pdf", "format": "PDF" }
+    ]
+  },
+  {
     "id": "excel-finance-dashboard-kit",
     "title": "Excel Finance Dashboard Kit",
     "description": "Build board-ready dashboards in minutes. P&L, cash flow and KPI templates with dynamic charts and a reusable design system.",
@@ -19,28 +50,6 @@
     "faqs": [
       { "q": "Which Excel version do I need?", "a": "Excel 2016 or later, including Microsoft 365. A few formulas use dynamic arrays that work best on 365." },
       { "q": "Can I rebrand it?", "a": "Yes. The colours and fonts are driven by the style guide tab, so you can match your company brand in a few clicks." }
-    ]
-  },
-  {
-    "id": "month-end-close-checklist",
-    "title": "Month-End Close Checklist & Tracker",
-    "description": "An Excel workbook that turns your close into a controlled, repeatable process. Task owners, dependencies, status dashboards and a reconciliation log.",
-    "price": "$29",
-    "category": "Templates",
-    "tags": ["Excel", "Finance"],
-    "gumroadUrl": "https://gumroad.com/l/placeholder-month-end-close",
-    "featured": true,
-    "longDescription": "Turn your month-end close from a scramble into a controlled, repeatable process. This Excel workbook tracks every task, who owns it, what it depends on, and where it stands, with a status dashboard that shows the whole close at a glance.",
-    "whatsInside": [
-      "Task tracker with owners, due dates and dependencies",
-      "Live status dashboard for the whole close",
-      "Reconciliation log to evidence sign-offs",
-      "A starter task list you can adapt to your close",
-      "Notes column for review points and carry-forwards"
-    ],
-    "faqs": [
-      { "q": "Is this tied to a specific ERP?", "a": "No. It works alongside any system (Oracle Fusion, SAP, NetSuite, QuickBooks). It tracks the process, not the software." },
-      { "q": "Can multiple people use it?", "a": "Yes. Store it on SharePoint or OneDrive for shared editing during the close." }
     ]
   },
   {

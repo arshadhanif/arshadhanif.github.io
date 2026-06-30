@@ -59,7 +59,7 @@ export const SOLUTIONS: Solution[] = [
     ],
     articleSlugs: ['oracle-fusion-new-year-setup-checklist'],
     productTag: 'Finance',
-    resourceIds: ['month-end-close-checklist-lite', 'new-year-setup-checklist'],
+    resourceIds: ['period-close-whitepaper', 'month-end-close-checklist-lite', 'new-year-setup-checklist'],
   },
 ];
 

@@ -121,6 +121,31 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         )}
       </header>
 
+      {product.freeDownloads && product.freeDownloads.length > 0 && (
+        <section className="mt-8 rounded-2xl border border-accent/30 bg-accent/5 p-6">
+          <p className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+            Free to read now
+          </p>
+          <p className="mt-2 text-sm text-muted">
+            See exactly how it works before you buy. These are free, no email
+            required.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {product.freeDownloads.map((d) => (
+              <a
+                key={d.url}
+                href={`${base}${d.url}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-semibold transition-colors hover:border-accent hover:text-accent"
+              >
+                {d.label} <span className="font-mono text-[10px] text-muted">{d.format}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
       <div className="prose-article mt-8">
         <p>{product.longDescription || product.description}</p>
       </div>

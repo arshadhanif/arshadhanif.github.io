@@ -1,0 +1,62 @@
+---
+title: 'How to Run a Clean Oracle Fusion Cloud Month-End Close'
+date: '2026-06-30'
+category: 'Oracle Fusion'
+excerpt: 'A practical, repeatable way to run the Oracle Fusion Cloud period close: the right order across the 12 Financials and SCM modules, the ESS jobs that matter, and the dependency traps that quietly break a close.'
+readTime: '9 min read'
+published: true
+---
+
+A month-end close goes wrong in predictable ways. A subledger gets closed before its accounting is created in final mode. Inventory transactions never make it to costing, so cost accounting is short. Someone closes the General Ledger period while a Payables accrual is still sitting unposted. None of these are exotic problems. They happen because the close is run from memory or a half-remembered checklist instead of a controlled, repeatable process.
+
+This is a walk-through of how a clean Oracle Fusion Cloud close actually runs: the order, the jobs, and the traps.
+
+## The close is a sequence, not a checklist
+
+The single most important idea is that the period close has a dependency order. Subledgers close before the General Ledger. Costing depends on inventory and receiving transactions being transferred first. Budgetary Control and Intercompany sit around the General Ledger. If you run the steps out of order, you get errors that are slow to unwind.
+
+A workable sequence across the 12 Financials and SCM modules looks like this:
+
+1. Procurement & Receipt Accounting
+2. Inventory Management
+3. Cost Accounting
+4. Cash Management
+5. Receivables
+6. Expenses
+7. Payables
+8. Fixed Assets
+9. Lease Accounting
+10. Intercompany
+11. General Ledger
+12. Budgetary Control
+
+The exact order can shift slightly by client, but the spine holds: transactions and subledgers first, General Ledger last, with costing downstream of inventory and receiving.
+
+## Get the period open cleanly first
+
+Before any of that, the relevant periods have to be open. Receivables, Payables and Fixed Assets each have their own calendars. Fixed Assets in particular is unforgiving: once an FA period is closed it cannot be reopened, so do not close it until you are sure. Cash Management has no period of its own, but bank statements need to be loaded and reconciled against AP, AR and GL.
+
+## The ESS jobs that carry the close
+
+Most of the close is running the right Oracle Enterprise Scheduler (ESS) processes in order and confirming each completes before the next. The ones that trip people up most:
+
+- **Transfer Transactions from Inventory to Costing** and **Transfer Transactions from Receiving to Costing** move inventory and receipt activity into Cost Management. Skip them and costing is incomplete.
+- **Create Cost Accounting Distributions** then **Create Accounting** (draft, then final) turn that activity into journal entries.
+- **Create Accounting** in final mode across each subledger, followed by transfer and posting to the General Ledger, is what lets the GL period close.
+- The **Subledger Period Close Exceptions Report** is the one to run early and often. Run it from a very old period through the current one, leave the subledger parameter blank, and it surfaces the entries in error that would otherwise block the close.
+
+## The traps that quietly break a close
+
+A few recurring ones worth naming:
+
+- **Closing GL too early.** Every subledger must complete Create Accounting in final mode and post to GL before the General Ledger period can close.
+- **Late receipts and GRNs.** A receipt entered after the fact books expense in the wrong month, then gets unwound with reversals at the wrong date. Cut-off discipline matters.
+- **Hardcoded scope.** If you run a fixed checklist that includes modules a client does not use, the team wastes time on steps that do not apply, or worse, treats them as outstanding.
+
+## Make it repeatable
+
+The difference between a close that takes eight days and one that takes three is rarely effort. It is process: a clear task list with owners and dependencies, the exact job names so nobody guesses, reconciliations that tie out, and a way to see at a glance what is done and what is outstanding.
+
+That is exactly what the [Oracle Fusion Cloud Period Close Accelerator](https://arshadhanif.github.io/myvault/store/oracle-fusion-period-close-accelerator/) is. It maps 159 sequenced tasks across all 12 modules, each with its exact ESS job and a recommendation, rolls progress into a live tracker, and lets you mark modules in or out of scope so the pack adapts to each client. If you would rather see the thinking first, the [free whitepaper](https://arshadhanif.github.io/myvault/downloads/period-close-accelerator-whitepaper.pdf) walks through the whole approach.
+
+A close you can repeat the same way every period, with nothing missed, is worth far more than heroics at month-end.
