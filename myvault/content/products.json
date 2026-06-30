@@ -26,7 +26,7 @@
       { "q": "Can the whole team use it during the close?", "a": "Yes. Keep it on SharePoint or OneDrive for shared editing. Standard guidance is locked so it cannot be changed by accident; only the input cells (status, owners, dates, scope) are open." }
     ],
     "freeDownloads": [
-      { "label": "Read the free whitepaper", "url": "/downloads/period-close-accelerator-whitepaper.pdf", "format": "PDF" },
+      { "label": "Read the free guide", "url": "/downloads/period-close-accelerator-guide.pdf", "format": "PDF" },
       { "label": "Download the one-pager", "url": "/downloads/period-close-accelerator-one-pager.pdf", "format": "PDF" }
     ]
   },

@@ -1,10 +1,10 @@
 [
   {
-    "id": "period-close-whitepaper",
-    "title": "Oracle Fusion Period Close Whitepaper",
+    "id": "period-close-guide",
+    "title": "Oracle Fusion Period Close Guide",
     "description": "A practical walk-through of a controlled Oracle Fusion Cloud month-end close: the 12 modules, the right sequence, and where closes go wrong. The thinking behind the Period Close Accelerator.",
     "format": "PDF",
-    "fileUrl": "/downloads/period-close-accelerator-whitepaper.pdf",
+    "fileUrl": "/downloads/period-close-accelerator-guide.pdf",
     "featured": true
   },
   {

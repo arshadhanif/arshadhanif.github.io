@@ -27,7 +27,7 @@ Last refreshed: 2026-06-30 (Period Close Accelerator is now the flagship product
   Tell Claude if it should be different.
 - Once the link is provided, Claude sets it in `content/products.json` and flips
   `STORE_LIVE` to true. The "Join the waitlist / Notify me" buttons become a live
-  "Get it" checkout. (Until then the page already gives away the free whitepaper
+  "Get it" checkout. (Until then the page already gives away the free guide
   and one-pager and collects emails, so it is working for you now.)
 
 ## 3. Analytics (one value, 2 minutes)
@@ -57,6 +57,6 @@ welcome + 5-day course automations; branded footer; themes.
 
 **Flagship product is fully built around the real file:** the Period Close
 Accelerator is the lead product (featured on home and the month-end-close hub),
-with accurate copy from the actual workbook, FAQs, and the real whitepaper and
+with accurate copy from the actual workbook, FAQs, and the real guide and
 one-pager hosted as free downloads. An SEO article on the Oracle Fusion close
 funnels to it. Only the Gumroad link (item 2) is needed to start selling.

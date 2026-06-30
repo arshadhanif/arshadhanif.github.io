@@ -19,7 +19,7 @@ export interface Product {
   longDescription?: string;
   whatsInside?: string[];
   faqs?: ProductFaq[];
-  // Free collateral (whitepaper, one-pager) offered on the product page.
+  // Free collateral (guide, one-pager) offered on the product page.
   freeDownloads?: { label: string; url: string; format: string }[];
 }
 
