@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oracle Fusion Cloud Period Close Accelerator</title>
+<script>document.documentElement.className+=' js';</script>
+<style>
+  :root{
+    --paper:#f6f4ee; --surface:#ffffff; --surface-2:#efece4; --ink:#16150f;
+    --muted:#6b665a; --line:#e0dbce; --accent:#0f8a72; --accent-dim:#0c6e5c;
+    --accent-soft:rgba(15,138,114,.10); --shadow:0 30px 60px -30px rgba(0,0,0,.30);
+    /* button colours kept separate from --accent so CTA text is always
+       high-contrast: white on a deep green in light mode. */
+    --btn-bg:#0c6e5c; --btn-fg:#ffffff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#13120e; --surface:#1c1b15; --surface-2:#242219; --ink:#f3f0e7;
+      --muted:#a59f90; --line:#33301f33; --line:#2f2c22; --accent:#2cc28d; --accent-dim:#21a878;
+      --accent-soft:rgba(44,194,141,.12); --shadow:0 30px 60px -30px rgba(0,0,0,.6);
+      --btn-bg:#2cc28d; --btn-fg:#06231a;
+    }
+  }
+  html[data-theme="light"]{
+    --paper:#f6f4ee; --surface:#ffffff; --surface-2:#efece4; --ink:#16150f;
+    --muted:#6b665a; --line:#e0dbce; --accent:#0f8a72; --accent-dim:#0c6e5c;
+    --accent-soft:rgba(15,138,114,.10); --shadow:0 30px 60px -30px rgba(0,0,0,.30);
+    --btn-bg:#0c6e5c; --btn-fg:#ffffff;
+  }
+  html[data-theme="dark"]{
+    --paper:#13120e; --surface:#1c1b15; --surface-2:#242219; --ink:#f3f0e7;
+    --muted:#a59f90; --line:#2f2c22; --accent:#2cc28d; --accent-dim:#21a878;
+    --accent-soft:rgba(44,194,141,.12); --shadow:0 30px 60px -30px rgba(0,0,0,.6);
+    --btn-bg:#2cc28d; --btn-fg:#06231a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);font-family:'Inter',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .disp{font-family:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;letter-spacing:-.02em;font-weight:700}
+  .mono{font-family:ui-monospace,'JetBrains Mono','SFMono-Regular',Menlo,Consolas,monospace}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+  .accent{color:var(--accent)}
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;gap:.5rem;border-radius:999px;padding:.95rem 1.6rem;font-weight:700;font-size:1rem;cursor:pointer;border:1.5px solid transparent;transition:transform .15s ease, box-shadow .15s ease, background .15s ease;text-align:center}
+  .btn:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+  .btn-primary{background:var(--btn-bg);color:var(--btn-fg);box-shadow:0 14px 30px -12px var(--accent)}
+  .btn-primary:hover{transform:translateY(-2px)}
+  .btn-ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+  .btn-ink{background:var(--ink);color:var(--paper)}
+  .btn-ink:hover{transform:translateY(-2px)}
+  /* header */
+  header.nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);background:color-mix(in srgb,var(--paper) 82%,transparent);border-bottom:1px solid var(--line)}
+  .nav-row{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:.6rem;font-weight:800}
+  .mark{width:34px;height:34px;border-radius:9px;background:var(--btn-bg);color:var(--btn-fg);display:grid;place-items:center;font-weight:800;font-size:1.15rem}
+  .nav-actions{display:flex;align-items:center;gap:.6rem}
+  .icon-btn{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted);display:grid;place-items:center;cursor:pointer}
+  .icon-btn:hover{color:var(--accent);border-color:var(--accent)}
+  .nav-buy{padding:.6rem 1.1rem;font-size:.92rem}
+  @media(max-width:640px){.nav-buy{display:none}}
+  /* hero */
+  .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+  .hero-bg{position:absolute;inset:0;background:radial-gradient(60% 50% at 80% 0%,var(--accent-soft),transparent 70%);pointer-events:none}
+  .dots{position:absolute;inset:0;opacity:.6;background-image:radial-gradient(var(--line) 1.3px,transparent 1.3px);background-size:26px 26px;-webkit-mask-image:radial-gradient(70% 60% at 70% 30%,#000,transparent);mask-image:radial-gradient(70% 60% at 70% 30%,#000,transparent)}
+  .hero-grid{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;padding:72px 0 80px}
+  @media(max-width:900px){.hero-grid{grid-template-columns:1fr;padding:48px 0 56px}}
+  .eyebrow{font-size:.8rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--accent)}
+  h1{font-size:clamp(2.4rem,5.4vw,3.8rem);line-height:1.02;margin:14px 0 0}
+  h1 .it{font-style:italic;color:var(--accent)}
+  .lead{margin-top:18px;font-size:1.2rem;color:var(--muted);max-width:34rem}
+  .chips{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+  .chip{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px}
+  .chip b{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;color:var(--accent);display:block;line-height:1}
+  .chip span{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .cta{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:30px}
+  .price{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.6rem}
+  .price small{display:block;font-family:inherit;font-weight:500;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .reassure{margin-top:16px;font-size:.92rem;color:var(--muted);display:flex;align-items:center;gap:.5rem}
+  /* dashboard mock */
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+  .panel .bar{display:flex;align-items:center;gap:7px;padding:13px 16px;border-bottom:1px solid var(--line)}
+  .panel .bar i{width:11px;height:11px;border-radius:50%;display:inline-block}
+  .r{background:#f0857a}.y{background:#f0c24b}.g{background:#5bbf8a}
+  .fn{margin-left:8px;font-size:12px;color:var(--muted)}
+  .tag{margin-left:auto;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:3px 9px;border-radius:999px}
+  .kpis{display:grid;grid-template-columns:1fr 1fr 1fr}
+  .kpi{padding:15px 16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .kpi:nth-child(3){border-right:none}
+  .kpi .kl{font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+  .kpi .kv{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.35rem;margin-top:3px}
+  .kpi .kd{font-size:11px;color:var(--accent);font-weight:600}
+  .rows{padding:14px 16px}
+  .row{margin:11px 0}
+  .row .top{display:flex;justify-content:space-between;align-items:center}
+  .row .nm{font-size:13px;font-weight:600}
+  .row.out .nm,.row.out .st{color:var(--muted);opacity:.7}
+  .st{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+  .st.prog{color:#c08a2e}
+  .track{height:8px;background:var(--surface-2);border-radius:6px;overflow:hidden;margin-top:7px}
+  .fill{height:100%;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 55%,transparent),var(--accent))}
+  .panel .foot{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-top:1px solid var(--line)}
+  .panel .foot .tt{font-size:12px;color:var(--muted)}
+  .closed{font-weight:800;font-size:12px;color:var(--btn-fg);background:var(--btn-bg);padding:6px 14px;border-radius:999px;letter-spacing:.06em}
+  /* sections */
+  section{padding:72px 0}
+  .sec-head{max-width:42rem}
+  .sec-eyebrow{font-size:.78rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--accent)}
+  h2{font-size:clamp(1.8rem,3.6vw,2.6rem);line-height:1.1;margin-top:10px}
+  .sec-sub{margin-top:14px;font-size:1.1rem;color:var(--muted)}
+  .band{background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  /* problem */
+  .pain{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:36px}
+  @media(max-width:760px){.pain{grid-template-columns:1fr}}
+  .pain .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .pain h3{font-size:1.05rem;margin-bottom:8px}
+  .pain p{color:var(--muted);font-size:.96rem}
+  .xmark{color:#d27a6c;font-weight:800}
+  /* features */
+  .feat{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px}
+  @media(max-width:900px){.feat{grid-template-columns:1fr 1fr}}
+  @media(max-width:600px){.feat{grid-template-columns:1fr}}
+  .feat .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;transition:transform .2s ease,border-color .2s ease}
+  .feat .card:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 50%,var(--line))}
+  .ic{width:46px;height:46px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;margin-bottom:14px}
+  .ic svg{width:24px;height:24px}
+  .feat h3{font-size:1.1rem;margin-bottom:6px}
+  .feat p{color:var(--muted);font-size:.95rem}
+  /* steps */
+  .steps{counter-reset:s;border-top:2px solid var(--ink);margin-top:36px}
+  .step{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:start;padding:28px 0;border-bottom:1px solid var(--line)}
+  .step .num{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:2.4rem;color:var(--accent);line-height:1}
+  .step h3{font-size:1.25rem}
+  .step p{color:var(--muted);margin-top:6px;max-width:42rem}
+  /* who */
+  .who{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:36px}
+  @media(max-width:700px){.who{grid-template-columns:1fr}}
+  .who .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:26px}
+  .who h3{font-size:1.2rem;margin-bottom:8px}
+  .who p{color:var(--muted)}
+  /* faq */
+  .faq{margin-top:32px;border-top:1px solid var(--line)}
+  details{border-bottom:1px solid var(--line);padding:6px 0}
+  summary{cursor:pointer;list-style:none;padding:18px 4px;font-weight:600;font-size:1.05rem;display:flex;justify-content:space-between;align-items:center}
+  summary::-webkit-details-marker{display:none}
+  summary .plus{color:var(--accent);font-size:1.4rem;transition:transform .2s ease}
+  details[open] summary .plus{transform:rotate(45deg)}
+  details p{color:var(--muted);padding:0 4px 20px;max-width:48rem}
+  /* final cta */
+  .final{position:relative;overflow:hidden;border-radius:26px;background:var(--ink);color:var(--paper);padding:56px 40px;text-align:center;margin:0 0 0}
+  .final .fg{position:absolute;inset:0;background:radial-gradient(50% 70% at 50% 0%,var(--accent-soft),transparent 70%)}
+  .final h2{position:relative}
+  .final p{position:relative;color:color-mix(in srgb,var(--paper) 72%,transparent);max-width:36rem;margin:14px auto 0}
+  .final .cta{position:relative;justify-content:center;margin-top:28px}
+  /* footer */
+  footer{border-top:1px solid var(--line);padding:34px 0;color:var(--muted);font-size:.9rem}
+  .foot-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+  .guarantee{display:inline-flex;align-items:center;gap:.5rem;font-size:.9rem;color:var(--muted)}
+  /* Scroll reveal is progressive enhancement. If JS runs, .in is added on
+     intersect for a smooth entrance. If the sanitizer strips the script but
+     the js class is set, a CSS animation reveals content after a short delay
+     so nothing can stay stuck hidden. If no script runs at all, the js class
+     is never set and content is simply visible. */
+  html.js .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease;animation:reveal-fallback .6s ease 1.6s forwards}
+  html.js .reveal.in{opacity:1;transform:none;animation:none}
+  @keyframes reveal-fallback{to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){html.js .reveal{opacity:1;transform:none;animation:none}.btn:hover,.feat .card:hover{transform:none}}
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap nav-row">
+    <div class="brand"><span class="mark disp">E</span><span>ERP Finance Pro</span></div>
+    <div class="nav-actions">
+      <button class="icon-btn" id="theme" aria-label="Toggle light and dark mode" title="Toggle theme">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></svg>
+      </button>
+      <a class="btn btn-primary nav-buy" data-gumroad-action="buy">Get it <span data-gumroad-field="price">$39</span></a>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg"></div><div class="dots"></div>
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">Oracle Fusion Cloud</p>
+      <h1 class="disp" data-gumroad-field="name">Period Close <span class="it">Accelerator</span></h1>
+      <p class="lead">Run the Oracle Fusion Cloud month-end close as a controlled, repeatable routine. Configure it once per client, then run it every period.</p>
+      <div class="chips">
+        <div class="chip"><b class="disp">100+</b><span>Tasks</span></div>
+        <div class="chip"><b class="disp">12</b><span>Modules</span></div>
+        <div class="chip"><b class="disp">100+</b><span>Reports</span></div>
+      </div>
+      <div class="cta">
+        <a class="btn btn-primary" data-gumroad-action="buy">Get the Accelerator</a>
+        <div class="price"><span data-gumroad-field="price">$39</span><small>one-time, instant download</small></div>
+      </div>
+      <p class="reassure">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        Plain Excel .xlsx, no macros. Works in any modern Excel.
+      </p>
+    </div>
+    <!-- dashboard mock -->
+    <div class="panel" aria-hidden="true">
+      <div class="bar"><i class="r"></i><i class="y"></i><i class="g"></i><span class="fn mono">master-close-tracker.xlsx</span><span class="tag">FY26</span></div>
+      <div class="kpis">
+        <div class="kpi"><div class="kl mono">Modules</div><div class="kv">12</div><div class="kd mono">in scope</div></div>
+        <div class="kpi"><div class="kl mono">Complete</div><div class="kv">100%</div><div class="kd mono">+ on time</div></div>
+        <div class="kpi"><div class="kl mono">Close</div><div class="kv">3.0d</div><div class="kd mono">-5.0d</div></div>
+      </div>
+      <div class="rows">
+        <div class="row"><div class="top"><span class="nm">General Ledger</span><span class="st mono">Complete</span></div><div class="track"><div class="fill" style="width:100%"></div></div></div>
+        <div class="row"><div class="top"><span class="nm">Payables</span><span class="st mono">Complete</span></div><div class="track"><div class="fill" style="width:100%"></div></div></div>
+        <div class="row"><div class="top"><span class="nm">Receivables</span><span class="st prog mono">92%</span></div><div class="track"><div class="fill" style="width:92%"></div></div></div>
+        <div class="row out"><div class="top"><span class="nm">Lease Accounting</span><span class="st mono">Out of scope</span></div><div class="track"><div class="fill" style="width:0"></div></div></div>
+      </div>
+      <div class="foot"><span class="tt mono">12 / 12 MODULES IN SCOPE</span><span class="closed mono">CLOSED</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section class="band">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="sec-eyebrow">The problem</p>
+      <h2 class="disp">A close run from memory breaks in predictable ways</h2>
+      <p class="sec-sub">Most month-end pain is not a tooling problem. It is a process problem, and the same mistakes repeat every period.</p>
+    </div>
+    <div class="pain">
+      <div class="card reveal"><h3><span class="xmark">&times;</span> Wrong order</h3><p>A subledger gets closed before its accounting is created in final mode, and the General Ledger will not close.</p></div>
+      <div class="card reveal"><h3><span class="xmark">&times;</span> Missed transfers</h3><p>Inventory and receiving transactions never reach costing, so cost accounting comes up short and nobody notices until later.</p></div>
+      <div class="card reveal"><h3><span class="xmark">&times;</span> No single view</h3><p>Status lives in someone's head or a chat thread. There is no clean picture of what is done and what is still outstanding.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT'S INSIDE -->
+<section>
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="sec-eyebrow">What is inside</p>
+      <h2 class="disp">Everything the close needs, in one workbook</h2>
+      <p class="sec-sub">A reusable Excel framework that maps the entire Oracle Fusion close and rolls it up live.</p>
+    </div>
+    <div class="feat">
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6" rx="1"/><rect x="12" y="7" width="3" height="10" rx="1"/><rect x="17" y="13" width="3" height="4" rx="1"/></svg></div>
+        <h3>Live Master Close Tracker</h3><p>Percent complete and status per module, rolled up from a single status column. See the whole close at a glance.</p>
+      </div>
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 1 2-2h13"/></svg></div>
+        <h3>100+ sequenced tasks</h3><p>Every close task in the right order across all 12 Financials and SCM modules, each with the exact Oracle ESS job to run.</p>
+      </div>
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg></div>
+        <h3>Scope automation</h3><p>Mark a module out of scope once and its rows grey out across every sheet, and drop out of the roll-up. The pack adapts to each client.</p>
+      </div>
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3l1.8 4.8L18.6 9.6 13.8 11.4 12 16.2 10.2 11.4 5.4 9.6 10.2 7.8z"/></svg></div>
+        <h3>Period Open + Known Issues</h3><p>Opening tasks and a known-issues and dependency-traps sheet, so nothing gets closed out of order.</p>
+      </div>
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg></div>
+        <h3>100+ report reference</h3><p>Standard Oracle reports tagged by module and purpose, plus a Custom Reports Register that flows your own reports into the listing.</p>
+      </div>
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+        <h3>Protected and macro-free</h3><p>A plain .xlsx. Formulas and standard guidance are locked, input cells are open. Nothing to enable, nothing for IT to block.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="band">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="sec-eyebrow">How it works</p>
+      <h2 class="disp">Set it up once, run it every month</h2>
+    </div>
+    <div class="steps">
+      <div class="step reveal"><div class="num disp">01</div><div><h3>Set your scope</h3><p>On the control sheet, mark each module In or Out of Scope for your client. Every other sheet updates automatically.</p></div></div>
+      <div class="step reveal"><div class="num disp">02</div><div><h3>Run the close</h3><p>Work the sequenced task list, each with its exact Oracle process and a recommendation. Update the status column as you go.</p></div></div>
+      <div class="step reveal"><div class="num disp">03</div><div><h3>Track to closed</h3><p>The Master Close Tracker shows percent complete and status per module in real time. Reset for next period and run it again.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- WHO IT'S FOR -->
+<section>
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="sec-eyebrow">Who it is for</p><h2 class="disp">Built for the people who run the close</h2></div>
+    <div class="who">
+      <div class="card reveal"><h3>Oracle consultants</h3><p>Configure it once per client and hand over a controlled, professional close process. Stop rebuilding a tracker for every engagement.</p></div>
+      <div class="card reveal"><h3>Finance teams</h3><p>Run a repeatable close every period with nothing missed, the exact Oracle steps in front of you, and a clear view of progress.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="band">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="sec-eyebrow">Questions</p><h2 class="disp">Good to know before you buy</h2></div>
+    <div class="faq">
+      <details class="reveal"><summary>Does it need macros?<span class="plus">+</span></summary><p>No. It is a plain .xlsx that works in any modern Excel. All automation is native: formulas, data validation and conditional formatting. Nothing to enable, and nothing blocked by IT security policies.</p></details>
+      <details class="reveal"><summary>How does it work across different clients?<span class="plus">+</span></summary><p>It is a configurable template. Set each module In or Out of Scope on the control sheet, adjust the close sequence if needed, and the whole pack adapts. Out-of-scope modules grey out and drop out of the roll-up.</p></details>
+      <details class="reveal"><summary>Do I need to be an Oracle expert?<span class="plus">+</span></summary><p>No. Each task names the exact Oracle process to run and explains why, so a finance team can follow it. A consultant can also tailor it once and hand it over.</p></details>
+      <details class="reveal"><summary>Can the whole team use it during the close?<span class="plus">+</span></summary><p>Yes. Keep it on SharePoint or OneDrive for shared editing. Standard guidance is locked so it cannot be changed by accident; only the input cells (status, owners, dates, scope) are open.</p></details>
+      <details class="reveal"><summary>How is it delivered?<span class="plus">+</span></summary><p>Instant digital download through Gumroad after checkout. You get the Excel workbook straight away.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section>
+  <div class="wrap">
+    <div class="final reveal">
+      <div class="fg"></div>
+      <h2 class="disp">Run your next close with nothing missed</h2>
+      <p>A controlled, repeatable Oracle Fusion close, set up once and reused every period. Instant download.</p>
+      <div class="cta">
+        <a class="btn btn-primary" data-gumroad-action="buy">Get it for <span data-gumroad-field="price">$39</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-row">
+    <div class="brand"><span class="mark disp">E</span><span>ERP Finance Pro</span></div>
+    <span class="guarantee">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
+      Secure checkout via Gumroad &middot; 30-day guarantee
+    </span>
+    <span>&copy; 2026 ERP Finance Pro &middot; Arshad Hanif</span>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    var root=document.documentElement, btn=document.getElementById('theme');
+    try{var s=localStorage.getItem('pca-theme'); if(s) root.setAttribute('data-theme',s);}catch(e){}
+    function cur(){var t=root.getAttribute('data-theme'); if(t==='light'||t==='dark') return t; return matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+    btn.addEventListener('click',function(){var n=cur()==='dark'?'light':'dark'; root.setAttribute('data-theme',n); try{localStorage.setItem('pca-theme',n);}catch(e){}});
+    // scroll reveal
+    var els=document.querySelectorAll('.reveal');
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.12});
+      els.forEach(function(el){io.observe(el);});
+    } else { els.forEach(function(el){el.classList.add('in');}); }
+  })();
+</script>
+</body>
+</html>
