@@ -24,27 +24,41 @@ export default function StorePage() {
   const liveProducts = products.filter(isLive);
   const featuredLive = liveProducts[0];
 
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
+  const siteBase = `${SITE_URL}${base}`;
+
   const itemListSchema = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    itemListElement: products.map((product, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      item: {
-        '@type': 'Product',
-        name: product.title,
-        description: product.description,
-        category: product.category,
-        url: product.gumroadUrl,
-        offers: {
-          '@type': 'Offer',
-          price: product.price.replace(/[^0-9.]/g, ''),
-          priceCurrency: 'USD',
-          url: product.gumroadUrl,
-          availability: 'https://schema.org/InStock',
+    itemListElement: products.map((product, index) => {
+      // Only products with a real checkout are advertised as in stock with a
+      // Gumroad URL. Waitlist products point at their detail page and are
+      // marked pre-order so search engines do not surface a dead offer link.
+      const live = isLive(product);
+      const offerUrl = live
+        ? product.gumroadUrl
+        : `${siteBase}/store/${product.id}/`;
+      return {
+        '@type': 'ListItem',
+        position: index + 1,
+        item: {
+          '@type': 'Product',
+          name: product.title,
+          description: product.description,
+          category: product.category,
+          url: offerUrl,
+          offers: {
+            '@type': 'Offer',
+            price: product.price.replace(/[^0-9.]/g, ''),
+            priceCurrency: 'USD',
+            url: offerUrl,
+            availability: live
+              ? 'https://schema.org/InStock'
+              : 'https://schema.org/PreOrder',
+          },
         },
-      },
-    })),
+      };
+    }),
   };
 
   return (

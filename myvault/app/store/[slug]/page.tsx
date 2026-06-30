@@ -51,8 +51,12 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       '@type': 'Offer',
       price: product.price.replace(/[^0-9.]/g, ''),
       priceCurrency: 'USD',
-      url: product.gumroadUrl,
-      availability: 'https://schema.org/InStock',
+      // Live products advertise the real Gumroad checkout and in-stock status;
+      // waitlist products point at this detail page and are marked pre-order.
+      url: live ? product.gumroadUrl : `${siteBase}/store/${product.id}/`,
+      availability: live
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/PreOrder',
     },
   };
 
