@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
-import { getAllProducts } from '@/lib/products';
+import { getAllProducts, isLive } from '@/lib/products';
 import Link from 'next/link';
 import StoreList from '@/components/StoreList';
 import PageHeader from '@/components/PageHeader';
 import JsonLd from '@/components/JsonLd';
 import { IconArrowRight } from '@/components/Icons';
-import { SITE_URL, STORE_LIVE } from '@/lib/constants';
+import { SITE_URL } from '@/lib/constants';
 
 export const metadata: Metadata = {
   title: 'Store',
@@ -21,6 +21,8 @@ export const metadata: Metadata = {
 
 export default function StorePage() {
   const products = getAllProducts();
+  const liveProducts = products.filter(isLive);
+  const featuredLive = liveProducts[0];
 
   const itemListSchema = {
     '@context': 'https://schema.org',
@@ -59,7 +61,28 @@ export default function StorePage() {
         intro="Proven templates, report packs and courses, built from real Oracle Fusion and finance work. Filter by category below."
       />
 
-      {!STORE_LIVE && (
+      {featuredLive ? (
+        <div className="mb-10 flex flex-col gap-4 rounded-2xl bg-foreground p-6 text-background sm:flex-row sm:items-center sm:justify-between sm:p-8">
+          <div>
+            <p className="font-mono text-xs font-semibold uppercase tracking-[0.25em] text-accent">
+              Available now
+            </p>
+            <h2 className="mt-2 font-display text-xl font-bold tracking-tight sm:text-2xl">
+              {featuredLive.title}
+            </h2>
+            <p className="mt-1 text-sm text-background/70">
+              Our first product is live. More templates and report packs are
+              landing soon, join the list to hear first.
+            </p>
+          </div>
+          <Link
+            href={`/store/${featuredLive.id}`}
+            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-accent px-6 py-3 font-semibold text-background transition-transform hover:-translate-y-0.5"
+          >
+            View product <IconArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      ) : (
         <div className="mb-10 flex flex-col gap-4 rounded-2xl bg-foreground p-6 text-background sm:flex-row sm:items-center sm:justify-between sm:p-8">
           <div>
             <p className="font-mono text-xs font-semibold uppercase tracking-[0.25em] text-accent">

@@ -27,6 +27,18 @@ export function getAllProducts(): Product[] {
   return productsData as Product[];
 }
 
+/**
+ * A product is "live" (real, buyable checkout) when it has a real Gumroad URL,
+ * not a placeholder. This lets a single product go live with a working
+ * checkout while the rest stay on the "Notify me" waitlist, independent of the
+ * site-wide STORE_LIVE switch.
+ */
+export function isLive(product: Product): boolean {
+  return (
+    !!product.gumroadUrl && !product.gumroadUrl.includes('placeholder')
+  );
+}
+
 export function getProductById(id: string): Product | null {
   return getAllProducts().find((p) => p.id === id) ?? null;
 }

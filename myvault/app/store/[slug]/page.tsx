@@ -5,11 +5,12 @@ import {
   getAllProductIds,
   getProductById,
   getProductsByTag,
+  isLive,
 } from '@/lib/products';
 import ProductCard from '@/components/ProductCard';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import JsonLd from '@/components/JsonLd';
-import { SITE_NAME, SITE_URL, STORE_LIVE } from '@/lib/constants';
+import { SITE_NAME, SITE_URL } from '@/lib/constants';
 
 export const dynamicParams = false;
 
@@ -35,6 +36,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const product = getProductById(params.slug);
   if (!product) notFound();
 
+  const live = isLive(product);
   const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
   const siteBase = `${SITE_URL}${base}`;
 
@@ -96,7 +98,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         </h1>
         <div className="mt-5 flex flex-wrap items-center gap-4">
           <span className="font-display text-3xl font-bold">{product.price}</span>
-          {STORE_LIVE ? (
+          {live ? (
             <a
               href={product.gumroadUrl}
               target="_blank"
@@ -114,7 +116,11 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             </Link>
           )}
         </div>
-        {!STORE_LIVE && (
+        {live ? (
+          <p className="mt-3 font-mono text-xs uppercase tracking-wider text-accent">
+            Available now. Secure checkout via Gumroad, instant download.
+          </p>
+        ) : (
           <p className="mt-3 font-mono text-xs uppercase tracking-wider text-accent">
             Launching soon. Join the list to get it first, at an early subscriber price.
           </p>
@@ -182,7 +188,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
 
       <div className="mt-10 rounded-xl border border-border bg-surface p-6 text-center">
         <p className="text-lg font-semibold">{product.price}</p>
-        {STORE_LIVE ? (
+        {live ? (
           <>
             <a
               href={product.gumroadUrl}

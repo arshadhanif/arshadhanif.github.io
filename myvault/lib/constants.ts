@@ -98,10 +98,11 @@ export const NAV_LINKS = [
   { href: '/about', label: 'About' },
 ];
 
-// Store launch switch. While false, the store runs in "launching soon" mode:
-// product buttons capture emails (waitlist) instead of linking to checkout,
-// since the real Gumroad links and files are not ready yet. Flip to true once
-// every product in content/products.json has a real gumroadUrl.
+// Store launch state is now decided per product, not site-wide. A product goes
+// live (real Gumroad checkout) as soon as it has a real gumroadUrl; see
+// isLive() in lib/products.ts. Products still on a placeholder URL keep the
+// "Notify me" waitlist button. This flag is kept only for reference and is no
+// longer read anywhere in the app.
 export const STORE_LIVE = false;
 
 // Beehiiv subscribe form id (from the embed snippet). Used by the BeehiivForm

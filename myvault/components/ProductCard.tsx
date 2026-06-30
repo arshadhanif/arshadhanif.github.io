@@ -1,21 +1,20 @@
 import Link from 'next/link';
 import type { Product } from '@/lib/products';
-import { STORE_LIVE } from '@/lib/constants';
+import { isLive } from '@/lib/products';
 import CategoryBadge from './CategoryBadge';
 
 export default function ProductCard({ product }: { product: Product }) {
+  const live = isLive(product);
   return (
     <article className="card-premium group flex h-full flex-col p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <CategoryBadge category={product.category} />
-        {!STORE_LIVE ? (
+        {live ? (
+          <span className="text-xs font-medium text-accent">Available now</span>
+        ) : (
           <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
             Soon
           </span>
-        ) : (
-          product.featured && (
-            <span className="text-xs font-medium text-accent">Featured</span>
-          )
         )}
       </div>
 
@@ -41,7 +40,7 @@ export default function ProductCard({ product }: { product: Product }) {
           >
             Details
           </Link>
-          {STORE_LIVE ? (
+          {live ? (
             <a
               href={product.gumroadUrl}
               target="_blank"
