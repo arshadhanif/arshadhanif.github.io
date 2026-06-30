@@ -3,6 +3,7 @@ import { getAllPosts } from '@/lib/posts';
 import { getFeaturedProducts } from '@/lib/products';
 import ProductCard from '@/components/ProductCard';
 import NewsletterSignup from '@/components/NewsletterSignup';
+import Testimonials from '@/components/Testimonials';
 import Reveal from '@/components/Reveal';
 import { IconArrowRight } from '@/components/Icons';
 
@@ -298,8 +299,15 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Social proof */}
+      <section className="container-page pb-4">
+        <Reveal>
+          <Testimonials eyebrow="Trusted by clients" heading="Proven on real work" />
+        </Reveal>
+      </section>
+
       {/* Newsletter band */}
-      <section className="container-page pb-24">
+      <section className="container-page py-16 pb-24">
         <Reveal>
           <div className="rounded-3xl border-2 border-foreground p-8 sm:p-12">
             <NewsletterSignup />

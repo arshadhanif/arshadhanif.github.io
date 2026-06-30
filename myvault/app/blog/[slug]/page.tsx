@@ -12,6 +12,7 @@ import JsonLd from '@/components/JsonLd';
 import ReadingProgress from '@/components/ReadingProgress';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import TableOfContents from '@/components/TableOfContents';
+import ArticleCTA from '@/components/ArticleCTA';
 import { extractHeadings, slugify } from '@/lib/toc';
 import { categorySlug } from '@/lib/categories';
 import { SITE_NAME, FOUNDER, LEAD_MAGNET, SITE_URL, OG_IMAGE } from '@/lib/constants';
@@ -150,6 +151,9 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
       <div className="prose-article mt-10">
         <MDXRemote source={post.content} components={mdxComponents} />
       </div>
+
+      {/* Contextual cross-sell to the most relevant hub */}
+      <ArticleCTA category={post.category} />
 
       {/* Content upgrade: turn a reader into a subscriber */}
       <div className="mt-12">
