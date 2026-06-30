@@ -9,7 +9,7 @@ import {
 import ProductCard from '@/components/ProductCard';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import JsonLd from '@/components/JsonLd';
-import { SITE_NAME, SITE_URL } from '@/lib/constants';
+import { SITE_NAME, SITE_URL, STORE_LIVE } from '@/lib/constants';
 
 export const dynamicParams = false;
 
@@ -96,15 +96,29 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         </h1>
         <div className="mt-5 flex flex-wrap items-center gap-4">
           <span className="font-display text-3xl font-bold">{product.price}</span>
-          <a
-            href={product.gumroadUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-full bg-foreground px-6 py-3 font-semibold text-background transition-transform hover:-translate-y-0.5"
-          >
-            Get it now
-          </a>
+          {STORE_LIVE ? (
+            <a
+              href={product.gumroadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full bg-foreground px-6 py-3 font-semibold text-background transition-transform hover:-translate-y-0.5"
+            >
+              Get it now
+            </a>
+          ) : (
+            <Link
+              href="/newsletter"
+              className="rounded-full bg-foreground px-6 py-3 font-semibold text-background transition-transform hover:-translate-y-0.5"
+            >
+              Join the waitlist
+            </Link>
+          )}
         </div>
+        {!STORE_LIVE && (
+          <p className="mt-3 font-mono text-xs uppercase tracking-wider text-accent">
+            Launching soon. Join the list to get it first, at an early subscriber price.
+          </p>
+        )}
       </header>
 
       <div className="prose-article mt-8">
@@ -143,17 +157,33 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
 
       <div className="mt-10 rounded-xl border border-border bg-surface p-6 text-center">
         <p className="text-lg font-semibold">{product.price}</p>
-        <a
-          href={product.gumroadUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 inline-block rounded-md bg-accent px-6 py-3 font-semibold text-background transition-colors hover:bg-accent-dim"
-        >
-          Get {product.title}
-        </a>
-        <p className="mt-3 text-xs text-muted">
-          Secure checkout via Gumroad. Instant download.
-        </p>
+        {STORE_LIVE ? (
+          <>
+            <a
+              href={product.gumroadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-block rounded-md bg-accent px-6 py-3 font-semibold text-background transition-colors hover:bg-accent-dim"
+            >
+              Get {product.title}
+            </a>
+            <p className="mt-3 text-xs text-muted">
+              Secure checkout via Gumroad. Instant download.
+            </p>
+          </>
+        ) : (
+          <>
+            <Link
+              href="/newsletter"
+              className="mt-3 inline-block rounded-md bg-accent px-6 py-3 font-semibold text-background transition-colors hover:bg-accent-dim"
+            >
+              Get notified when it launches
+            </Link>
+            <p className="mt-3 text-xs text-muted">
+              On the list, you hear first and get an early subscriber price.
+            </p>
+          </>
+        )}
       </div>
 
       {related.length > 0 && (

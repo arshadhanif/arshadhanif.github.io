@@ -98,6 +98,12 @@ export const NAV_LINKS = [
   { href: '/about', label: 'About' },
 ];
 
+// Store launch switch. While false, the store runs in "launching soon" mode:
+// product buttons capture emails (waitlist) instead of linking to checkout,
+// since the real Gumroad links and files are not ready yet. Flip to true once
+// every product in content/products.json has a real gumroadUrl.
+export const STORE_LIVE = false;
+
 // Beehiiv subscribe form id (from the embed snippet). Used by the BeehiivForm
 // component for all email capture across the site.
 export const BEEHIIV_FORM_ID = '918006cc-0744-44ac-a374-75efce67f345';

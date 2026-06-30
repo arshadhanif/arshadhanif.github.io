@@ -11,9 +11,18 @@ Last refreshed: 2026-06-30.
 
 ## 1. Blocks real sales (highest priority)
 
-- [ ] **Gumroad product links.** All 13 store products currently point to
-  placeholder URLs (`//gumroad.com/l/placeholder-...`), so "Get it" buttons do
-  not lead to a real checkout. Provide the real Gumroad link (or product
+> Interim handled: the store now runs in "launching soon" mode (`STORE_LIVE =
+> false` in `lib/constants.ts`). Product buttons capture emails (waitlist)
+> instead of pointing at dead checkout links. When the real Gumroad links are
+> added below, flip `STORE_LIVE` to `true` and the store is live.
+>
+> What Gumroad is: a service that hosts a digital file for sale and gives you a
+> checkout link. You (or Claude, guided by you) create a free Gumroad account,
+> upload each product file, set a price, and copy the link it generates. This
+> needs your account and the real product files, so it cannot be done until the
+> files exist.
+
+- [ ] **Gumroad product links.** Provide the real Gumroad link (or product
   permalink) for each product. Any format is fine: a list mapping product title
   to URL. Products live in `content/products.json`.
   - Excel Finance Dashboard Kit
@@ -33,10 +42,18 @@ Last refreshed: 2026-06-30.
 
 ## 2. Turns on growth tracking
 
-- [ ] **Analytics.** Pick one and send it over; Claude flips it on in
-  `lib/constants.ts`:
-  - Plausible: just confirm the domain (default `arshadhanif.github.io`), or
-  - Google Analytics 4: send the Measurement ID (looks like `G-XXXXXXXXXX`).
+The code is ready and config-driven; it needs one value that can only come from
+your own account. Recommended: Google Analytics 4 (free).
+
+GA4 in 4 steps (about 2 minutes):
+1. Go to analytics.google.com and sign in with your Google account.
+2. Admin (bottom left) -> Create -> set up a property for the site.
+3. Add a "Web" data stream for `https://arshadhanif.github.io`.
+4. Copy the Measurement ID it shows (looks like `G-XXXXXXXXXX`) and send it.
+
+- [ ] **GA4 Measurement ID** (`G-XXXXXXXXXX`). Once provided, Claude sets
+  `ANALYTICS.provider = 'ga'` and `gaId` in `lib/constants.ts` and it goes live.
+  (Plausible is an alternative but needs a paid Plausible account.)
 
 ## 3. Video / YouTube
 

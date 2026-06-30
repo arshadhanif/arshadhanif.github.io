@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Product } from '@/lib/products';
+import { STORE_LIVE } from '@/lib/constants';
 import CategoryBadge from './CategoryBadge';
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -7,8 +8,14 @@ export default function ProductCard({ product }: { product: Product }) {
     <article className="card-premium group flex h-full flex-col p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <CategoryBadge category={product.category} />
-        {product.featured && (
-          <span className="text-xs font-medium text-accent">Featured</span>
+        {!STORE_LIVE ? (
+          <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+            Soon
+          </span>
+        ) : (
+          product.featured && (
+            <span className="text-xs font-medium text-accent">Featured</span>
+          )
         )}
       </div>
 
@@ -34,14 +41,23 @@ export default function ProductCard({ product }: { product: Product }) {
           >
             Details
           </Link>
-          <a
-            href={product.gumroadUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-accent-dim"
-          >
-            Get it
-          </a>
+          {STORE_LIVE ? (
+            <a
+              href={product.gumroadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-accent-dim"
+            >
+              Get it
+            </a>
+          ) : (
+            <Link
+              href="/newsletter"
+              className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-accent-dim"
+            >
+              Notify me
+            </Link>
+          )}
         </div>
       </div>
     </article>

@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import { getAllProducts } from '@/lib/products';
+import Link from 'next/link';
 import StoreList from '@/components/StoreList';
 import PageHeader from '@/components/PageHeader';
 import JsonLd from '@/components/JsonLd';
-import { SITE_URL } from '@/lib/constants';
+import { IconArrowRight } from '@/components/Icons';
+import { SITE_URL, STORE_LIVE } from '@/lib/constants';
 
 export const metadata: Metadata = {
   title: 'Store',
@@ -56,6 +58,29 @@ export default function StorePage() {
         title="The Store"
         intro="Proven templates, report packs and courses, built from real Oracle Fusion and finance work. Filter by category below."
       />
+
+      {!STORE_LIVE && (
+        <div className="mb-10 flex flex-col gap-4 rounded-2xl bg-foreground p-6 text-background sm:flex-row sm:items-center sm:justify-between sm:p-8">
+          <div>
+            <p className="font-mono text-xs font-semibold uppercase tracking-[0.25em] text-accent">
+              Launching soon
+            </p>
+            <h2 className="mt-2 font-display text-xl font-bold tracking-tight sm:text-2xl">
+              The store opens shortly. Get in early.
+            </h2>
+            <p className="mt-1 text-sm text-background/70">
+              Join the list to be first when products go live, with an early
+              subscriber price.
+            </p>
+          </div>
+          <Link
+            href="/newsletter"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-accent px-6 py-3 font-semibold text-background transition-transform hover:-translate-y-0.5"
+          >
+            Join the waitlist <IconArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      )}
 
       <StoreList products={products} />
     </div>
