@@ -27,9 +27,9 @@ export const ANALYTICS: {
   domain: string;
   gaId: string;
 } = {
-  provider: '',
+  provider: 'ga',
   domain: 'arshadhanif.github.io',
-  gaId: '',
+  gaId: 'G-PX9FZD48E5',
 };
 
 // The person behind the brand. This shows up on the About page, not the
