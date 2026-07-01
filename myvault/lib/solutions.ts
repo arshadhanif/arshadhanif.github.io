@@ -36,12 +36,12 @@ export const SOLUTIONS: Solution[] = [
   {
     slug: 'excel-for-finance',
     title: 'Excel for Finance',
-    metaTitle: 'Excel for Finance: Templates, Formulas and a Free Generator',
+    metaTitle: 'Excel for Finance: Formulas, Guides and a Free Generator',
     intro:
-      'The Excel side of finance work, done properly: the formulas that matter, ready-to-use templates, and a free tool that builds the formulas for you.',
+      'The Excel side of finance work, done properly: the formulas that matter, practical guides, and a free tool that builds the formulas for you.',
     body: [
-      'Most finance Excel work is the same handful of patterns repeated: lookups, conditional sums, period-end dates, clean error handling, and dashboards that update themselves. Learn those well and start from templates that already work, and you save hours every month.',
-      'Start with the free formula generator, read the formula guide, then pick up the templates that fit your work.',
+      'Most finance Excel work is the same handful of patterns repeated: lookups, conditional sums, period-end dates, clean error handling, and dashboards that update themselves. Learn those well and you save hours every month.',
+      'Start with the free formula generator, then read the formula guide to go deeper.',
     ],
     articleSlugs: ['excel-formulas-every-finance-pro-should-know'],
     productTag: 'Excel',

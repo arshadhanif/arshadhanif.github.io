@@ -15,11 +15,11 @@ import { SITE_NAME, SITE_URL } from '@/lib/constants';
 export const metadata: Metadata = {
   title: 'Excel for Finance',
   description:
-    'Excel templates, courses and free tools for finance professionals: dashboards, financial models, close trackers, formulas and more.',
+    'Free Excel tools and practical guides for finance professionals: a formula generator, finance calculators, and hands-on articles.',
   openGraph: {
     title: 'Excel for Finance',
     description:
-      'Excel templates, courses and free tools for finance professionals.',
+      'Free Excel tools and practical guides for finance professionals.',
   },
 };
 
@@ -50,9 +50,9 @@ export default function ExcelPage() {
       <JsonLd data={breadcrumbSchema} />
 
       <PageHeader
-        eyebrow="Templates · Courses · Free tools"
+        eyebrow="Free tools · Guides"
         title="Excel for finance"
-        intro={`The Excel side of ${SITE_NAME}: ready-to-use templates, practical courses, and free tools built for real finance work. Stop fighting spreadsheets and start from something that already works.`}
+        intro={`The Excel side of ${SITE_NAME}: free tools and practical guides built for real finance work, starting with a formula generator that writes the formula for you.`}
       />
 
       {/* Free tool callout (inverted accent block) */}
@@ -143,8 +143,8 @@ export default function ExcelPage() {
       )}
 
       <NewsletterSignup
-        heading="Get new Excel templates first"
-        subheading="Subscribe for new Excel templates, courses and tips, plus the free starter kit."
+        heading="Get new Excel tools and guides first"
+        subheading="Subscribe for new Excel tools, guides and tips, plus the free starter kit."
       />
     </div>
   );

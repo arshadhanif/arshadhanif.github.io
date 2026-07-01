@@ -16,9 +16,14 @@ Last refreshed: 2026-06-30 (Period Close Accelerator is live and selling).
 
 ## 2. Optional, not blocking
 
-- [ ] The other 12 store products: their files are not built yet. They sit on the
-  waitlist ("Notify me") until you create them. The Period Close Accelerator is
-  the one real, finished, selling product.
+- [ ] The remaining store products are on the waitlist until you build their
+  files. After a market review, the generic Excel templates and Excel courses
+  were dropped (they compete with free versions and sit outside the Oracle
+  niche). The moat-focused lineup to build, in priority order: OTBI Analytics
+  Pack (build next), BI Publisher Report Pack, Oracle Fusion Reporting Bundle,
+  ERP Implementation Document Pack (only in an Oracle Fusion specific form), and
+  the Oracle Fusion Financials course (highest effort, build later once there is
+  an audience). The Period Close Accelerator is the one real, selling product.
 - [ ] Real YouTube channel handle + video IDs (the Watch page is stubbed).
 - [ ] Custom domain (only if you want one; the github.io URL works).
 

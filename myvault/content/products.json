@@ -5,7 +5,11 @@
     "description": "A reusable Excel framework that runs the Oracle Fusion Cloud month-end close end to end: 100+ sequenced tasks across 12 modules, scope automation, a live tracker and a 100+ report reference.",
     "price": "$39",
     "category": "Templates",
-    "tags": ["Oracle Fusion", "Finance", "Close"],
+    "tags": [
+      "Oracle Fusion",
+      "Finance",
+      "Close"
+    ],
     "gumroadUrl": "https://arshadhanif1999.gumroad.com/l/period-close-accelerator",
     "featured": true,
     "longDescription": "The Period Close Accelerator turns the Oracle Fusion Cloud month-end close into a controlled, repeatable routine. A consultant configures it once per client, then the team runs it every period. It maps over 100 sequenced close tasks across the 12 Financials and SCM modules, each with the exact Oracle ESS job or process name and clear recommendations, and rolls progress up into a live Master Close Tracker. Mark a module Out of Scope and its rows grey out across every sheet automatically. It is a plain .xlsx: no macros, native Excel formulas, data validation and conditional formatting only.",
@@ -20,97 +24,35 @@
       "Plain .xlsx, no macros; sheets protected with formulas locked and input cells open"
     ],
     "faqs": [
-      { "q": "Does it need macros?", "a": "No. It is a plain .xlsx that works in any modern Excel. All automation is native: formulas, data validation and conditional formatting. Nothing to enable, and nothing blocked by security policies." },
-      { "q": "How does it work across different clients?", "a": "It is a configurable template. Set each module In or Out of Scope on the control sheet, adjust the close sequence if needed, and the whole pack adapts. Out-of-scope modules grey out and drop out of the roll-up." },
-      { "q": "Do I need to be an Oracle expert to use it?", "a": "No. Each task names the exact Oracle process to run and explains why, so a finance team can follow it. A consultant can also tailor it once and hand it over." },
-      { "q": "Can the whole team use it during the close?", "a": "Yes. Keep it on SharePoint or OneDrive for shared editing. Standard guidance is locked so it cannot be changed by accident; only the input cells (status, owners, dates, scope) are open." }
+      {
+        "q": "Does it need macros?",
+        "a": "No. It is a plain .xlsx that works in any modern Excel. All automation is native: formulas, data validation and conditional formatting. Nothing to enable, and nothing blocked by security policies."
+      },
+      {
+        "q": "How does it work across different clients?",
+        "a": "It is a configurable template. Set each module In or Out of Scope on the control sheet, adjust the close sequence if needed, and the whole pack adapts. Out-of-scope modules grey out and drop out of the roll-up."
+      },
+      {
+        "q": "Do I need to be an Oracle expert to use it?",
+        "a": "No. Each task names the exact Oracle process to run and explains why, so a finance team can follow it. A consultant can also tailor it once and hand it over."
+      },
+      {
+        "q": "Can the whole team use it during the close?",
+        "a": "Yes. Keep it on SharePoint or OneDrive for shared editing. Standard guidance is locked so it cannot be changed by accident; only the input cells (status, owners, dates, scope) are open."
+      }
     ],
     "freeDownloads": [
-      { "label": "Read the free guide", "url": "/downloads/period-close-accelerator-guide.pdf", "format": "PDF" },
-      { "label": "Download the one-pager", "url": "/downloads/period-close-accelerator-one-pager.pdf", "format": "PDF" }
+      {
+        "label": "Read the free guide",
+        "url": "/downloads/period-close-accelerator-guide.pdf",
+        "format": "PDF"
+      },
+      {
+        "label": "Download the one-pager",
+        "url": "/downloads/period-close-accelerator-one-pager.pdf",
+        "format": "PDF"
+      }
     ]
-  },
-  {
-    "id": "excel-finance-dashboard-kit",
-    "title": "Excel Finance Dashboard Kit",
-    "description": "Build board-ready dashboards in minutes. P&L, cash flow and KPI templates with dynamic charts and a reusable design system.",
-    "price": "$39",
-    "category": "Templates",
-    "tags": ["Excel", "Dashboards"],
-    "gumroadUrl": "https://gumroad.com/l/placeholder-excel-dashboard",
-    "featured": true,
-    "longDescription": "A set of board-ready Excel dashboards built the way finance teams actually present numbers. Drop in your data and the P&L, cash flow and KPI views update automatically, with a clean design system you can reuse across reports.",
-    "whatsInside": [
-      "P&L dashboard with month, quarter and year-to-date views",
-      "Cash flow dashboard with a rolling position",
-      "KPI scorecard with dynamic charts and conditional formatting",
-      "A reusable colour and chart style guide",
-      "A sample data set so you can see it working before you plug in your own"
-    ],
-    "faqs": [
-      { "q": "Which Excel version do I need?", "a": "Excel 2016 or later, including Microsoft 365. A few formulas use dynamic arrays that work best on 365." },
-      { "q": "Can I rebrand it?", "a": "Yes. The colours and fonts are driven by the style guide tab, so you can match your company brand in a few clicks." }
-    ]
-  },
-  {
-    "id": "excel-3-statement-model",
-    "title": "3-Statement Financial Model",
-    "description": "A fully linked income statement, balance sheet and cash flow model in Excel, with assumptions, scenarios and checks built in.",
-    "price": "$49",
-    "category": "Templates",
-    "tags": ["Excel", "Financial Modelling"],
-    "gumroadUrl": "https://gumroad.com/l/placeholder-3-statement-model",
-    "featured": false
-  },
-  {
-    "id": "excel-13-week-cashflow",
-    "title": "13-Week Cash Flow Model",
-    "description": "A rolling short-term cash flow forecast in Excel for treasury and FP&A. Weekly inflows, outflows, and a live liquidity view.",
-    "price": "$29",
-    "category": "Templates",
-    "tags": ["Excel", "Financial Modelling"],
-    "gumroadUrl": "https://gumroad.com/l/placeholder-13-week-cashflow",
-    "featured": false
-  },
-  {
-    "id": "excel-budgeting-pack",
-    "title": "Budgeting & Forecasting Template Pack",
-    "description": "A set of Excel templates for annual budgets, rolling forecasts and variance analysis, with clean inputs and ready-made charts.",
-    "price": "$45",
-    "category": "Templates",
-    "tags": ["Excel", "Budgeting"],
-    "gumroadUrl": "https://gumroad.com/l/placeholder-budgeting-pack",
-    "featured": false
-  },
-  {
-    "id": "excel-reconciliation-pack",
-    "title": "Reconciliation Templates Pack",
-    "description": "Bank, intercompany, AP and AR reconciliation templates in Excel, designed to make month-end tie-outs fast and auditable.",
-    "price": "$25",
-    "category": "Templates",
-    "tags": ["Excel", "Finance"],
-    "gumroadUrl": "https://gumroad.com/l/placeholder-reconciliation-pack",
-    "featured": false
-  },
-  {
-    "id": "excel-for-finance-course",
-    "title": "Excel for Finance: From Basics to Dashboards",
-    "description": "The complete video course: start with the essentials and finish building clean, automated finance dashboards, using real finance examples throughout. If you only want a deep dive on formulas, see the Formulas Masterclass.",
-    "price": "$149",
-    "category": "Courses",
-    "tags": ["Excel", "Course"],
-    "gumroadUrl": "https://gumroad.com/l/placeholder-excel-finance-course",
-    "featured": false
-  },
-  {
-    "id": "excel-formulas-masterclass",
-    "title": "Excel Formulas Masterclass for Finance",
-    "description": "A focused deep dive on formulas only, for people who already know their way around Excel: XLOOKUP, SUMIFS, INDEX/MATCH, dynamic arrays and LET, taught with hands-on workbooks. For the full beginner-to-dashboards journey, see Excel for Finance.",
-    "price": "$99",
-    "category": "Courses",
-    "tags": ["Excel", "Course"],
-    "gumroadUrl": "https://gumroad.com/l/placeholder-excel-formulas-course",
-    "featured": false
   },
   {
     "id": "oracle-fusion-otbi-analytics-pack",
@@ -118,9 +60,13 @@
     "description": "Interactive OTBI analyses for Oracle Fusion Financials across GL, AP, AR and FA, built for exploring and reconciling on screen. Portable parameters, ready to run.",
     "price": "$69",
     "category": "Report Packages",
-    "tags": ["Oracle Fusion", "Reporting", "OTBI"],
+    "tags": [
+      "Oracle Fusion",
+      "Reporting",
+      "OTBI"
+    ],
     "gumroadUrl": "https://gumroad.com/l/placeholder-otbi-analytics",
-    "featured": false,
+    "featured": true,
     "longDescription": "A set of ready-built OTBI analyses for the reports finance teams pull most across GL, AP, AR and FA. OTBI is the tool for exploring and reconciling on screen: drill into balances, filter by ledger and business unit, and export to Excel. Built on standard subject areas with parameters for ledger and business unit, so they move between instances without rework. If you need formatted, printable statements, pair this with the BI Publisher Report Pack.",
     "whatsInside": [
       "GL trial balance and account analysis (OTBI)",
@@ -130,8 +76,14 @@
       "Parameter setup notes so the analyses are portable across instances"
     ],
     "faqs": [
-      { "q": "What is OTBI best for?", "a": "On-screen exploration and reconciliation. You drill into balances, filter by ledger and business unit, and export to Excel. For formatted, printable statements, use the BI Publisher Report Pack, or the bundle that includes both." },
-      { "q": "Will these work on my instance?", "a": "Yes. They are built on standard subject areas with parameters for ledger and business unit, so they move between instances without rework." }
+      {
+        "q": "What is OTBI best for?",
+        "a": "On-screen exploration and reconciliation. You drill into balances, filter by ledger and business unit, and export to Excel. For formatted, printable statements, use the BI Publisher Report Pack, or the bundle that includes both."
+      },
+      {
+        "q": "Will these work on my instance?",
+        "a": "Yes. They are built on standard subject areas with parameters for ledger and business unit, so they move between instances without rework."
+      }
     ]
   },
   {
@@ -140,7 +92,11 @@
     "description": "Pixel-perfect BI Publisher templates for Oracle Fusion Financials across GL, AP, AR and FA: formal statements and documents, formatted and ready to run.",
     "price": "$89",
     "category": "Report Packages",
-    "tags": ["Oracle Fusion", "Reporting", "BI Publisher"],
+    "tags": [
+      "Oracle Fusion",
+      "Reporting",
+      "BI Publisher"
+    ],
     "gumroadUrl": "https://gumroad.com/l/placeholder-bip-report-pack",
     "featured": false,
     "longDescription": "A set of BI Publisher templates for the formatted, printable output finance and audit teams need: statements, ageing documents and account analyses, laid out cleanly and ready to run. BI Publisher is the tool for pixel-perfect output, where OTBI is for on-screen exploration. Built with portable data models and parameters so they move between instances. If you also want to explore and reconcile on screen, pair this with the OTBI Analytics Pack.",
@@ -152,8 +108,45 @@
       "Data model and parameter setup notes for portability across instances"
     ],
     "faqs": [
-      { "q": "What is BI Publisher best for?", "a": "Pixel-perfect, printable output: formal statements and documents you can hand to auditors or leadership. For on-screen exploration and reconciliation, use the OTBI Analytics Pack, or the bundle that includes both." },
-      { "q": "Will these work on my instance?", "a": "Yes. They are built with standard data models and parameters for ledger and business unit, so they are portable across instances." }
+      {
+        "q": "What is BI Publisher best for?",
+        "a": "Pixel-perfect, printable output: formal statements and documents you can hand to auditors or leadership. For on-screen exploration and reconciliation, use the OTBI Analytics Pack, or the bundle that includes both."
+      },
+      {
+        "q": "Will these work on my instance?",
+        "a": "Yes. They are built with standard data models and parameters for ledger and business unit, so they are portable across instances."
+      }
+    ]
+  },
+  {
+    "id": "oracle-fusion-reporting-bundle",
+    "title": "Oracle Fusion Reporting Bundle (OTBI + BI Publisher)",
+    "description": "Both reporting packs together at a saving: interactive OTBI analyses and pixel-perfect BI Publisher templates across GL, AP, AR and FA.",
+    "price": "$129",
+    "category": "Report Packages",
+    "tags": [
+      "Oracle Fusion",
+      "Reporting",
+      "Bundle"
+    ],
+    "gumroadUrl": "https://gumroad.com/l/placeholder-reporting-bundle",
+    "featured": true,
+    "longDescription": "The OTBI Analytics Pack and the BI Publisher Report Pack together, at a meaningful saving over buying them separately. OTBI for exploring and reconciling on screen, BI Publisher for formatted, printable statements, across the same four areas (GL, AP, AR and FA), all built on portable parameters. The complete reporting baseline for Oracle Fusion Financials.",
+    "whatsInside": [
+      "Everything in the OTBI Analytics Pack: GL, AP, AR and FA analyses",
+      "Everything in the BI Publisher Report Pack: formatted statements and documents",
+      "Guidance on when to use OTBI versus BI Publisher",
+      "Parameter setup notes for portability across instances"
+    ],
+    "faqs": [
+      {
+        "q": "Is it cheaper than buying both separately?",
+        "a": "Yes. The bundle is priced below the total of the OTBI Analytics Pack and the BI Publisher Report Pack bought on their own."
+      },
+      {
+        "q": "Who is this for?",
+        "a": "Consultants, report developers and finance teams who want a complete Oracle Fusion reporting baseline: exploration in OTBI and formal output in BI Publisher, without building either from scratch."
+      }
     ]
   },
   {
@@ -162,7 +155,9 @@
     "description": "Every document you need to run a clean ERP implementation: BRD, fit-gap analysis, test scripts (SIT/UAT), cutover plan, and a go-live runbook.",
     "price": "$119",
     "category": "Document Packs",
-    "tags": ["ERP"],
+    "tags": [
+      "ERP"
+    ],
     "gumroadUrl": "https://gumroad.com/l/placeholder-erp-docs",
     "featured": false
   },
@@ -172,52 +167,11 @@
     "description": "A hands-on video course covering the Oracle Fusion Financials modules consultants actually get asked about, with real-world configuration walkthroughs.",
     "price": "$249",
     "category": "Courses",
-    "tags": ["Oracle Fusion", "Course"],
+    "tags": [
+      "Oracle Fusion",
+      "Course"
+    ],
     "gumroadUrl": "https://gumroad.com/l/placeholder-fusion-course",
     "featured": false
-  },
-  {
-    "id": "excel-finance-template-bundle",
-    "title": "Excel Finance Template Bundle",
-    "description": "All five Excel finance templates in one bundle at a saving: the dashboard kit, 3-statement model, 13-week cash flow, budgeting pack and reconciliation pack.",
-    "price": "$129",
-    "category": "Templates",
-    "tags": ["Excel", "Bundle"],
-    "gumroadUrl": "https://gumroad.com/l/placeholder-excel-bundle",
-    "featured": true,
-    "longDescription": "All five of the ERP Finance Pro Excel templates in a single bundle, at a meaningful saving over buying them one by one. The fastest way to equip a finance team with a consistent, reusable toolkit. The Oracle Fusion Period Close Accelerator is a separate, Oracle specific product and is not part of this Excel bundle.",
-    "whatsInside": [
-      "Excel Finance Dashboard Kit",
-      "3-Statement Financial Model",
-      "13-Week Cash Flow Model",
-      "Budgeting & Forecasting Template Pack",
-      "Reconciliation Templates Pack",
-      "Free updates as new Excel templates are added"
-    ],
-    "faqs": [
-      { "q": "Do I get future templates?", "a": "Yes. New Excel templates added to the bundle are included at no extra cost." },
-      { "q": "Is it cheaper than buying separately?", "a": "Yes, the bundle is priced well below the total of the individual templates." }
-    ]
-  },
-  {
-    "id": "oracle-fusion-reporting-bundle",
-    "title": "Oracle Fusion Reporting Bundle (OTBI + BI Publisher)",
-    "description": "Both reporting packs together at a saving: interactive OTBI analyses and pixel-perfect BI Publisher templates across GL, AP, AR and FA.",
-    "price": "$129",
-    "category": "Report Packages",
-    "tags": ["Oracle Fusion", "Reporting", "Bundle"],
-    "gumroadUrl": "https://gumroad.com/l/placeholder-reporting-bundle",
-    "featured": false,
-    "longDescription": "The OTBI Analytics Pack and the BI Publisher Report Pack together, at a meaningful saving over buying them separately. OTBI for exploring and reconciling on screen, BI Publisher for formatted, printable statements, across the same four areas (GL, AP, AR and FA), all built on portable parameters. The complete reporting baseline for Oracle Fusion Financials.",
-    "whatsInside": [
-      "Everything in the OTBI Analytics Pack: GL, AP, AR and FA analyses",
-      "Everything in the BI Publisher Report Pack: formatted statements and documents",
-      "Guidance on when to use OTBI versus BI Publisher",
-      "Parameter setup notes for portability across instances"
-    ],
-    "faqs": [
-      { "q": "Is it cheaper than buying both separately?", "a": "Yes. The bundle is priced below the total of the OTBI Analytics Pack and the BI Publisher Report Pack bought on their own." },
-      { "q": "Who is this for?", "a": "Consultants, report developers and finance teams who want a complete Oracle Fusion reporting baseline: exploration in OTBI and formal output in BI Publisher, without building either from scratch." }
-    ]
   }
 ]
