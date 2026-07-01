@@ -24,7 +24,9 @@ Last refreshed: 2026-06-30 (Period Close Accelerator is live and selling).
   ERP Implementation Document Pack (only in an Oracle Fusion specific form), and
   the Oracle Fusion Financials course (highest effort, build later once there is
   an audience). The Period Close Accelerator is the one real, selling product.
-- [ ] Real YouTube channel handle + video IDs (the Watch page is stubbed).
+- [ ] Real YouTube channel handle + video IDs. The Watch page is built but
+  hidden (removed from the footer and sitemap) until a channel exists; send the
+  handle and real video IDs and Claude switches it back on in minutes.
 - [ ] Custom domain (only if you want one; the github.io URL works).
 
 ---
