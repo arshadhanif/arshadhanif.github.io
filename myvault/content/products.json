@@ -113,25 +113,47 @@
     "featured": false
   },
   {
-    "id": "oracle-fusion-reporting-toolkit",
-    "title": "Oracle Fusion Reporting Toolkit",
-    "description": "A complete set of OTBI and BI Publisher report templates for Oracle Fusion Financials, covering GL, AP, AR and FA. Plug in and go.",
-    "price": "$79",
+    "id": "oracle-fusion-otbi-analytics-pack",
+    "title": "OTBI Analytics Pack for Oracle Fusion",
+    "description": "Interactive OTBI analyses for Oracle Fusion Financials across GL, AP, AR and FA, built for exploring and reconciling on screen. Portable parameters, ready to run.",
+    "price": "$69",
     "category": "Report Packages",
-    "tags": ["Oracle Fusion", "Reporting"],
-    "gumroadUrl": "https://gumroad.com/l/placeholder-fusion-reporting",
-    "featured": true,
-    "longDescription": "A complete set of OTBI and BI Publisher report templates for Oracle Fusion Financials, covering the reports finance teams ask for most across GL, AP, AR and FA. Import them, point them at your ledger and business unit, and you have working reports on day one.",
+    "tags": ["Oracle Fusion", "Reporting", "OTBI"],
+    "gumroadUrl": "https://gumroad.com/l/placeholder-otbi-analytics",
+    "featured": false,
+    "longDescription": "A set of ready-built OTBI analyses for the reports finance teams pull most across GL, AP, AR and FA. OTBI is the tool for exploring and reconciling on screen: drill into balances, filter by ledger and business unit, and export to Excel. Built on standard subject areas with parameters for ledger and business unit, so they move between instances without rework. If you need formatted, printable statements, pair this with the BI Publisher Report Pack.",
     "whatsInside": [
       "GL trial balance and account analysis (OTBI)",
-      "AP invoice and ageing reports",
-      "AR transaction and ageing reports",
-      "Fixed Assets cost and depreciation reports",
-      "Parameter setup notes so the reports are portable across instances"
+      "AP invoice and ageing analyses",
+      "AR transaction and ageing analyses",
+      "Fixed Assets cost and depreciation analyses",
+      "Parameter setup notes so the analyses are portable across instances"
     ],
     "faqs": [
-      { "q": "Will these work on my instance?", "a": "Yes. They are built on standard subject areas and data models, with parameters for ledger and business unit so they move between instances without rework." },
-      { "q": "Do I need technical skills to use them?", "a": "Basic OTBI and BI Publisher familiarity helps, but the setup notes walk through importing and pointing each report at your data." }
+      { "q": "What is OTBI best for?", "a": "On-screen exploration and reconciliation. You drill into balances, filter by ledger and business unit, and export to Excel. For formatted, printable statements, use the BI Publisher Report Pack, or the bundle that includes both." },
+      { "q": "Will these work on my instance?", "a": "Yes. They are built on standard subject areas with parameters for ledger and business unit, so they move between instances without rework." }
+    ]
+  },
+  {
+    "id": "oracle-fusion-bip-report-pack",
+    "title": "BI Publisher Report Pack for Oracle Fusion",
+    "description": "Pixel-perfect BI Publisher templates for Oracle Fusion Financials across GL, AP, AR and FA: formal statements and documents, formatted and ready to run.",
+    "price": "$89",
+    "category": "Report Packages",
+    "tags": ["Oracle Fusion", "Reporting", "BI Publisher"],
+    "gumroadUrl": "https://gumroad.com/l/placeholder-bip-report-pack",
+    "featured": false,
+    "longDescription": "A set of BI Publisher templates for the formatted, printable output finance and audit teams need: statements, ageing documents and account analyses, laid out cleanly and ready to run. BI Publisher is the tool for pixel-perfect output, where OTBI is for on-screen exploration. Built with portable data models and parameters so they move between instances. If you also want to explore and reconcile on screen, pair this with the OTBI Analytics Pack.",
+    "whatsInside": [
+      "GL account analysis and trial balance templates",
+      "AP invoice and ageing report templates",
+      "AR transaction and ageing report templates",
+      "Fixed Assets cost and depreciation templates",
+      "Data model and parameter setup notes for portability across instances"
+    ],
+    "faqs": [
+      { "q": "What is BI Publisher best for?", "a": "Pixel-perfect, printable output: formal statements and documents you can hand to auditors or leadership. For on-screen exploration and reconciliation, use the OTBI Analytics Pack, or the bundle that includes both." },
+      { "q": "Will these work on my instance?", "a": "Yes. They are built with standard data models and parameters for ledger and business unit, so they are portable across instances." }
     ]
   },
   {
@@ -179,23 +201,24 @@
     ]
   },
   {
-    "id": "otbi-bip-report-pack-bundle",
-    "title": "OTBI + BI Publisher Report Pack",
-    "description": "The combined Oracle Fusion reporting bundle: OTBI analyses and BI Publisher templates across GL, AP, AR and FA, with portable parameters.",
-    "price": "$149",
+    "id": "oracle-fusion-reporting-bundle",
+    "title": "Oracle Fusion Reporting Bundle (OTBI + BI Publisher)",
+    "description": "Both reporting packs together at a saving: interactive OTBI analyses and pixel-perfect BI Publisher templates across GL, AP, AR and FA.",
+    "price": "$129",
     "category": "Report Packages",
     "tags": ["Oracle Fusion", "Reporting", "Bundle"],
-    "gumroadUrl": "https://gumroad.com/l/placeholder-otbi-bip-bundle",
+    "gumroadUrl": "https://gumroad.com/l/placeholder-reporting-bundle",
     "featured": false,
-    "longDescription": "Both the OTBI and BI Publisher report sets for Oracle Fusion Financials in one bundle. Exploration in OTBI, pixel-perfect output in BIP, all built on portable parameters so they move between instances cleanly.",
+    "longDescription": "The OTBI Analytics Pack and the BI Publisher Report Pack together, at a meaningful saving over buying them separately. OTBI for exploring and reconciling on screen, BI Publisher for formatted, printable statements, across the same four areas (GL, AP, AR and FA), all built on portable parameters. The complete reporting baseline for Oracle Fusion Financials.",
     "whatsInside": [
-      "OTBI analyses for GL, AP, AR and FA",
-      "BI Publisher templates for formal statements and documents",
-      "Parameter setup notes for portability across instances",
-      "Guidance on when to use OTBI vs BI Publisher"
+      "Everything in the OTBI Analytics Pack: GL, AP, AR and FA analyses",
+      "Everything in the BI Publisher Report Pack: formatted statements and documents",
+      "Guidance on when to use OTBI versus BI Publisher",
+      "Parameter setup notes for portability across instances"
     ],
     "faqs": [
-      { "q": "Who is this for?", "a": "Functional consultants, report developers and finance teams who want a working reporting baseline on Oracle Fusion without building from scratch." }
+      { "q": "Is it cheaper than buying both separately?", "a": "Yes. The bundle is priced below the total of the OTBI Analytics Pack and the BI Publisher Report Pack bought on their own." },
+      { "q": "Who is this for?", "a": "Consultants, report developers and finance teams who want a complete Oracle Fusion reporting baseline: exploration in OTBI and formal output in BI Publisher, without building either from scratch." }
     ]
   }
 ]
