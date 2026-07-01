@@ -31,6 +31,13 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  // Under construction: keep the whole /myvault subsite out of search results
+  // for now. Delete this robots block (or set index/follow to true) when the
+  // site is ready for SEO. The portfolio at the domain root is unaffected.
+  robots: {
+    index: false,
+    follow: false,
+  },
   title: {
     default: `${SITE_NAME}: ${SITE_TAGLINE}`,
     template: `%s · ${SITE_NAME}`,

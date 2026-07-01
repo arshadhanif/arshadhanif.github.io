@@ -7,6 +7,23 @@ Last refreshed: 2026-06-30 (Period Close Accelerator is live and selling).
 
 ---
 
+## NOTE: SEO is intentionally on hold (site is under construction)
+
+Arshad does not want the site showing up in search yet: it is still being built
+out and does not have enough content. So the whole `/myvault` subsite is set to
+**noindex, nofollow** (in `app/layout.tsx` metadata), which keeps every page out
+of Google and Bing even if they crawl it. The portfolio at the domain root is
+not affected.
+
+Do NOT submit the site to Google Search Console or chase rankings for now.
+
+**When ready to do SEO later:** delete the `robots` block in `app/layout.tsx`
+(or set `index: true, follow: true`), then submit the sitemap in Google Search
+Console and request indexing on the key pages. Everything else (sitemap,
+robots.txt, titles, structured data) is already in place for that day.
+
+---
+
 ## 1. Analytics (one value, 2 minutes)
 
 - [ ] Create a free Google Analytics 4 property and send Claude the **Measurement
