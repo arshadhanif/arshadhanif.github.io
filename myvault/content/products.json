@@ -83,19 +83,19 @@
     "featured": false
   },
   {
-    "id": "excel-reconciliation-bundle",
-    "title": "Reconciliation Templates Bundle",
+    "id": "excel-reconciliation-pack",
+    "title": "Reconciliation Templates Pack",
     "description": "Bank, intercompany, AP and AR reconciliation templates in Excel, designed to make month-end tie-outs fast and auditable.",
     "price": "$25",
     "category": "Templates",
     "tags": ["Excel", "Finance"],
-    "gumroadUrl": "https://gumroad.com/l/placeholder-reconciliation-bundle",
+    "gumroadUrl": "https://gumroad.com/l/placeholder-reconciliation-pack",
     "featured": false
   },
   {
     "id": "excel-for-finance-course",
     "title": "Excel for Finance: From Basics to Dashboards",
-    "description": "A practical video course that takes you from core formulas to clean, automated finance dashboards, using real finance examples throughout.",
+    "description": "The complete video course: start with the essentials and finish building clean, automated finance dashboards, using real finance examples throughout. If you only want a deep dive on formulas, see the Formulas Masterclass.",
     "price": "$149",
     "category": "Courses",
     "tags": ["Excel", "Course"],
@@ -105,7 +105,7 @@
   {
     "id": "excel-formulas-masterclass",
     "title": "Excel Formulas Masterclass for Finance",
-    "description": "Master the formulas that matter in finance: XLOOKUP, SUMIFS, INDEX/MATCH, dynamic arrays and LET, taught with hands-on workbooks.",
+    "description": "A focused deep dive on formulas only, for people who already know their way around Excel: XLOOKUP, SUMIFS, INDEX/MATCH, dynamic arrays and LET, taught with hands-on workbooks. For the full beginner-to-dashboards journey, see Excel for Finance.",
     "price": "$99",
     "category": "Courses",
     "tags": ["Excel", "Course"],
@@ -179,21 +179,20 @@
   {
     "id": "excel-finance-template-bundle",
     "title": "Excel Finance Template Bundle",
-    "description": "Every Excel finance template in one bundle at a lower price: dashboards, the 3-statement model, 13-week cash flow, budgeting pack, reconciliations and the close tracker.",
+    "description": "All five Excel finance templates in one bundle at a saving: the dashboard kit, 3-statement model, 13-week cash flow, budgeting pack and reconciliation pack.",
     "price": "$129",
     "category": "Templates",
     "tags": ["Excel", "Bundle"],
     "gumroadUrl": "https://gumroad.com/l/placeholder-excel-bundle",
     "featured": true,
-    "longDescription": "All of the ERP Finance Pro Excel templates in a single bundle, at a meaningful saving over buying them one by one. The fastest way to equip a finance team with a consistent, reusable toolkit.",
+    "longDescription": "All five of the ERP Finance Pro Excel templates in a single bundle, at a meaningful saving over buying them one by one. The fastest way to equip a finance team with a consistent, reusable toolkit. The Oracle Fusion Period Close Accelerator is a separate, Oracle specific product and is not part of this Excel bundle.",
     "whatsInside": [
       "Excel Finance Dashboard Kit",
       "3-Statement Financial Model",
       "13-Week Cash Flow Model",
       "Budgeting & Forecasting Template Pack",
-      "Reconciliation Templates Bundle",
-      "Month-End Close Checklist & Tracker",
-      "Free updates as new templates are added"
+      "Reconciliation Templates Pack",
+      "Free updates as new Excel templates are added"
     ],
     "faqs": [
       { "q": "Do I get future templates?", "a": "Yes. New Excel templates added to the bundle are included at no extra cost." },
