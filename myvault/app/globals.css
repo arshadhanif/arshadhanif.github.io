@@ -186,6 +186,12 @@
     @apply border border-border/80 bg-surface/70 backdrop-blur-xl;
   }
 
+  /* Editorial print shadow: a solid accent offset behind a panel, like a
+     screen-printed plate. Pairs with a bordered, surface-coloured child. */
+  .print-shadow {
+    box-shadow: 12px 12px 0 0 rgb(var(--accent) / 0.9);
+  }
+
   /*
    * Card with a subtle gradient hairline border. The gradient sits on the
    * outer element; an inset background mask leaves only a 1px rim showing.

@@ -45,7 +45,15 @@ export default function Reveal({
       { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
     );
     io.observe(el);
-    return () => io.disconnect();
+
+    // Safety net: never leave content invisible if the observer misfires
+    // (prerender snapshots, unusual embedded browsers, missed intersections).
+    const fallback = window.setTimeout(() => setShown(true), 2500);
+
+    return () => {
+      io.disconnect();
+      window.clearTimeout(fallback);
+    };
   }, []);
 
   return (
