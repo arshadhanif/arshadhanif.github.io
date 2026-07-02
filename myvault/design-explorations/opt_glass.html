@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ERP Finance Pro: The field manual for finance and ERP</title>
+<style>
+  :root{
+    --ink:#16161d; --muted:#5f606e; --faint:#9a9aa6;
+    --indigo:#5b5bd6; --teal:#14b8a6; --amber:#f59e0b;
+    --bg:#fbfbfd; --line:rgba(22,22,29,.08);
+    --glass:rgba(255,255,255,.6); --glass-br:rgba(255,255,255,.75);
+    --shadow:0 25px 80px -20px rgba(91,91,214,.25);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    letter-spacing:-.01em;-webkit-font-smoothing:antialiased;width:1440px;margin:0 auto}
+  a{text-decoration:none;color:inherit}
+  .wrap{width:1160px;margin:0 auto}
+  .grad-text{background:linear-gradient(100deg,var(--indigo),var(--teal) 60%,var(--amber));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .pill{display:inline-block;border-radius:999px;font-weight:700;font-size:15px;
+    padding:14px 30px;letter-spacing:-.01em}
+  .pill-grad{background:linear-gradient(120deg,var(--indigo),#7c6cf0 45%,var(--teal));color:#fff;
+    box-shadow:0 12px 32px -8px rgba(91,91,214,.5)}
+  .pill-ghost{background:var(--glass);border:1px solid var(--line);color:var(--ink);
+    backdrop-filter:blur(20px)}
+  .kicker{font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--indigo)}
+  h2{font-size:40px;font-weight:800;letter-spacing:-.03em;margin:12px 0 10px}
+  .sub{color:var(--muted);font-size:17px;line-height:1.6}
+
+  /* NAV */
+  nav{position:sticky;top:18px;z-index:9;width:1160px;margin:18px auto 0;
+    display:flex;align-items:center;justify-content:space-between;padding:14px 26px;
+    background:var(--glass);backdrop-filter:blur(20px);border:1px solid var(--glass-br);
+    border-radius:24px;box-shadow:0 12px 40px -16px rgba(22,22,29,.18)}
+  .logo{font-weight:800;font-size:18px;letter-spacing:-.02em}
+  .logo .dot{display:inline-block;width:11px;height:11px;border-radius:4px;margin-right:9px;
+    background:linear-gradient(135deg,var(--indigo),var(--teal))}
+  nav ul{display:flex;gap:30px;list-style:none;font-size:15px;font-weight:600;color:var(--muted)}
+  nav ul a:hover{color:var(--ink)}
+  nav .pill{padding:10px 22px;font-size:14px}
+
+  /* HERO */
+  header{position:relative;overflow:hidden;padding:96px 0 120px}
+  .aurora{position:absolute;inset:-200px -100px;filter:blur(80px);pointer-events:none;
+    background:
+      radial-gradient(600px 420px at 22% 30%,rgba(91,91,214,.22),transparent 70%),
+      radial-gradient(560px 420px at 72% 22%,rgba(20,184,166,.18),transparent 70%),
+      radial-gradient(520px 400px at 55% 78%,rgba(245,158,11,.14),transparent 70%)}
+  .hero{position:relative;display:flex;align-items:center;gap:70px}
+  .hero-copy{flex:1}
+  .hero-copy .kicker{color:var(--muted)}
+  h1{font-size:70px;font-weight:800;letter-spacing:-.045em;line-height:1.03;margin:20px 0 24px}
+  .hero-copy p{font-size:19px;line-height:1.65;color:var(--muted);max-width:480px;margin-bottom:36px}
+  .cta-row{display:flex;gap:16px;align-items:center}
+
+  /* Tracker panel */
+  .tracker-zone{flex:1;position:relative}
+  .tracker{position:relative;background:var(--glass);backdrop-filter:blur(20px);
+    border:1px solid var(--glass-br);border-radius:28px;box-shadow:var(--shadow);
+    padding:26px 28px;transform:rotate(-1.2deg)}
+  .tracker-head{display:flex;align-items:center;gap:10px;padding-bottom:16px;
+    border-bottom:1px solid var(--line)}
+  .tl{width:10px;height:10px;border-radius:50%}
+  .tracker-head .name{margin-left:8px;font-size:13px;font-weight:700;color:var(--muted);
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:0}
+  .kpis{display:flex;gap:14px;margin:18px 0}
+  .kpi{flex:1;background:rgba(255,255,255,.7);border:1px solid var(--line);
+    border-radius:20px;padding:16px 18px}
+  .kpi .lab{font-size:10px;font-weight:800;letter-spacing:.16em;color:var(--faint)}
+  .kpi .val{font-size:26px;font-weight:800;letter-spacing:-.03em;margin-top:4px}
+  .kpi:nth-child(2) .val{color:var(--teal)}
+  .row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--line);
+    font-size:14px;font-weight:600}
+  .row .mod{flex:1}
+  .bar{width:150px;height:7px;border-radius:99px;background:rgba(22,22,29,.07);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--indigo),var(--teal))}
+  .tag{font-size:10px;font-weight:800;letter-spacing:.08em;padding:4px 10px;border-radius:99px}
+  .tag.ok{background:rgba(20,184,166,.14);color:#0b8578}
+  .tag.warn{background:rgba(245,158,11,.16);color:#a96a04}
+  .tag.na{background:rgba(22,22,29,.06);color:var(--faint)}
+  .tracker-foot{display:flex;justify-content:space-between;align-items:center;padding-top:16px;
+    font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--faint)}
+  .closed{background:linear-gradient(120deg,var(--indigo),var(--teal));color:#fff;
+    padding:6px 14px;border-radius:99px;font-size:11px;letter-spacing:.1em}
+  .chip{position:absolute;background:var(--glass);backdrop-filter:blur(20px);
+    border:1px solid var(--glass-br);border-radius:18px;padding:12px 18px;
+    font-size:13px;font-weight:700;box-shadow:0 18px 50px -18px rgba(20,184,166,.35)}
+  .chip.a{top:-22px;right:-14px;transform:rotate(2deg)}
+  .chip.b{bottom:-20px;left:-18px;transform:rotate(-2deg);
+    box-shadow:0 18px 50px -18px rgba(245,158,11,.4)}
+  .chip b{color:var(--teal)}
+
+  /* FEATURED */
+  .featured-band{background:linear-gradient(180deg,#fff,#f6f6fc);padding:100px 0;
+    border-top:1px solid var(--line)}
+  .feature-card{display:flex;gap:60px;align-items:center;background:var(--glass);
+    backdrop-filter:blur(20px);border:1px solid var(--glass-br);border-radius:28px;
+    box-shadow:var(--shadow);padding:56px 60px;margin-top:44px}
+  .badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.14em;
+    padding:7px 14px;border-radius:99px;background:rgba(20,184,166,.14);color:#0b8578}
+  .feature-card h3{font-size:32px;font-weight:800;letter-spacing:-.03em;margin:16px 0 12px}
+  .price{font-size:44px;font-weight:800;letter-spacing:-.04em}
+  .price small{font-size:15px;font-weight:600;color:var(--faint)}
+  .stats{display:flex;gap:14px;margin:26px 0 30px}
+  .stat{background:rgba(255,255,255,.75);border:1px solid var(--line);border-radius:20px;
+    padding:16px 22px;text-align:center;min-width:120px}
+  .stat b{display:block;font-size:22px;letter-spacing:-.02em}
+  .stat span{font-size:12px;color:var(--muted);font-weight:600}
+  .soon-grid{display:flex;gap:24px;margin-top:28px}
+  .soon{flex:1;background:rgba(255,255,255,.55);backdrop-filter:blur(20px);
+    border:1px solid var(--glass-br);border-radius:24px;padding:32px 34px;
+    box-shadow:0 18px 60px -24px rgba(22,22,29,.15)}
+  .soon .badge{background:rgba(245,158,11,.16);color:#a96a04}
+  .soon h4{font-size:20px;font-weight:800;letter-spacing:-.02em;margin:14px 0 6px}
+  .soon .p{font-size:26px;font-weight:800;letter-spacing:-.03em}
+
+  /* SECTIONS INDEX */
+  .index-band{padding:100px 0;background:#fff;border-top:1px solid var(--line)}
+  .index-grid{display:flex;gap:24px;margin-top:44px}
+  .idx{flex:1;border:1px solid var(--line);border-radius:26px;padding:36px 34px;
+    background:linear-gradient(180deg,#fff,#fafaff);transition:none}
+  .idx .num{font-size:13px;font-weight:800;letter-spacing:.14em;color:var(--indigo)}
+  .idx:nth-child(2) .num{color:var(--teal)}
+  .idx:nth-child(3) .num{color:var(--amber)}
+  .idx h4{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:14px 0 8px}
+  .idx p{color:var(--muted);font-size:15px;line-height:1.55}
+  .idx .metric{display:inline-block;margin-top:20px;font-size:13px;font-weight:700;
+    padding:8px 16px;border-radius:99px;background:rgba(91,91,214,.08);color:var(--indigo)}
+  .idx:nth-child(2) .metric{background:rgba(20,184,166,.1);color:#0b8578}
+  .idx:nth-child(3) .metric{background:rgba(245,158,11,.12);color:#a96a04}
+
+  /* ARTICLES */
+  .articles-band{padding:100px 0;background:linear-gradient(180deg,#f6f6fc,#fff)}
+  .article-list{margin-top:40px;background:var(--glass);backdrop-filter:blur(20px);
+    border:1px solid var(--glass-br);border-radius:26px;overflow:hidden;
+    box-shadow:0 18px 60px -28px rgba(91,91,214,.2)}
+  .article{display:flex;align-items:center;gap:24px;padding:26px 36px;
+    border-bottom:1px solid var(--line)}
+  .article:last-child{border-bottom:none}
+  .article .t{flex:1;font-size:18px;font-weight:700;letter-spacing:-.015em}
+  .article .min{font-size:13px;font-weight:700;color:var(--faint)}
+  .article .arrow{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;
+    background:rgba(91,91,214,.08);color:var(--indigo);font-weight:800}
+
+  /* NEWSLETTER */
+  .news-band{padding:100px 0;position:relative;overflow:hidden}
+  .news-card{position:relative;background:var(--glass);backdrop-filter:blur(20px);
+    border:1px solid var(--glass-br);border-radius:28px;box-shadow:var(--shadow);
+    padding:70px;text-align:center;overflow:hidden}
+  .news-card .aurora{inset:-140px;opacity:.8}
+  .news-inner{position:relative}
+  .field{display:inline-flex;margin-top:34px;background:#fff;border:1px solid var(--line);
+    border-radius:999px;padding:6px 6px 6px 26px;align-items:center;gap:18px;
+    box-shadow:0 12px 40px -16px rgba(22,22,29,.15)}
+  .field span{color:var(--faint);font-size:15px;min-width:260px;text-align:left}
+
+  /* FOOTER */
+  footer{border-top:1px solid var(--line);padding:70px 0 40px;background:#fff}
+  .foot-grid{display:flex;gap:80px}
+  .foot-brand{flex:1.4}
+  .foot-brand p{color:var(--muted);font-size:14px;line-height:1.6;margin-top:14px;max-width:300px}
+  .fcol h5{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--faint);margin-bottom:18px}
+  .fcol a{display:block;font-size:15px;color:var(--muted);font-weight:600;margin-bottom:12px}
+  .fcol a:hover{color:var(--ink)}
+  .copy{margin-top:56px;padding-top:24px;border-top:1px solid var(--line);
+    font-size:13px;color:var(--faint);display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="#"><span class="dot"></span>ERP Finance Pro</a>
+  <ul>
+    <li><a href="#">Articles</a></li><li><a href="#">Store</a></li>
+    <li><a href="#">Excel</a></li><li><a href="#">Resources</a></li>
+    <li><a href="#">Services</a></li><li><a href="#">About</a></li>
+  </ul>
+  <a class="pill pill-grad" href="#">Subscribe</a>
+</nav>
+
+<header>
+  <div class="aurora"></div>
+  <div class="wrap hero">
+    <div class="hero-copy">
+      <span class="kicker">The field manual for finance and ERP</span>
+      <h1>Report cleaner.<br><span class="grad-text">Close faster.</span></h1>
+      <p>Templates, report packs and tools that help finance and ERP teams stop rebuilding the same work. Drawn from real Oracle Fusion delivery, not theory.</p>
+      <div class="cta-row">
+        <a class="pill pill-grad" href="#">Browse the store</a>
+        <a class="pill pill-ghost" href="#">Start here</a>
+      </div>
+    </div>
+    <div class="tracker-zone">
+      <div class="chip a">Typical close: <b>3 days</b></div>
+      <div class="tracker">
+        <div class="tracker-head">
+          <span class="tl" style="background:#ff5f57"></span>
+          <span class="tl" style="background:#febc2e"></span>
+          <span class="tl" style="background:#28c840"></span>
+          <span class="name">master-close-tracker.xlsx</span>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="lab">MODULES</div><div class="val">12</div></div>
+          <div class="kpi"><div class="lab">COMPLETE</div><div class="val">100%</div></div>
+          <div class="kpi"><div class="lab">CLOSE</div><div class="val">3.0d</div></div>
+        </div>
+        <div class="row"><span class="mod">General Ledger</span><span class="bar"><i style="width:100%"></i></span><span class="tag ok">COMPLETE</span></div>
+        <div class="row"><span class="mod">Payables</span><span class="bar"><i style="width:100%"></i></span><span class="tag ok">COMPLETE</span></div>
+        <div class="row"><span class="mod">Receivables</span><span class="bar"><i style="width:92%"></i></span><span class="tag warn">92%</span></div>
+        <div class="row" style="border-bottom:none"><span class="mod">Lease Accounting</span><span class="bar"><i style="width:0"></i></span><span class="tag na">OUT OF SCOPE</span></div>
+        <div class="tracker-foot">
+          <span>12/12 MODULES IN SCOPE</span>
+          <span class="closed">CLOSED</span>
+        </div>
+      </div>
+      <div class="chip b">100+ reports mapped</div>
+    </div>
+  </div>
+</header>
+
+<section class="featured-band">
+  <div class="wrap">
+    <span class="kicker">Featured product</span>
+    <h2>Built from real close cycles, <span class="grad-text">ready on day one</span></h2>
+    <div class="feature-card">
+      <div style="flex:1.3">
+        <span class="badge">AVAILABLE NOW</span>
+        <h3>Oracle Fusion Cloud Period Close Accelerator</h3>
+        <p class="sub">Every task, dependency and report you need for a controlled month-end close in Oracle Fusion Cloud, sequenced and ready to run.</p>
+        <div class="stats">
+          <div class="stat"><b>100+</b><span>tasks</span></div>
+          <div class="stat"><b>12</b><span>modules</span></div>
+          <div class="stat"><b>100+</b><span>reports</span></div>
+        </div>
+        <div class="cta-row">
+          <a class="pill pill-grad" href="#">Get it for $39</a>
+          <a class="pill pill-ghost" href="#">See what's inside</a>
+        </div>
+      </div>
+      <div style="text-align:center">
+        <div class="price"><small>one-time</small><br>$39</div>
+      </div>
+    </div>
+    <div class="soon-grid">
+      <div class="soon">
+        <span class="badge">COMING SOON</span>
+        <h4>OTBI Analytics Pack for Oracle Fusion</h4>
+        <p class="sub">Prebuilt analyses and dashboards mapped to the subject areas finance actually uses.</p>
+        <p class="p" style="margin-top:16px">$69</p>
+      </div>
+      <div class="soon">
+        <span class="badge">COMING SOON</span>
+        <h4>Oracle Fusion Reporting Bundle (OTBI + BI Publisher)</h4>
+        <p class="sub">The full reporting toolkit: OTBI analytics plus pixel-perfect BI Publisher templates.</p>
+        <p class="p" style="margin-top:16px">$129</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="index-band">
+  <div class="wrap">
+    <span class="kicker">Start anywhere</span>
+    <h2>Three tracks, one goal: <span class="grad-text">a cleaner close</span></h2>
+    <div class="index-grid">
+      <div class="idx">
+        <span class="num">01</span>
+        <h4>Oracle Fusion reporting</h4>
+        <p>Know which report answers which question, across OTBI, BI Publisher and Smart View.</p>
+        <span class="metric">100+ reports mapped</span>
+      </div>
+      <div class="idx">
+        <span class="num">02</span>
+        <h4>Excel for finance</h4>
+        <p>Practical workbooks and utilities that remove the manual grind from reconciliation and reporting.</p>
+        <span class="metric">5 free tools</span>
+      </div>
+      <div class="idx">
+        <span class="num">03</span>
+        <h4>Month-end close</h4>
+        <p>Sequenced checklists and trackers that turn a chaotic close into a repeatable routine.</p>
+        <span class="metric">3 days typical close</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="articles-band">
+  <div class="wrap">
+    <span class="kicker">From the field</span>
+    <h2>Latest articles</h2>
+    <div class="article-list">
+      <a class="article" href="#"><span class="t">How to Run a Clean Oracle Fusion Cloud Month-End Close</span><span class="min">9 min</span><span class="arrow">&rarr;</span></a>
+      <a class="article" href="#"><span class="t">Understanding Oracle Fusion Cloud Enterprise Structure</span><span class="min">10 min</span><span class="arrow">&rarr;</span></a>
+      <a class="article" href="#"><span class="t">A Practical New Year Setup Checklist for Oracle Fusion</span><span class="min">7 min</span><span class="arrow">&rarr;</span></a>
+      <a class="article" href="#"><span class="t">Safely Inactivating Oracle Fusion Implementation User Accounts</span><span class="min">11 min</span><span class="arrow">&rarr;</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="news-band">
+  <div class="wrap">
+    <div class="news-card">
+      <div class="aurora"></div>
+      <div class="news-inner">
+        <span class="kicker">Newsletter</span>
+        <h2>Field notes, <span class="grad-text">straight to your inbox</span></h2>
+        <p class="sub" style="max-width:520px;margin:0 auto">One practical email at a time: close checklists, reporting patterns and Excel tools from live Oracle Fusion projects. No fluff, unsubscribe anytime.</p>
+        <div class="field">
+          <span>you@company.com</span>
+          <a class="pill pill-grad" href="#" style="padding:12px 26px;font-size:14px">Subscribe</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="logo" href="#"><span class="dot"></span>ERP Finance Pro</a>
+        <p>The field manual for finance and ERP. Templates, report packs and tools drawn from real Oracle Fusion delivery.</p>
+      </div>
+      <div class="fcol">
+        <h5>Explore</h5>
+        <a href="#">Articles</a><a href="#">Store</a><a href="#">Excel</a><a href="#">Services</a>
+      </div>
+      <div class="fcol">
+        <h5>Resources</h5>
+        <a href="#">Start here</a><a href="#">Oracle Fusion reporting</a><a href="#">Month-end close</a><a href="#">Free tools</a>
+      </div>
+      <div class="fcol">
+        <h5>Company</h5>
+        <a href="#">About</a><a href="#">Newsletter</a><a href="#">Contact</a>
+      </div>
+    </div>
+    <div class="copy">
+      <span>Copyright 2026 ERP Finance Pro. All rights reserved.</span>
+      <span>Made for finance and ERP teams.</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
