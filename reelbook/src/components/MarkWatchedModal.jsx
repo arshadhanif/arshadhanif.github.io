@@ -61,7 +61,7 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
         tags,
         isRewatch,
       })
-      onSaved?.()
+      onSaved?.(groupId)
       onClose()
     } catch (e) {
       setErr(e.message || 'Could not save')

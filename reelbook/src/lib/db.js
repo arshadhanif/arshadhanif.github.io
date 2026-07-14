@@ -539,6 +539,51 @@ export async function removeFromWatchlist(id) {
   if (error) throw error
 }
 
+// Copy an existing title into another group's watchlist. No-op (returns the
+// existing row id) if that group already has it, so it is safe to run in bulk.
+export async function copyWatchlistToGroup(titleId, targetGroupId, addedBy) {
+  const { data: existing } = await supabase
+    .from('watchlist')
+    .select('id')
+    .eq('title_id', titleId)
+    .eq('group_id', targetGroupId)
+    .maybeSingle()
+  if (existing) return { id: existing.id, created: false }
+  const { data, error } = await supabase
+    .from('watchlist')
+    .insert({ title_id: titleId, group_id: targetGroupId, added_by: addedBy })
+    .select('id')
+    .single()
+  if (error) throw error
+  return { id: data.id, created: true }
+}
+
+// Move a single watchlist row to another group: copy across, then drop the
+// original. If the target already has the title we still drop the original.
+export async function moveWatchlistItem(watchlistId, titleId, targetGroupId, addedBy) {
+  await copyWatchlistToGroup(titleId, targetGroupId, addedBy)
+  await removeFromWatchlist(watchlistId)
+}
+
+// Bulk copy/move a whole group's watchlist into another group. Returns a
+// breakdown so the UI can report exactly what happened.
+export async function mergeWatchlists(sourceGroupId, targetGroupId, addedBy, { move = false } = {}) {
+  if (sourceGroupId === targetGroupId) return { copied: 0, skipped: 0, removed: 0 }
+  const src = await listWatchlist(sourceGroupId)
+  let copied = 0, skipped = 0
+  for (const it of src) {
+    const tid = it.titles?.id
+    if (!tid) continue
+    const { created } = await copyWatchlistToGroup(tid, targetGroupId, addedBy)
+    created ? copied++ : skipped++
+  }
+  let removed = 0
+  if (move) {
+    for (const it of src) { await removeFromWatchlist(it.id); removed++ }
+  }
+  return { copied, skipped, removed }
+}
+
 // ---------- Friends / social ----------
 
 export async function sendFriendRequest(email) {
