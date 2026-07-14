@@ -277,7 +277,7 @@ export default function Import() {
           seenW.add(tid)
           const dates = s.watched.map((e) => e.watchedOn).filter(Boolean).sort()
           const last = dates[dates.length - 1]
-          watchRows.push({ title_id: tid, group_id: groupId, watched_on: last || null, date_precision: last ? 'day' : null, episodes_watched: s.watched.length, created_by: user.id, visibility: 'private' })
+          watchRows.push({ title_id: tid, group_id: groupId, watched_on: last || null, date_precision: last ? 'day' : null, episodes_watched: s.watched.length, created_by: user.id, visibility: 'private', is_rewatch: false, rewatch_count: 0 })
         } else if (snap.watches.has(tid)) alreadyWatches++
       }
       // Movies
@@ -302,7 +302,7 @@ export default function Import() {
           seenWl.add(tid); watchlistRows.push({ title_id: tid, group_id: groupId, added_by: user.id })
         } else {
           if (snap.watches.has(tid) || seenW.has(tid)) { alreadyWatches++; continue }
-          seenW.add(tid); watchRows.push({ title_id: tid, group_id: groupId, watched_on: null, date_precision: null, created_by: user.id, visibility: 'private' })
+          seenW.add(tid); watchRows.push({ title_id: tid, group_id: groupId, watched_on: null, date_precision: null, created_by: user.id, visibility: 'private', is_rewatch: false, rewatch_count: 0 })
         }
       }
 
@@ -358,7 +358,7 @@ export default function Import() {
             continue
           }
           const wd = normDate(m.it.date)
-          watchRows.push({ title_id: tid, group_id: groupId, watched_on: wd || null, date_precision: wd ? 'day' : null, created_by: user.id, visibility: 'private', _score: profileId ? s : null })
+          watchRows.push({ title_id: tid, group_id: groupId, watched_on: wd || null, date_precision: wd ? 'day' : null, created_by: user.id, visibility: 'private', is_rewatch: false, rewatch_count: 0, _score: profileId ? s : null })
         }
         setPlan({ batchKind: cfg.label, watchRows, ratingUpdates, counts: { newWatches: watchRows.length, alreadyWatches, ratingChanged: ratingUpdates.length, unmatched: unmatchedTitles.length }, unmatchedTitles })
       }
