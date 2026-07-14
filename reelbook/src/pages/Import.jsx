@@ -29,6 +29,14 @@ async function pool(items, fn, concurrency, onTick) {
 }
 const keyOf = (s) => `${s.media_type}-${s.tmdb_id}`
 
+// TV Time omits IMDb ids on series rows, and TMDB has no TheTVDB cross-reference
+// for some regional titles, so both auto-match paths (tvdb id, then title search)
+// miss them. Map those TheTVDB ids to a known IMDb id that TMDB *can* resolve, so
+// the show comes in with real metadata instead of being dropped as unmatched.
+const TVDB_IMDB_FIXUPS = {
+  '340760': 'tt1889883', // Khuda Aur Mohabbat (Pakistani drama, 2011)
+}
+
 // Identify which TV Time export file this is, from its header row.
 function detectTvType(headers) {
   const h = headers.map((x) => x.toLowerCase())
@@ -242,8 +250,16 @@ export default function Import() {
     const tick = () => { done++; setProgress((p) => ({ ...p, done })) }
     try {
       const snap = await getGroupImportSnapshot(groupId)
-      const epR = await pool(epSeries, async (s) => ({ s, seed: (await findByTvdbId(s.tvdb)) || (await findByTitle(s.title, null, 'tv')) }), 12, tick)
-      const wlR = await pool(wlSeries, async (r) => ({ r, seed: (await findByTvdbId(r.tvdb_id)) || (r.imdb_id ? await findByImdbId(r.imdb_id) : null) || (await findByTitle(r.title, null, 'tv')) }), 12, tick)
+      const epR = await pool(epSeries, async (s) => {
+        const fix = TVDB_IMDB_FIXUPS[String(s.tvdb)]
+        const seed = (await findByTvdbId(s.tvdb)) || (fix ? await findByImdbId(fix) : null) || (await findByTitle(s.title, null, 'tv'))
+        return { s, seed }
+      }, 12, tick)
+      const wlR = await pool(wlSeries, async (r) => {
+        const fix = TVDB_IMDB_FIXUPS[String(r.tvdb_id)]
+        const seed = (await findByTvdbId(r.tvdb_id)) || (fix ? await findByImdbId(fix) : null) || (r.imdb_id ? await findByImdbId(r.imdb_id) : null) || (await findByTitle(r.title, null, 'tv'))
+        return { r, seed }
+      }, 12, tick)
       const mvR = await pool(movieRows, async (r) => {
         let seed = r.imdb_id ? await findByImdbId(r.imdb_id) : null
         if (!seed) seed = await findByTitle(r.title, r.year, 'movie')
