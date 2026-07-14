@@ -669,34 +669,44 @@ export async function markWatched({
 
 // Diary = all watches, newest first, with title + group + ratings.
 export async function listDiary({ groupId = null, limit = 200 } = {}) {
-  let q = supabase
-    .from('watches')
-    .select(
-      'id, watched_on, date_precision, note, episodes_watched, where_watched, service, group_id, created_by, created_at, tags, is_rewatch, rewatch_count, ' +
-        'titles(*), groups(id, name, color), ratings(id, profile_id, score)'
-    )
-    .order('watched_on', { ascending: false })
-    .order('created_at', { ascending: false })
-    .limit(limit)
-  if (groupId) q = q.eq('group_id', groupId)
-  const { data, error } = await q
-  if (error) throw error
-  return data
+  const cols = 'id, watched_on, date_precision, note, episodes_watched, where_watched, service, group_id, created_by, created_at, tags, is_rewatch, rewatch_count, ' +
+    'titles(*), groups(id, name, color), ratings(id, profile_id, score)'
+  // PostgREST caps any single response at 1000 rows, so page through with
+  // .range() up to `limit`. A stable id tiebreaker is required because bulk
+  // imports share watched_on/created_at, which would otherwise let rows shift
+  // between pages (causing duplicates or gaps).
+  return pagedSelect('watches', cols, {
+    groupId, limit,
+    order: (q) => q.order('watched_on', { ascending: false }).order('created_at', { ascending: false }).order('id', { ascending: true }),
+  })
+}
+
+// Page through a table with .range() until `limit` rows (or the data) run out.
+async function pagedSelect(table, cols, { groupId = null, limit = 1000, order }) {
+  const PAGE = 1000
+  const out = []
+  for (let from = 0; from < limit; from += PAGE) {
+    const to = Math.min(from + PAGE, limit) - 1
+    let q = supabase.from(table).select(cols)
+    q = order(q)
+    q = q.range(from, to)
+    if (groupId) q = q.eq('group_id', groupId)
+    const { data, error } = await q
+    if (error) throw error
+    out.push(...(data || []))
+    if (!data || data.length < (to - from + 1)) break
+  }
+  return out
 }
 
 // Episode-level diary: individual episode watches, newest first, with title + group.
 export async function listEpisodeDiary({ groupId = null, limit = 400 } = {}) {
-  let q = supabase
-    .from('episode_watches')
-    .select('id, season_number, episode_number, watched_on, rating, rewatch_count, created_at, group_id, ' +
-      'titles(id, tmdb_id, title, media_type, poster_path, year, runtime), groups(id, name, color)')
-    .order('watched_on', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false })
-    .limit(limit)
-  if (groupId) q = q.eq('group_id', groupId)
-  const { data, error } = await q
-  if (error) throw error
-  return data || []
+  const cols = 'id, season_number, episode_number, watched_on, rating, rewatch_count, created_at, group_id, ' +
+    'titles(id, tmdb_id, title, media_type, poster_path, year, runtime), groups(id, name, color)'
+  return pagedSelect('episode_watches', cols, {
+    groupId, limit,
+    order: (q) => q.order('watched_on', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }).order('id', { ascending: true }),
+  })
 }
 
 export async function updateWatch(id, fields) {

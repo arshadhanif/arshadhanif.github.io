@@ -18,7 +18,7 @@ export default function Insights() {
   const [seasonR, setSeasonR] = useState([])
 
   useEffect(() => {
-    Promise.all([listDiary({ limit: 4000 }), listEpisodeDiary({ limit: 6000 })])
+    Promise.all([listDiary({ limit: 20000 }), listEpisodeDiary({ limit: 100000 })])
       .then(([d, e]) => { setEntries(d); setEps(e) })
       .finally(() => setLoading(false))
     listAllSeasonRatings().then(setSeasonR).catch(() => {})
@@ -38,7 +38,13 @@ export default function Insights() {
     return arr
   }, [seasonR])
 
-  const epData = useMemo(() => eps.filter((e) => !groupId || e.group_id === groupId), [eps, groupId])
+  // Episodes respond to the same group + decade filters as the rest of the page
+  // so every card refreshes together (media type is moot: episodes are all TV).
+  const epData = useMemo(() => eps.filter((e) => {
+    if (groupId && e.group_id !== groupId) return false
+    if (decade !== 'all') { const y = e.titles?.year; if (!y || Math.floor(y / 10) * 10 !== Number(decade)) return false }
+    return true
+  }), [eps, groupId, decade])
   const es = useMemo(() => computeEpisodes(epData), [epData])
 
   const decades = useMemo(() => {
