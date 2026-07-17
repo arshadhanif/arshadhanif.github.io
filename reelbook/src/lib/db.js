@@ -743,7 +743,7 @@ async function pagedSelect(table, cols, { groupId = null, limit = 1000, order })
 
 // Episode-level diary: individual episode watches, newest first, with title + group.
 export async function listEpisodeDiary({ groupId = null, limit = 400 } = {}) {
-  const cols = 'id, season_number, episode_number, watched_on, rating, rewatch_count, created_at, group_id, ' +
+  const cols = 'id, season_number, episode_number, watched_on, rating, rewatch_count, created_at, created_by, group_id, ' +
     'titles(id, tmdb_id, title, media_type, poster_path, year, runtime), groups(id, name, color)'
   return pagedSelect('episode_watches', cols, {
     groupId, limit,

@@ -5,7 +5,7 @@ import {
   createImportBatch, listImportBatches, revertImportBatch, dismissImportBatch, getGroupImportSnapshot,
   updateEpisodeRewatches, setRating, getExistingWatchKeys, restoreSeasonRatingsBulk,
 } from '../lib/db'
-import { downloadJsonBackup } from '../lib/backup'
+import { downloadJsonBackup, runCustomExport } from '../lib/backup'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/Toast'
@@ -172,6 +172,7 @@ export default function Import() {
   const [backup, setBackup] = useState(null)      // parsed ReelBook export
   const [groupMap, setGroupMap] = useState({})    // backup group name -> target group id
   const [exporting, setExporting] = useState(false)
+  const [view, setView] = useState('import')   // 'import' | 'export'
   const toast = useToast()
 
   const cfg = MODES[mode]
@@ -220,9 +221,9 @@ export default function Import() {
     setBackup(json)
     const names = new Set()
     const add = (n) => names.add(n || NOGROUP)   // rows with no group get a mappable placeholder
-    for (const d of json.diary || []) add(d.groups?.name)
-    for (const e of json.episodes || []) add(e.groups?.name)
-    for (const w of json.watchlist || []) add(w.groups?.name)
+    for (const d of json.diary || []) add(d.groups?.name ?? d.group)
+    for (const e of json.episodes || []) add(e.groups?.name ?? e.group)
+    for (const w of json.watchlist || []) add(w.groups?.name ?? w.group)
     for (const r of json.season_ratings || []) add(r.group_name)
     const map = {}
     for (const n of names) {
@@ -477,12 +478,16 @@ export default function Import() {
     setAnalyzing(true); setStatus(null)
     try {
       // Resolve every referenced title once (matched by TMDB id, no lookups).
-      const seeds = []
+      // Works for both the normalized schema (top-level `titles` + row refs) and
+      // the older embedded schema (titles(*) on every row).
+      const seeds = [...(backup.titles || [])]
       for (const d of backup.diary || []) if (d.titles?.tmdb_id) seeds.push(d.titles)
       for (const e of backup.episodes || []) if (e.titles?.tmdb_id) seeds.push(e.titles)
       for (const w of backup.watchlist || []) if (w.titles?.tmdb_id) seeds.push(w.titles)
       for (const r of backup.season_ratings || []) if (r.tmdb_id) seeds.push({ tmdb_id: r.tmdb_id, media_type: r.media_type, title: r.title })
       const map = await ensureTitlesBulk(seeds)
+      const titleKey = (row) => row.titles ? keyOf(row.titles) : (row.tmdb_id ? `${row.media_type}-${row.tmdb_id}` : null)
+      const groupNameOf = (row) => row.groups?.name ?? row.group ?? null
 
       const snaps = {}, watchKeys = {}
       for (const gid of targets) { snaps[gid] = await getGroupImportSnapshot(gid); watchKeys[gid] = await getExistingWatchKeys(gid) }
@@ -496,7 +501,7 @@ export default function Import() {
       const seenWl = {}, seenSeason = new Set()   // per-target dedup so merging two groups doesn't double-count
 
       for (const d of backup.diary || []) {
-        const tid = d.titles && map.get(keyOf(d.titles)); const gid = gidOf(d.groups?.name)
+        const tid = map.get(titleKey(d)); const gid = gidOf(groupNameOf(d))
         if (!tid || !gid) continue
         // Dedup only against what's already in the DB; do NOT collapse two
         // legitimate same-day watches from the backup into one.
@@ -513,19 +518,20 @@ export default function Import() {
         })
       }
       for (const e of backup.episodes || []) {
-        const tid = e.titles && map.get(keyOf(e.titles)); const gid = gidOf(e.groups?.name)
+        const tid = map.get(titleKey(e)); const gid = gidOf(groupNameOf(e))
         if (!tid || !gid) continue
-        if (snaps[gid].episodes.has(`${tid}-${e.season_number}-${e.episode_number}`)) { skipEp++; continue }
+        const sn = e.season ?? e.season_number, en = e.episode ?? e.episode_number
+        if (snaps[gid].episodes.has(`${tid}-${sn}-${en}`)) { skipEp++; continue }
         const mk = `${tid}|${gid}`
         if (!episodeMap.has(mk)) episodeMap.set(mk, { titleId: tid, groupId: gid, episodes: [], seen: new Set() })
         const grp = episodeMap.get(mk)
-        const ek = `${e.season_number}-${e.episode_number}`
+        const ek = `${sn}-${en}`
         if (grp.seen.has(ek)) continue   // two source groups merged into one target
         grp.seen.add(ek)
-        grp.episodes.push({ season: e.season_number, episode: e.episode_number, watchedOn: e.watched_on || null, rewatchCount: e.rewatch_count || 0, rating: e.rating ?? null })
+        grp.episodes.push({ season: sn, episode: en, watchedOn: e.watched_on || null, rewatchCount: e.rewatch_count || 0, rating: e.rating ?? null })
       }
       for (const w of backup.watchlist || []) {
-        const tid = w.titles && map.get(keyOf(w.titles)); const gid = gidOf(w.groups?.name)
+        const tid = map.get(titleKey(w)); const gid = gidOf(groupNameOf(w))
         if (!tid || !gid) continue
         if (snaps[gid].watchlist.has(tid)) { skipWl++; continue }
         const key = `${gid}|${tid}`
@@ -595,7 +601,18 @@ export default function Import() {
 
   return (
     <div className="page">
-      <h1>Import</h1>
+      <h1>Import &amp; Export</h1>
+
+      <div className="seg" style={{ marginBottom: 16 }}>
+        <button className={view === 'import' ? 'on' : ''} onClick={() => setView('import')}>⬆️ Import</button>
+        <button className={view === 'export' ? 'on' : ''} onClick={() => setView('export')}>⬇️ Export</button>
+      </div>
+
+      {view === 'export' && (
+        <ExportPanel groups={groups} myProfileId={user.id} onFullBackup={runBackupExport} exporting={exporting} />
+      )}
+
+      {view === 'import' && (<>
       <p className="sub">Bring your history in from IMDb and TV Time. Pick what you’re importing:</p>
 
       <div className="scroll-x" style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap' }}>
@@ -604,18 +621,6 @@ export default function Import() {
             style={mode === k ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#0b0d12' } : undefined}
             onClick={() => pickMode(k)}>{m.icon} {m.label}</button>
         ))}
-      </div>
-
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div className="spread" style={{ alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-          <div style={{ minWidth: 0 }}>
-            <strong>⬇️ Export everything</strong>
-            <div className="faint" style={{ marginTop: 4 }}>A full archive of everything you own: diary, episodes, watchlist, season ratings, lists, favourites and subscriptions. The <strong>ReelBook backup</strong> importer restores your diary, episodes, watchlist and season ratings; lists, favourites and subscriptions are kept safe in the file.</div>
-          </div>
-          <button className="btn primary" disabled={exporting} onClick={runBackupExport}>
-            {exporting ? 'Preparing…' : 'Download backup (.json)'}
-          </button>
-        </div>
       </div>
 
       <div className="banner">{cfg.help}</div>
@@ -834,6 +839,7 @@ export default function Import() {
           </div>
         </div>
       )}
+      </>)}
     </div>
   )
 }
@@ -856,6 +862,102 @@ function reelbookActions(p, cats) {
   if (cats.watchlist) t += num(c.newWatchlist)
   if (cats.seasonRatings) t += num(c.newSeasonRatings)
   return t
+}
+
+function ExpCheck({ on, set, children }) {
+  return (
+    <label className="row" style={{ gap: 8, cursor: 'pointer', alignItems: 'center' }}>
+      <input type="checkbox" checked={on} onChange={(e) => set(e.target.checked)} style={{ width: 'auto' }} />
+      <span>{children}</span>
+    </label>
+  )
+}
+
+function ExportPanel({ groups, myProfileId, onFullBackup, exporting }) {
+  const toast = useToast()
+  const [fmt, setFmt] = useState({ json: true, csv: false })
+  const [inc, setInc] = useState({ diary: true, episodes: true, watchlist: false, seasonRatings: false })
+  const [media, setMedia] = useState('all')
+  const [groupId, setGroupId] = useState('')
+  const [mineOnly, setMineOnly] = useState(false)
+  const [withRatings, setWithRatings] = useState(true)
+  const [busy, setBusy] = useState(false)
+
+  const noFmt = !fmt.json && !fmt.csv
+  const noInc = !inc.diary && !inc.episodes && !inc.watchlist && !inc.seasonRatings
+
+  async function run() {
+    if (noFmt || noInc) return
+    setBusy(true)
+    try {
+      const c = await runCustomExport({ formats: fmt, include: inc, media, groupId: groupId || null, mineOnly, myProfileId, withRatings })
+      toast(`Exported ${c.diary} watches · ${c.episodes} episodes · ${c.watchlist} watchlist`)
+    } catch (e) { toast(e.message || 'Export failed', 'err') }
+    finally { setBusy(false) }
+  }
+
+  return (
+    <>
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div className="spread" style={{ alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 0 }}>
+            <strong>🗂️ Full backup</strong>
+            <div className="faint" style={{ marginTop: 4 }}>Everything you own in one compact JSON, ready to restore from the Import tab (ReelBook backup).</div>
+          </div>
+          <button className="btn primary" disabled={exporting} onClick={onFullBackup}>{exporting ? 'Preparing…' : 'Download full backup (.json)'}</button>
+        </div>
+      </div>
+
+      <div className="card">
+        <strong>⬇️ Custom export</strong>
+        <div className="faint" style={{ margin: '4px 0 14px' }}>Choose exactly what to export, and in which format.</div>
+
+        <div className="field">
+          <label>Format</label>
+          <div className="row" style={{ gap: 18, flexWrap: 'wrap' }}>
+            <ExpCheck on={fmt.json} set={(v) => setFmt((f) => ({ ...f, json: v }))}>JSON</ExpCheck>
+            <ExpCheck on={fmt.csv} set={(v) => setFmt((f) => ({ ...f, csv: v }))}>CSV (a file per category)</ExpCheck>
+          </div>
+        </div>
+
+        <div className="field">
+          <label>Include</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <ExpCheck on={inc.diary} set={(v) => setInc((s) => ({ ...s, diary: v }))}>Diary (watched movies &amp; shows)</ExpCheck>
+            <ExpCheck on={inc.episodes} set={(v) => setInc((s) => ({ ...s, episodes: v }))}>Episode history</ExpCheck>
+            <ExpCheck on={inc.watchlist} set={(v) => setInc((s) => ({ ...s, watchlist: v }))}>Watchlist</ExpCheck>
+            <ExpCheck on={inc.seasonRatings} set={(v) => setInc((s) => ({ ...s, seasonRatings: v }))}>Season ratings</ExpCheck>
+          </div>
+        </div>
+
+        <div className="field">
+          <label>Type (applies to diary &amp; watchlist)</label>
+          <div className="seg">
+            {[['all', 'Movies & TV'], ['movie', 'Movies only'], ['tv', 'TV only']].map(([v, l]) => (
+              <button key={v} type="button" className={media === v ? 'on' : ''} onClick={() => setMedia(v)}>{l}</button>
+            ))}
+          </div>
+        </div>
+
+        <div className="field">
+          <label>Group</label>
+          <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+            <option value="">All groups</option>
+            {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+          </select>
+        </div>
+
+        <div className="field" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <ExpCheck on={mineOnly} set={setMineOnly}>Only entries I logged</ExpCheck>
+          <ExpCheck on={withRatings} set={setWithRatings}>Include ratings</ExpCheck>
+        </div>
+
+        <button className="btn primary block" disabled={busy || noFmt || noInc} onClick={run}>
+          {busy ? 'Preparing…' : noFmt ? 'Pick a format' : noInc ? 'Pick what to export' : 'Export selection'}
+        </button>
+      </div>
+    </>
+  )
 }
 
 function CatToggle({ on, set, label, n, already }) {
