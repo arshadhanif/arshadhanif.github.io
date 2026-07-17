@@ -29,6 +29,7 @@ export default function TitleDetail() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState(null)
   const [watchModal, setWatchModal] = useState(false)
+  const [castAll, setCastAll] = useState(false)
   const [listModal, setListModal] = useState(false)
   const preferred = getPref('region', DEFAULT_REGION)
   const [region, setRegion] = useState(preferred)
@@ -69,6 +70,8 @@ export default function TitleDetail() {
 
   const isTv = media === 'tv'
   const backdrop = IMG.backdrop(full.backdrop_path)
+  // Most recent watch date, for the header badge.
+  const lastWatched = watches.map((w) => w.watched_on).filter(Boolean).sort().pop() || null
 
   return (
     <div className="detail">
@@ -92,6 +95,9 @@ export default function TitleDetail() {
               {full.total_episodes ? <span>{full.total_episodes} episodes</span> : null}
               {imdb?.rating ? <span className="imdb-rating">★ {imdb.rating} IMDb</span> : null}
               {full.vote_average ? <span className="tmdb-rating">★ {full.vote_average} TMDB</span> : null}
+              {watches.length > 0 && (
+                <span className="watched-chip">✓ Watched{lastWatched ? ` ${fmtDate(lastWatched)}` : ''}</span>
+              )}
             </div>
             <div className="scroll-x" style={{ margin: '4px 0 14px' }}>
               {full.genres.map((g) => <span className="chip" key={g}>{g}</span>)}
@@ -142,9 +148,9 @@ export default function TitleDetail() {
 
         {full.cast.length > 0 && (
           <Block title="Cast">
-            <div className="scroll-x cast-row">
-              {full.cast.map((c) => (
-                <div className="cast" key={c.id} onClick={() => navigate(`/person/${c.id}`)} style={{ cursor: 'pointer' }}>
+            <div className={castAll ? 'cast-grid' : 'scroll-x cast-row'}>
+              {(castAll ? full.cast : full.cast.slice(0, 12)).map((c, i) => (
+                <div className="cast" key={`${c.id}-${i}`} onClick={() => navigate(`/person/${c.id}`)} style={{ cursor: 'pointer' }}>
                   <div className="cast-photo">
                     {IMG.profile(c.profile_path)
                       ? <img src={IMG.profile(c.profile_path)} alt={c.name} loading="lazy" />
@@ -155,6 +161,11 @@ export default function TitleDetail() {
                 </div>
               ))}
             </div>
+            {full.cast.length > 12 && (
+              <button className="btn sm" style={{ marginTop: 12 }} onClick={() => setCastAll((v) => !v)}>
+                {castAll ? 'Show less' : `See full cast (${full.cast.length})`}
+              </button>
+            )}
           </Block>
         )}
 

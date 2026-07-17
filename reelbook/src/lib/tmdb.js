@@ -194,16 +194,24 @@ export async function getRecommendations(tmdbId, mediaType) {
 
 // Rich detail for the title page: core fields + credits + external ids + providers + videos.
 export async function getFullDetail(tmdbId, mediaType) {
-  const data = await tmdb(`/${mediaType}/${tmdbId}`, {
-    append_to_response: 'credits,external_ids,watch/providers,videos',
-  })
   const isMovie = mediaType === 'movie'
+  // TV `credits` only returns a small top-billed set; `aggregate_credits` spans
+  // the whole run (with a roles[] per person), which is the full cast users expect.
+  const append = isMovie
+    ? 'credits,external_ids,watch/providers,videos'
+    : 'aggregate_credits,credits,external_ids,watch/providers,videos'
+  const data = await tmdb(`/${mediaType}/${tmdbId}`, { append_to_response: append })
   const runtime = isMovie
     ? data.runtime ?? null
     : (data.episode_run_time && data.episode_run_time[0]) ?? null
 
-  const cast = (data.credits?.cast || []).slice(0, 18).map((c) => ({
-    id: c.id, name: c.name, character: c.character, profile_path: c.profile_path,
+  const castSource = isMovie
+    ? (data.credits?.cast || [])
+    : (data.aggregate_credits?.cast?.length ? data.aggregate_credits.cast : (data.credits?.cast || []))
+  const cast = castSource.slice(0, 60).map((c) => ({
+    id: c.id, name: c.name, profile_path: c.profile_path,
+    // aggregate_credits carries roles[]; a plain credit carries character.
+    character: c.character || (c.roles || []).map((r) => r.character).filter(Boolean).join(' / ') || '',
   }))
   let crew = []
   if (isMovie) {
