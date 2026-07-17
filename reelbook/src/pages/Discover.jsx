@@ -34,16 +34,19 @@ export default function Discover() {
       const KEY = 'reelbook.epRefresh'
       if (Date.now() - Number(localStorage.getItem(KEY) || 0) < 6 * 3600 * 1000) return
       const HEAD = 24
-      const refreshedHead = await Promise.all(shows.slice(0, HEAD).map(async (s) => {
+      const totals = {}   // tmdb_id -> aired episodes (deduped: a show can be in two groups)
+      const seenTmdb = new Set()
+      await Promise.all(shows.slice(0, HEAD).map(async (s) => {
+        if (seenTmdb.has(s.title.tmdb_id)) return
+        seenTmdb.add(s.title.tmdb_id)
         try {
           const st = await getTvStatus(s.title.tmdb_id)
           const aired = st.aired_episodes ?? st.number_of_episodes
-          if (aired && aired !== s.total) await setTitleTotalEpisodes(s.title.id, aired).catch(() => {})
-          return { ...s, total: aired ?? s.total }
-        } catch { return s }
+          if (aired) { totals[s.title.tmdb_id] = aired; if (aired !== s.total) await setTitleTotalEpisodes(s.title.id, aired).catch(() => {}) }
+        } catch { /* keep the show as-is on failure */ }
       }))
       try { localStorage.setItem(KEY, String(Date.now())) } catch {}
-      const merged = [...refreshedHead, ...shows.slice(HEAD)]
+      const merged = shows.map((s) => (totals[s.title.tmdb_id] ? { ...s, total: totals[s.title.tmdb_id] } : s))
       setContinueShows(merged.filter((s) => !s.total || s.watched < s.total))
     }).catch(() => {})
 
@@ -171,22 +174,44 @@ function Rail({ title, items }) {
 }
 
 function ContinueRail({ shows }) {
+  const [gid, setGid] = useState(null)
+  // Distinct groups present, so we only show the filter when it's useful.
+  const groupsPresent = []
+  const seen = new Set()
+  for (const s of shows) if (s.group && !seen.has(s.group.id)) { seen.add(s.group.id); groupsPresent.push(s.group) }
+  const view = gid ? shows.filter((s) => s.groupId === gid) : shows
   return (
     <div style={{ marginBottom: 26 }}>
       <div className="section-head"><h2>▶ Continue watching</h2></div>
+      {groupsPresent.length > 1 && (
+        <div className="scroll-x" style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <button className={`chip ${!gid ? 'active' : ''}`}
+            style={!gid ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#0b0d12' } : undefined}
+            onClick={() => setGid(null)}>All</button>
+          {groupsPresent.map((g) => (
+            <button key={g.id} className={`chip ${gid === g.id ? 'active' : ''}`}
+              style={gid === g.id ? { background: g.color, borderColor: g.color, color: '#0b0d12' } : undefined}
+              onClick={() => setGid(g.id)}>{g.name}</button>
+          ))}
+        </div>
+      )}
       <div className="scroll-x rail">
-        {shows.map(({ title, watched, total }) => {
+        {view.map((s) => {
+          const { title, watched, total, group, groupId } = s
           const pct = total ? Math.round((watched / total) * 100) : 0
           const toGo = total ? total - watched : 0
           return (
-            <TitleLink className="rail-item tile" key={title.id} tmdbId={title.tmdb_id} media={title.media_type}>
+            <TitleLink className="rail-item tile" key={`${title.id}-${groupId}`} tmdbId={title.tmdb_id} media={title.media_type}>
               <div style={{ position: 'relative' }}>
                 <Poster title={title.title} mediaType="tv" posterPath={title.poster_path} />
                 {toGo > 0 && <span className="ep-badge">{toGo} to go</span>}
               </div>
               <div className="progress-track"><div className="progress-fill" style={{ width: `${pct}%` }} /></div>
               <div className="tile-title">{title.title}</div>
-              <div className="tile-sub">{watched}{total ? `/${total}` : ''} eps</div>
+              <div className="tile-sub">
+                {watched}{total ? `/${total}` : ''} eps
+                {group && <> · <span style={{ color: group.color }}>{group.name}</span></>}
+              </div>
             </TitleLink>
           )
         })}

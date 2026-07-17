@@ -440,14 +440,36 @@ async function episodeCountsByTitle() {
     .filter((x) => x.title)
 }
 
+// In-progress shows, split per GROUP so "Continue watching" can tell your solo
+// list apart from a shared one (a show can be in progress in one group and
+// finished in another). Each entry carries its group so the UI can label/filter.
 export async function listInProgressShows() {
-  const all = await episodeCountsByTitle()
+  const rows = await pagedSelect('episode_watches', 'title_id, group_id, season_number, episode_number, watched_on', {
+    limit: 200000, order: (q) => q.order('id', { ascending: true }),
+  })
+  const byKey = new Map()   // `${title_id}|${group_id}`
+  for (const r of rows) {
+    const k = `${r.title_id}|${r.group_id}`
+    if (!byKey.has(k)) byKey.set(k, { title_id: r.title_id, group_id: r.group_id, eps: new Set(), last: null })
+    const e = byKey.get(k)
+    e.eps.add(`${r.season_number}-${r.episode_number}`)
+    if (r.watched_on && (!e.last || r.watched_on > e.last)) e.last = r.watched_on
+  }
+  if (!byKey.size) return []
+  const titles = await pagedSelect('titles', 'id, tmdb_id, media_type, title, poster_path, year, total_episodes', {
+    limit: 200000, order: (q) => q.order('id', { ascending: true }),
+  })
+  const tById = new Map(titles.map((t) => [t.id, t]))
+  const groups = await listGroups()
+  const gById = new Map(groups.map((g) => [g.id, { id: g.id, name: g.name, color: g.color }]))
   const out = []
-  for (const { title, watched, last } of all) {
-    if (title.media_type !== 'tv') continue
+  for (const e of byKey.values()) {
+    const title = tById.get(e.title_id)
+    if (!title || title.media_type !== 'tv') continue
     const total = title.total_episodes || 0
-    if (total && watched >= total) continue // finished
-    out.push({ title, watched, total, last })
+    const watched = e.eps.size
+    if (total && watched >= total) continue // finished in this group
+    out.push({ title, group: gById.get(e.group_id) || null, groupId: e.group_id, watched, total, last: e.last })
   }
   return out.sort((a, b) => (b.last || '').localeCompare(a.last || ''))
 }
