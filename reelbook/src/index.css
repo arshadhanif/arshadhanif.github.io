@@ -446,6 +446,8 @@ input:focus, select:focus, textarea:focus {
 .cast-grid .cast { width: 100%; }
 .cast-grid .cast-photo { width: 100%; height: auto; aspect-ratio: 1; }
 .detail-meta .watched-chip { display: inline-flex; align-items: center; gap: 4px; background: var(--green); color: #0b0d12; font-weight: 800; font-size: 12.5px; padding: 2px 9px; border-radius: 6px; white-space: nowrap; }
+.detail-progress { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; color: rgba(255,255,255,.86); font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+.detail-progress .watched-chip { display: inline-flex; align-items: center; gap: 4px; background: var(--accent); color: #0b0d12; font-weight: 800; padding: 2px 9px; border-radius: 6px; white-space: nowrap; }
 
 /* Fixed dark tile (theme-independent): provider logos are a mix of white-on-
    transparent (live data) and opaque colored marks (TMDB). A dark chip shows

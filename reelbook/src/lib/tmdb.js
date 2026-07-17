@@ -247,6 +247,10 @@ export async function getFullDetail(tmdbId, mediaType) {
     tagline: data.tagline || null,
     vote_average: data.vote_average ? Math.round(data.vote_average * 10) / 10 : null,
     imdb_id: data.external_ids?.imdb_id || data.imdb_id || null,
+    // air range + status (TV): for "aired 2004 to 2010" style headers
+    first_air_date: isMovie ? (data.release_date || null) : (data.first_air_date || null),
+    last_air_date: isMovie ? null : (data.last_air_date || null),
+    status: data.status || null,
     // display-only extras
     vote_count: data.vote_count || 0,
     genres: (data.genres || []).map((g) => g.name),

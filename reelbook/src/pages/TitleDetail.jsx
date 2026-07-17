@@ -4,7 +4,7 @@ import { getFullDetail, getSeason, getRecommendations, getEpisodeExternalIds, IM
 import {
   ensureTitleFromFull, getWatchesForTitle, addToWatchlist,
   listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, markEpisodesBulk, unmarkAllEpisodes, setEpisodeRating, setEpisodeWatchedDate,
-  getTitleServices, setTitleServices, getStreamingAvailability,
+  getTitleServices, setTitleServices, getStreamingAvailability, getEpisodeWatchSpan,
   getImdbRating, getImdbSeasonRatings, getSeasonRatings, setSeasonRating,
 } from '../lib/db'
 import { useAppData } from '../context/AppData'
@@ -30,6 +30,7 @@ export default function TitleDetail() {
   const [err, setErr] = useState(null)
   const [watchModal, setWatchModal] = useState(false)
   const [castAll, setCastAll] = useState(false)
+  const [epSpan, setEpSpan] = useState(null)
   const [listModal, setListModal] = useState(false)
   const preferred = getPref('region', DEFAULT_REGION)
   const [region, setRegion] = useState(preferred)
@@ -56,6 +57,7 @@ export default function TitleDetail() {
           if (!alive) return
           setTitleId(tid)
           loadWatches(tid)
+          if (f.media_type === 'tv') getEpisodeWatchSpan(tid).then((sp) => alive && setEpSpan(sp)).catch(() => {})
         } catch (e) { console.warn('cache title', e) }
       })
       .catch((e) => alive && setErr(e.message))
@@ -72,6 +74,15 @@ export default function TitleDetail() {
   const backdrop = IMG.backdrop(full.backdrop_path)
   // Most recent watch date, for the header badge.
   const lastWatched = watches.map((w) => w.watched_on).filter(Boolean).sort().pop() || null
+  // Aired range: "2004" for movies, "2004 - 2010" (or "- present") for TV runs.
+  const airedRange = (() => {
+    const fy = full.first_air_date ? String(full.first_air_date).slice(0, 4) : (full.year ? String(full.year) : '')
+    if (!isTv) return fy
+    const ly = full.last_air_date ? String(full.last_air_date).slice(0, 4) : ''
+    const ongoing = /return|progress/i.test(full.status || '') || !ly
+    if (!fy) return ''
+    return ongoing ? `${fy} - present` : (ly && ly !== fy ? `${fy} - ${ly}` : fy)
+  })()
 
   return (
     <div className="detail">
@@ -88,17 +99,24 @@ export default function TitleDetail() {
             <h1>{full.title}</h1>
             {full.tagline && <p className="detail-tagline">“{full.tagline}”</p>}
             <div className="detail-meta">
-              {full.year && <span>{full.year}</span>}
+              {airedRange && <span>{airedRange}</span>}
               <span>{isTv ? 'TV Series' : 'Movie'}</span>
               {full.runtime ? <span>{full.runtime} min{isTv ? '/ep' : ''}</span> : null}
               {isTv && full.number_of_seasons ? <span>{full.number_of_seasons} season{full.number_of_seasons > 1 ? 's' : ''}</span> : null}
               {full.total_episodes ? <span>{full.total_episodes} episodes</span> : null}
               {imdb?.rating ? <span className="imdb-rating">★ {imdb.rating} IMDb</span> : null}
               {full.vote_average ? <span className="tmdb-rating">★ {full.vote_average} TMDB</span> : null}
-              {watches.length > 0 && (
+              {!isTv && watches.length > 0 && (
                 <span className="watched-chip">✓ Watched{lastWatched ? ` ${fmtDate(lastWatched)}` : ''}</span>
               )}
             </div>
+            {isTv && epSpan && epSpan.count > 0 && (
+              <div className="detail-progress">
+                <span className="watched-chip">▶ {epSpan.count}/{full.total_episodes || '?'} episodes</span>
+                {epSpan.first && <span>Started {fmtDate(epSpan.first)}</span>}
+                {epSpan.last && epSpan.last !== epSpan.first && <span>Last watched {fmtDate(epSpan.last)}</span>}
+              </div>
+            )}
             <div className="scroll-x" style={{ margin: '4px 0 14px' }}>
               {full.genres.map((g) => <span className="chip" key={g}>{g}</span>)}
             </div>

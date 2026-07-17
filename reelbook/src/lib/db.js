@@ -409,24 +409,44 @@ export async function markSeason({ titleId, groupId, season, episodes, watchedOn
 }
 
 // Shows with episodes ticked off but not yet complete - for "Continue watching".
-export async function listInProgressShows() {
-  const { data, error } = await supabase
-    .from('episode_watches')
-    .select('title_id, season_number, episode_number, watched_on, titles(*)')
-  if (error) throw error
+// Distinct watched episodes + last-watched date per TV show, aggregated across
+// all groups. Pages through episode_watches (PostgREST caps at 1000/response,
+// and the library now runs to 10k+ rows) using minimal columns, then batch-loads
+// the titles so we never join titles(*) across every episode row.
+async function episodeCountsByTitle() {
+  const rows = await pagedSelect('episode_watches', 'title_id, season_number, episode_number, watched_on', {
+    limit: 200000,
+    order: (q) => q.order('id', { ascending: true }),
+  })
   const byTitle = new Map()
-  for (const row of data || []) {
-    const t = row.titles
-    if (!t || t.media_type !== 'tv') continue
-    if (!byTitle.has(row.title_id)) byTitle.set(row.title_id, { title: t, eps: new Set(), last: row.watched_on })
+  for (const row of rows) {
+    if (!byTitle.has(row.title_id)) byTitle.set(row.title_id, { eps: new Set(), last: null, first: null })
     const e = byTitle.get(row.title_id)
     e.eps.add(`${row.season_number}-${row.episode_number}`)
-    if (row.watched_on && (!e.last || row.watched_on > e.last)) e.last = row.watched_on
+    if (row.watched_on) {
+      if (!e.last || row.watched_on > e.last) e.last = row.watched_on
+      if (!e.first || row.watched_on < e.first) e.first = row.watched_on
+    }
   }
+  if (!byTitle.size) return []
+  const ids = [...byTitle.keys()]
+  const titlesById = new Map()
+  for (let i = 0; i < ids.length; i += 300) {
+    const { data, error } = await supabase.from('titles').select('*').in('id', ids.slice(i, i + 300))
+    if (error) throw error
+    for (const t of (data || [])) titlesById.set(t.id, t)
+  }
+  return [...byTitle.entries()]
+    .map(([tid, e]) => ({ title: titlesById.get(tid), watched: e.eps.size, last: e.last, first: e.first }))
+    .filter((x) => x.title)
+}
+
+export async function listInProgressShows() {
+  const all = await episodeCountsByTitle()
   const out = []
-  for (const { title, eps, last } of byTitle.values()) {
+  for (const { title, watched, last } of all) {
+    if (title.media_type !== 'tv') continue
     const total = title.total_episodes || 0
-    const watched = eps.size
     if (total && watched >= total) continue // finished
     out.push({ title, watched, total, last })
   }
@@ -435,22 +455,25 @@ export async function listInProgressShows() {
 
 // All TV shows you've ticked episodes for (watched count + cached total).
 export async function listTrackedShows() {
-  const { data, error } = await supabase
-    .from('episode_watches')
-    .select('title_id, season_number, episode_number, watched_on, titles(*)')
+  const all = await episodeCountsByTitle()
+  return all
+    .filter(({ title }) => title.media_type === 'tv')
+    .map(({ title, watched, last }) => ({ title, watched, cachedTotal: title.total_episodes || 0, last }))
+}
+
+// Distinct episodes watched + first/last watched date for one title (across the
+// user's groups). Used for the "you started / last watched" line on TV headers.
+export async function getEpisodeWatchSpan(titleId) {
+  const { data, error } = await supabase.from('episode_watches')
+    .select('season_number, episode_number, watched_on').eq('title_id', titleId)
   if (error) throw error
-  const byTitle = new Map()
-  for (const row of data || []) {
-    const t = row.titles
-    if (!t || t.media_type !== 'tv') continue
-    if (!byTitle.has(row.title_id)) byTitle.set(row.title_id, { title: t, eps: new Set(), last: row.watched_on })
-    const e = byTitle.get(row.title_id)
-    e.eps.add(`${row.season_number}-${row.episode_number}`)
-    if (row.watched_on && (!e.last || row.watched_on > e.last)) e.last = row.watched_on
+  const eps = new Set(); const dated = []
+  for (const r of data || []) {
+    eps.add(`${r.season_number}-${r.episode_number}`)
+    if (r.watched_on) dated.push(r.watched_on)
   }
-  return [...byTitle.values()].map(({ title, eps, last }) => ({
-    title, watched: eps.size, cachedTotal: title.total_episodes || 0, last,
-  }))
+  dated.sort()
+  return { count: eps.size, first: dated[0] || null, last: dated[dated.length - 1] || null }
 }
 
 export async function setTitleTotalEpisodes(titleId, total) {
