@@ -97,7 +97,13 @@ export default function TitleDetail() {
               {full.genres.map((g) => <span className="chip" key={g}>{g}</span>)}
             </div>
             <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
-              <button className="btn primary" onClick={() => setWatchModal(true)}>✓ Mark watched</button>
+              <button className="btn primary" onClick={() => setWatchModal(true)}
+                style={watches.length > 0 ? { background: 'var(--green)', color: '#0b0d12' } : undefined}
+                title={watches.length > 0 ? 'Log another watch (rewatch)' : undefined}>
+                {watches.length > 0
+                  ? `✓ Watched${watches.length > 1 ? ` ×${watches.length}` : ''} · log again`
+                  : '✓ Mark watched'}
+              </button>
               <AddWatchlist titleId={titleId} groups={groups} userId={user.id} />
               <button className="btn" onClick={() => setListModal(true)}>📚 Add to list</button>
               {full.trailer_key && (
