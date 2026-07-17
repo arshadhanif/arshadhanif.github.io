@@ -10,7 +10,7 @@ import {
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/Toast'
-import { Poster, Spinner, DualScore, Modal, TitleLink, StarRating } from '../components/ui'
+import { Poster, Spinner, DualScore, Modal, TitleLink, StarRating, ScrollRow } from '../components/ui'
 import MarkWatchedModal from '../components/MarkWatchedModal'
 import AddToCollectionModal from '../components/AddToCollectionModal'
 import { getPref, DEFAULT_REGION } from '../lib/prefs'
@@ -193,7 +193,7 @@ export default function TitleDetail() {
 
         {recs.length > 0 && (
           <Block title="More like this">
-            <div className="scroll-x rail">
+            <ScrollRow className="rail">
               {recs.map((r) => (
                 <TitleLink className="rail-item tile" key={`${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
                   <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
@@ -201,7 +201,7 @@ export default function TitleDetail() {
                   <div className="tile-sub">{r.year || 'N/A'}</div>
                 </TitleLink>
               ))}
-            </div>
+            </ScrollRow>
           </Block>
         )}
 

@@ -1,6 +1,36 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { IMG } from '../lib/tmdb'
+
+// Horizontal scroller with left/right arrow buttons (for mouse users). Arrows
+// hide when there's nothing more to scroll in that direction.
+export function ScrollRow({ children, className = '' }) {
+  const ref = useRef(null)
+  const [atStart, setAtStart] = useState(true)
+  const [atEnd, setAtEnd] = useState(false)
+  const update = () => {
+    const el = ref.current
+    if (!el) return
+    setAtStart(el.scrollLeft <= 2)
+    setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 2)
+  }
+  useEffect(() => {
+    update()
+    const el = ref.current
+    if (!el) return
+    el.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    return () => { el.removeEventListener('scroll', update); window.removeEventListener('resize', update) }
+  }, [children])
+  const scroll = (dir) => { const el = ref.current; if (el) el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: 'smooth' }) }
+  return (
+    <div className="scroll-row-wrap">
+      {!atStart && <button className="scroll-arrow left" onClick={() => scroll(-1)} aria-label="Scroll left">‹</button>}
+      <div className={`scroll-x ${className}`} ref={ref}>{children}</div>
+      {!atEnd && <button className="scroll-arrow right" onClick={() => scroll(1)} aria-label="Scroll right">›</button>}
+    </div>
+  )
+}
 
 const TAG_SUGGESTIONS = ['comfort watch', 'date night', 'with friends', 'masterpiece', 'made me cry', 'background', 'rewatch material', 'guilty pleasure', 'so bad it’s good']
 

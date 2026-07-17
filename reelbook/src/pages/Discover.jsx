@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { searchMulti, getTrending, getPopular, getTopRated, getTvStatus, getAnime, listWatchProviders, discoverByProviders, IMG } from '../lib/tmdb'
 import { listInProgressShows, setTitleTotalEpisodes, listSubscriptions } from '../lib/db'
 import { regionFromSubs, matchProviderIds } from '../lib/providers'
-import { Poster, Empty, SkeletonGrid, TitleLink } from '../components/ui'
+import { Poster, Empty, SkeletonGrid, TitleLink, ScrollRow } from '../components/ui'
 
 export default function Discover() {
   const [q, setQ] = useState('')
@@ -160,7 +160,7 @@ function Rail({ title, items }) {
   return (
     <div style={{ marginBottom: 26 }}>
       <div className="section-head"><h2>{title}</h2></div>
-      <div className="scroll-x rail">
+      <ScrollRow className="rail">
         {items.map((r) => (
           <TitleLink className="rail-item tile" key={`${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
             <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
@@ -168,7 +168,7 @@ function Rail({ title, items }) {
             <div className="tile-sub">{r.year || 'N/A'}</div>
           </TitleLink>
         ))}
-      </div>
+      </ScrollRow>
     </div>
   )
 }
@@ -195,7 +195,7 @@ function ContinueRail({ shows }) {
           ))}
         </div>
       )}
-      <div className="scroll-x rail">
+      <ScrollRow className="rail">
         {view.map((s) => {
           const { title, watched, total, group, groupId } = s
           const pct = total ? Math.round((watched / total) * 100) : 0
@@ -215,7 +215,7 @@ function ContinueRail({ shows }) {
             </TitleLink>
           )
         })}
-      </div>
+      </ScrollRow>
     </div>
   )
 }
