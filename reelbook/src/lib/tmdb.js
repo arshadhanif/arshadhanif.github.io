@@ -274,9 +274,12 @@ function pickTrailer(videos = []) {
 // How many episodes have actually AIRED (TMDB's number_of_episodes also counts
 // announced/unaired episodes for ongoing shows, which breaks "caught up" logic).
 function airedEpisodes(data) {
-  if (!data.next_episode_to_air) return data.number_of_episodes ?? null // ended / fully aired
+  // Count up to the most recently AIRED episode. This must not fall back to
+  // number_of_episodes just because nothing is scheduled next: a show can have
+  // announced episodes with no air date (e.g. a "TBA" season premiere) that
+  // inflate number_of_episodes and make a caught-up viewer look "1 to go".
   const last = data.last_episode_to_air
-  if (!last) return data.number_of_episodes ?? null
+  if (!last) return data.number_of_episodes ?? null   // nothing aired yet: use total
   let count = (data.seasons || [])
     .filter((s) => (s.season_number || 0) >= 1 && s.season_number < last.season_number)
     .reduce((a, s) => a + (s.episode_count || 0), 0)
