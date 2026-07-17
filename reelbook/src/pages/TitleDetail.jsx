@@ -493,9 +493,11 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
     const next = new Set(watched)
     if (next.has(key)) {
       next.delete(key); setWatched(next)
+      setEpDates((m) => { const n = { ...m }; delete n[key]; return n })
       await unmarkEpisode({ titleId, groupId: trackGroupId, season, episode: ep }).catch(reload)
     } else {
       next.add(key); setWatched(next)
+      setEpDates((m) => ({ ...m, [key]: today }))   // default to today, editable below
       await markEpisode({ titleId, groupId: trackGroupId, season, episode: ep, watchedOn: today, createdBy: userId }).catch(reload)
     }
   }
@@ -503,6 +505,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
     const key = `${season}-${ep}`
     setEpRatings((r) => ({ ...r, [key]: score }))
     setWatched((w) => new Set(w).add(key))
+    setEpDates((m) => (m[key] ? m : { ...m, [key]: today }))
     await setEpisodeRating({ titleId, groupId: trackGroupId, season, episode: ep, rating: score, watchedOn: today, createdBy: userId }).catch(reload)
   }
   // Set or correct an episode's watched date. Picking a date also marks it
@@ -663,7 +666,11 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
                                           onClick={() => setEpDate(s.season_number, e.episode_number, '')}>clear</button>
                                       )}
                                     </dd></div>
-                                    <div><dt>List / watched by</dt><dd>{trackGroup ? trackGroup.name : 'N/A'}</dd></div>
+                                    <div><dt>List / watched by</dt><dd>
+                                      <select className="ep2-date" value={trackGroupId} onChange={(ev) => setTrackGroupId(ev.target.value)}>
+                                        {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                                      </select>
+                                    </dd></div>
                                   </dl>
                                   <div className="faint" style={{ margin: '4px 0' }}>Your rating</div>
                                   <StarRating value={rt || 0} color="var(--accent)" onChange={(sc) => rate(s.season_number, e.episode_number, sc)} />
