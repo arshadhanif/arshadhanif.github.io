@@ -338,6 +338,32 @@ input:focus, select:focus, textarea:focus {
 @media (min-width: 600px) { .modal { border-radius: 20px; animation: pop .15s ease; } }
 .modal h2 { margin: 0; font-size: 20px; letter-spacing: -0.3px; }
 
+/* global top-bar search */
+.gsearch-backdrop {
+  position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px); display: flex; justify-content: center;
+  align-items: flex-start; padding: 68px 14px 14px; animation: fade .12s ease;
+}
+.gsearch {
+  width: 100%; max-width: 560px; background: var(--bg-elev); border: 1px solid var(--border);
+  border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; animation: pop .14s ease;
+}
+.gsearch-bar { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.gsearch-ico { color: var(--text-dim); flex-shrink: 0; }
+.gsearch-bar input { border: none; background: none; padding: 0; font-size: 16px; flex: 1; border-radius: 0; }
+.gsearch-bar input:focus { outline: none; box-shadow: none; }
+.gsearch-x { color: var(--text-dim); width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; }
+.gsearch-x:hover { background: var(--bg-hover); color: var(--text); }
+.gsearch-results { max-height: min(60vh, 460px); overflow-y: auto; padding: 6px; }
+.gsearch-empty { padding: 18px; text-align: center; color: var(--text-dim); font-size: 14px; }
+.gsearch-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px; border-radius: 10px; text-align: left; }
+.gsearch-row.active { background: var(--bg-hover); }
+.gsearch-thumb { width: 40px; height: 60px; flex-shrink: 0; border-radius: 6px; overflow: hidden; background: var(--bg-elev-2); display: grid; place-items: center; color: var(--text-faint-solid); font-weight: 800; }
+.gsearch-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.gsearch-info { min-width: 0; }
+.gsearch-title { font-weight: 700; font-size: 14.5px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gsearch-sub { font-size: 12.5px; color: var(--text-faint-solid); margin-top: 2px; }
+
 .field { margin-bottom: 15px; }
 .field label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 7px; color: var(--text-dim); }
 
