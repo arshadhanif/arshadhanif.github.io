@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { getFullDetail, getSeason, getRecommendations, getEpisodeExternalIds, IMG, providerRegions } from '../lib/tmdb'
 import {
   ensureTitleFromFull, getWatchesForTitle, addToWatchlist,
-  listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, markEpisodesBulk, unmarkAllEpisodes, setEpisodeRating,
+  listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, markEpisodesBulk, unmarkAllEpisodes, setEpisodeRating, setEpisodeWatchedDate,
   getTitleServices, setTitleServices, getStreamingAvailability,
   getImdbRating, getImdbSeasonRatings, getSeasonRatings, setSeasonRating,
 } from '../lib/db'
@@ -470,6 +470,15 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
     setWatched((w) => new Set(w).add(key))
     await setEpisodeRating({ titleId, groupId: trackGroupId, season, episode: ep, rating: score, watchedOn: today, createdBy: userId }).catch(reload)
   }
+  // Set or correct an episode's watched date. Picking a date also marks it
+  // watched; clearing keeps it watched but with no date.
+  async function setEpDate(season, ep, date) {
+    if (!trackGroupId) return
+    const key = `${season}-${ep}`
+    setEpDates((m) => { const n = { ...m }; if (date) n[key] = date; else delete n[key]; return n })
+    if (date) setWatched((w) => new Set(w).add(key))
+    await setEpisodeWatchedDate({ titleId, groupId: trackGroupId, season, episode: ep, watchedOn: date || null, createdBy: userId }).catch(reload)
+  }
   async function markWholeSeason(season, eps) {
     await markSeason({ titleId, groupId: trackGroupId, season, episodes: eps.map((e) => e.episode_number), watchedOn: today, createdBy: userId })
     reload(); toast(`Marked ${eps.length} episodes watched`)
@@ -610,7 +619,15 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
                                 <div onClick={(ev) => ev.stopPropagation()} style={{ marginTop: 8 }}>
                                   <dl className="ep2-facts">
                                     <div><dt>Released</dt><dd>{e.air_date ? fmtDate(e.air_date) : 'N/A'}</dd></div>
-                                    <div><dt>Watched</dt><dd>{on ? (epDates[key] ? fmtDate(epDates[key]) : 'date not set') : 'Not yet'}</dd></div>
+                                    <div><dt>Watched on</dt><dd>
+                                      <input type="date" className="ep2-date" value={epDates[key] || ''} max={today} disabled={!trackGroupId}
+                                        onChange={(ev) => setEpDate(s.season_number, e.episode_number, ev.target.value)} />
+                                      {on && !epDates[key] && <span className="faint" style={{ marginLeft: 8, fontSize: 12 }}>date not set</span>}
+                                      {on && epDates[key] && (
+                                        <button className="ep2-date-clear" title="Clear date (stays watched)"
+                                          onClick={() => setEpDate(s.season_number, e.episode_number, '')}>clear</button>
+                                      )}
+                                    </dd></div>
                                     <div><dt>List / watched by</dt><dd>{trackGroup ? trackGroup.name : 'N/A'}</dd></div>
                                   </dl>
                                   <div className="faint" style={{ margin: '4px 0' }}>Your rating</div>

@@ -343,6 +343,21 @@ export async function markEpisode({ titleId, groupId, season, episode, watchedOn
   if (error) throw error
 }
 
+// Set (or clear) the watched date on an episode. Upserts so it works whether
+// the episode was already marked or is being marked for the first time; passing
+// an empty date keeps it watched but with no date.
+export async function setEpisodeWatchedDate({ titleId, groupId, season, episode, watchedOn, createdBy }) {
+  const { error } = await supabase.from('episode_watches').upsert(
+    {
+      title_id: titleId, group_id: groupId,
+      season_number: season, episode_number: episode,
+      watched_on: watchedOn || null, created_by: createdBy,
+    },
+    { onConflict: 'title_id,group_id,season_number,episode_number' }
+  )
+  if (error) throw error
+}
+
 export async function unmarkEpisode({ titleId, groupId, season, episode }) {
   let q = supabase
     .from('episode_watches')
