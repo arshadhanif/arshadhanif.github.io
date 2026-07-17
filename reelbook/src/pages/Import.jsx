@@ -29,6 +29,7 @@ async function pool(items, fn, concurrency, onTick) {
   return results
 }
 const keyOf = (s) => `${s.media_type}-${s.tmdb_id}`
+const NOGROUP = '(no group)'   // placeholder for backup rows with no group, so they can be mapped or skipped
 
 // TV Time omits IMDb ids on series rows, and TMDB has no TheTVDB cross-reference
 // for some regional titles, so both auto-match paths (tvdb id, then title search)
@@ -218,14 +219,16 @@ export default function Import() {
     if (json?.app !== 'ReelBook') { setStatus({ type: 'error', text: 'That does not look like a ReelBook backup.' }); return }
     setBackup(json)
     const names = new Set()
-    for (const d of json.diary || []) if (d.groups?.name) names.add(d.groups.name)
-    for (const e of json.episodes || []) if (e.groups?.name) names.add(e.groups.name)
-    for (const w of json.watchlist || []) if (w.groups?.name) names.add(w.groups.name)
-    for (const r of json.season_ratings || []) if (r.group_name) names.add(r.group_name)
+    const add = (n) => names.add(n || NOGROUP)   // rows with no group get a mappable placeholder
+    for (const d of json.diary || []) add(d.groups?.name)
+    for (const e of json.episodes || []) add(e.groups?.name)
+    for (const w of json.watchlist || []) add(w.groups?.name)
+    for (const r of json.season_ratings || []) add(r.group_name)
     const map = {}
     for (const n of names) {
+      if (n === NOGROUP) { map[n] = ''; continue }   // must be consciously targeted
       const hit = groups.find((g) => g.name.toLowerCase() === n.toLowerCase())
-      map[n] = hit ? hit.id : (groups[0]?.id || '')
+      map[n] = hit ? hit.id : ''   // no name match -> Skip, never silently the first group
     }
     setGroupMap(map)
   }
@@ -485,22 +488,28 @@ export default function Import() {
       for (const gid of targets) { snaps[gid] = await getGroupImportSnapshot(gid); watchKeys[gid] = await getExistingWatchKeys(gid) }
 
       const watchRows = [], episodeMap = new Map(), watchlistRows = [], seasonRows = []
-      let skipWatch = 0, skipEp = 0, skipWl = 0
-      const gidOf = (name) => groupMap[name] || ''
+      let skipWatch = 0, skipEp = 0, skipWl = 0, skipSeason = 0
+      const gidOf = (name) => groupMap[name || NOGROUP] || ''
+      // Only restore ratings that belong to a profile that exists here, so a
+      // stale/foreign profile id can't abort the whole batch on a FK violation.
+      const validProfiles = new Set(profiles.map((p) => p.id))
+      const seenWl = {}, seenSeason = new Set()   // per-target dedup so merging two groups doesn't double-count
 
       for (const d of backup.diary || []) {
         const tid = d.titles && map.get(keyOf(d.titles)); const gid = gidOf(d.groups?.name)
         if (!tid || !gid) continue
+        // Dedup only against what's already in the DB; do NOT collapse two
+        // legitimate same-day watches from the backup into one.
         const k = `${tid}|${d.watched_on || ''}`
         if (watchKeys[gid].has(k)) { skipWatch++; continue }
-        watchKeys[gid].add(k)
         watchRows.push({
           title_id: tid, group_id: gid, watched_on: d.watched_on || null,
           date_precision: d.date_precision || (d.watched_on ? 'day' : null),
           note: d.note || null, service: d.service || null, where_watched: d.where_watched || null,
+          episodes_watched: d.episodes_watched || 0,
           tags: d.tags || [], is_rewatch: !!d.is_rewatch, rewatch_count: d.rewatch_count || 0,
           visibility: d.visibility || 'private', created_by: user.id,
-          _ratings: (d.ratings || []).filter((r) => r.score != null).map((r) => ({ profile_id: r.profile_id, score: r.score })),
+          _ratings: (d.ratings || []).filter((r) => r.score != null && validProfiles.has(r.profile_id)).map((r) => ({ profile_id: r.profile_id, score: r.score })),
         })
       }
       for (const e of backup.episodes || []) {
@@ -508,18 +517,26 @@ export default function Import() {
         if (!tid || !gid) continue
         if (snaps[gid].episodes.has(`${tid}-${e.season_number}-${e.episode_number}`)) { skipEp++; continue }
         const mk = `${tid}|${gid}`
-        if (!episodeMap.has(mk)) episodeMap.set(mk, { titleId: tid, groupId: gid, episodes: [] })
-        episodeMap.get(mk).episodes.push({ season: e.season_number, episode: e.episode_number, watchedOn: e.watched_on || null, rewatchCount: e.rewatch_count || 0 })
+        if (!episodeMap.has(mk)) episodeMap.set(mk, { titleId: tid, groupId: gid, episodes: [], seen: new Set() })
+        const grp = episodeMap.get(mk)
+        const ek = `${e.season_number}-${e.episode_number}`
+        if (grp.seen.has(ek)) continue   // two source groups merged into one target
+        grp.seen.add(ek)
+        grp.episodes.push({ season: e.season_number, episode: e.episode_number, watchedOn: e.watched_on || null, rewatchCount: e.rewatch_count || 0, rating: e.rating ?? null })
       }
       for (const w of backup.watchlist || []) {
         const tid = w.titles && map.get(keyOf(w.titles)); const gid = gidOf(w.groups?.name)
         if (!tid || !gid) continue
         if (snaps[gid].watchlist.has(tid)) { skipWl++; continue }
+        const key = `${gid}|${tid}`
+        if (seenWl[key]) continue; seenWl[key] = true
         watchlistRows.push({ title_id: tid, group_id: gid, added_by: user.id })
       }
       for (const r of backup.season_ratings || []) {
         const tid = map.get(`${r.media_type}-${r.tmdb_id}`); const gid = gidOf(r.group_name)
-        if (!tid || !gid || r.score == null || !r.profile_id) continue
+        if (!tid || !gid || r.score == null || !r.profile_id || !validProfiles.has(r.profile_id)) { skipSeason++; continue }
+        const sk = `${tid}|${gid}|${r.profile_id}|${r.season_number}`
+        if (seenSeason.has(sk)) continue; seenSeason.add(sk)
         seasonRows.push({ title_id: tid, group_id: gid, profile_id: r.profile_id, season_number: r.season_number, score: r.score, created_by: user.id })
       }
 
@@ -593,7 +610,7 @@ export default function Import() {
         <div className="spread" style={{ alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ minWidth: 0 }}>
             <strong>⬇️ Export everything</strong>
-            <div className="faint" style={{ marginTop: 4 }}>One categorized JSON with your diary, episodes, watchlist, season ratings, lists, favourites and subscriptions. Re-import it any time with the <strong>ReelBook backup</strong> option.</div>
+            <div className="faint" style={{ marginTop: 4 }}>A full archive of everything you own: diary, episodes, watchlist, season ratings, lists, favourites and subscriptions. The <strong>ReelBook backup</strong> importer restores your diary, episodes, watchlist and season ratings; lists, favourites and subscriptions are kept safe in the file.</div>
           </div>
           <button className="btn primary" disabled={exporting} onClick={runBackupExport}>
             {exporting ? 'Preparing…' : 'Download backup (.json)'}

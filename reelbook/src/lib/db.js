@@ -325,10 +325,9 @@ export async function setSeasonRating({ titleId, groupId, profileId, season, sco
 
 // All season ratings across the household, with title + profile, for analytics.
 export async function listAllSeasonRatings() {
-  const { data, error } = await supabase.from('season_ratings')
-    .select('season_number, score, profile_id, titles(id, tmdb_id, title, media_type, poster_path), profiles(name, color)')
-  if (error) throw error
-  return data || []
+  return pagedSelect('season_ratings',
+    'id, season_number, score, profile_id, titles(id, tmdb_id, title, media_type, poster_path), profiles(name, color)',
+    { limit: 100000, order: (q) => q.order('id', { ascending: true }) })
 }
 
 export async function markEpisode({ titleId, groupId, season, episode, watchedOn, createdBy }) {
@@ -384,6 +383,7 @@ export async function markEpisodesBulk({ titleId, groupId, episodes, createdBy, 
     season_number: e.season, episode_number: e.episode,
     watched_on: e.watchedOn || null, created_by: createdBy, import_batch: importBatch,
     rewatch_count: e.rewatchCount || 0,
+    ...(e.rating != null ? { rating: e.rating } : {}),
   }))
   for (let i = 0; i < rows.length; i += 500) {
     const { error } = await supabase
@@ -549,15 +549,12 @@ export async function deleteGroup(groupId) {
 
 // ---------- Watchlist ----------
 
-export async function listWatchlist(groupId = null) {
-  let q = supabase
-    .from('watchlist')
-    .select('id, group_id, added_by, created_at, titles(*), groups(id, name, color)')
-    .order('created_at', { ascending: false })
-  if (groupId) q = q.eq('group_id', groupId)
-  const { data, error } = await q
-  if (error) throw error
-  return data
+export async function listWatchlist(groupId = null, limit = 100000) {
+  // Paginated so a watchlist over 1000 rows isn't silently truncated.
+  return pagedSelect('watchlist', 'id, group_id, added_by, created_at, titles(*), groups(id, name, color)', {
+    groupId, limit,
+    order: (q) => q.order('created_at', { ascending: false }).order('id', { ascending: true }),
+  })
 }
 
 export async function addToWatchlist({ seed, groupId, addedBy }) {
@@ -714,7 +711,7 @@ export async function markWatched({
 
 // Diary = all watches, newest first, with title + group + ratings.
 export async function listDiary({ groupId = null, limit = 200 } = {}) {
-  const cols = 'id, watched_on, date_precision, note, episodes_watched, where_watched, service, group_id, created_by, created_at, tags, is_rewatch, rewatch_count, ' +
+  const cols = 'id, watched_on, date_precision, note, episodes_watched, where_watched, service, visibility, group_id, created_by, created_at, tags, is_rewatch, rewatch_count, ' +
     'titles(*), groups(id, name, color), ratings(id, profile_id, score)'
   // PostgREST caps any single response at 1000 rows, so page through with
   // .range() up to `limit`. A stable id tiebreaker is required because bulk
@@ -796,12 +793,19 @@ export async function setRating(watchId, profileId, score) {
 export async function loadNotifState() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
-  const { data, error } = await supabase
-    .from('notif_state')
-    .select('title_id, baseline_aired, dismissed')
-    .eq('user_id', user.id)
-  if (error) throw error
-  return data || []
+  const out = []
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase
+      .from('notif_state')
+      .select('title_id, baseline_aired, dismissed')
+      .eq('user_id', user.id)
+      .order('title_id', { ascending: true })
+      .range(from, from + 999)
+    if (error) throw error
+    out.push(...(data || []))
+    if (!data || data.length < 1000) break
+  }
+  return out
 }
 
 // Upsert one title's state. baseline/dismissed are optional (only set what changed).
@@ -836,13 +840,14 @@ export async function saveNotifBaselines(map) {
 // Set of TMDB ids the household has logged (watched or watchlisted) - used to
 // badge titles you've seen on person / discovery pages.
 export async function getLoggedTmdbIds() {
-  const [{ data: w }, { data: wl }] = await Promise.all([
-    supabase.from('watches').select('titles(tmdb_id)'),
-    supabase.from('watchlist').select('titles(tmdb_id)'),
+  const order = (q) => q.order('id', { ascending: true })
+  const [w, wl] = await Promise.all([
+    pagedSelect('watches', 'id, titles(tmdb_id)', { limit: 100000, order }),
+    pagedSelect('watchlist', 'id, titles(tmdb_id)', { limit: 100000, order }),
   ])
   const set = new Set()
-  for (const r of w || []) if (r.titles?.tmdb_id) set.add(r.titles.tmdb_id)
-  for (const r of wl || []) if (r.titles?.tmdb_id) set.add(r.titles.tmdb_id)
+  for (const r of w) if (r.titles?.tmdb_id) set.add(r.titles.tmdb_id)
+  for (const r of wl) if (r.titles?.tmdb_id) set.add(r.titles.tmdb_id)
   return set
 }
 
@@ -1077,9 +1082,9 @@ export async function restoreSeasonRatingsBulk(rows) {
 
 // Season ratings with everything needed to re-import (group + profile + title).
 async function exportSeasonRatings() {
-  const { data, error } = await supabase.from('season_ratings')
-    .select('season_number, score, group_id, profile_id, groups(name), profiles(name), titles(tmdb_id, media_type, title)')
-  if (error) throw error
+  const data = await pagedSelect('season_ratings',
+    'id, season_number, score, group_id, profile_id, groups(name), profiles(name), titles(tmdb_id, media_type, title)',
+    { limit: 100000, order: (q) => q.order('id', { ascending: true }) })
   return (data || []).map((r) => ({
     tmdb_id: r.titles?.tmdb_id, media_type: r.titles?.media_type, title: r.titles?.title,
     season_number: r.season_number, score: r.score,

@@ -33,18 +33,27 @@ export default function Discover() {
       // KEEPS the show as-is instead of dropping it from the rail.
       const KEY = 'reelbook.epRefresh'
       if (Date.now() - Number(localStorage.getItem(KEY) || 0) < 6 * 3600 * 1000) return
-      const HEAD = 24
-      const totals = {}   // tmdb_id -> aired episodes (deduped: a show can be in two groups)
+      // Prioritise shows with an UNKNOWN total: without it they can never be
+      // marked caught up and cling to the rail forever. Then the most-recent
+      // shows (to catch newly-aired episodes). Dedupe by tmdb id, cap the work,
+      // and run in small batches so TMDB doesn't rate-limit. A failed check
+      // keeps the show as-is rather than dropping it.
+      const totals = {}
       const seenTmdb = new Set()
-      await Promise.all(shows.slice(0, HEAD).map(async (s) => {
-        if (seenTmdb.has(s.title.tmdb_id)) return
-        seenTmdb.add(s.title.tmdb_id)
-        try {
-          const st = await getTvStatus(s.title.tmdb_id)
-          const aired = st.aired_episodes ?? st.number_of_episodes
-          if (aired) { totals[s.title.tmdb_id] = aired; if (aired !== s.total) await setTitleTotalEpisodes(s.title.id, aired).catch(() => {}) }
-        } catch { /* keep the show as-is on failure */ }
-      }))
+      const work = []
+      for (const s of [...shows.filter((s) => !s.total), ...shows.filter((s) => s.total)]) {
+        if (!seenTmdb.has(s.title.tmdb_id)) { seenTmdb.add(s.title.tmdb_id); work.push(s) }
+      }
+      const capped = work.slice(0, 120)
+      for (let i = 0; i < capped.length; i += 8) {
+        await Promise.all(capped.slice(i, i + 8).map(async (s) => {
+          try {
+            const st = await getTvStatus(s.title.tmdb_id)
+            const aired = st.aired_episodes ?? st.number_of_episodes
+            if (aired) { totals[s.title.tmdb_id] = aired; if (aired !== s.total) await setTitleTotalEpisodes(s.title.id, aired).catch(() => {}) }
+          } catch { /* keep the show as-is on failure */ }
+        }))
+      }
       try { localStorage.setItem(KEY, String(Date.now())) } catch {}
       const merged = shows.map((s) => (totals[s.title.tmdb_id] ? { ...s, total: totals[s.title.tmdb_id] } : s))
       setContinueShows(merged.filter((s) => !s.total || s.watched < s.total))

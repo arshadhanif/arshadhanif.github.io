@@ -125,7 +125,7 @@ export default function Insights() {
       </div>
       <GroupChips groups={groups} value={groupId} onChange={setGroupId} />
 
-      {data.length === 0 ? (
+      {data.length === 0 && es.total === 0 ? (
         <Empty icon="📊">No watches match these filters yet.</Empty>
       ) : (
         <>
