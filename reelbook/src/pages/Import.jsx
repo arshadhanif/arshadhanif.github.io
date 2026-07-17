@@ -3,8 +3,9 @@ import { findByImdbId, findByTitle, findByTvdbId } from '../lib/tmdb'
 import {
   ensureTitlesBulk, insertWatchesBulk, insertRatingsBulk, insertWatchlistBulk, markEpisodesBulk,
   createImportBatch, listImportBatches, revertImportBatch, dismissImportBatch, getGroupImportSnapshot,
-  updateEpisodeRewatches, setRating,
+  updateEpisodeRewatches, setRating, getExistingWatchKeys, restoreSeasonRatingsBulk,
 } from '../lib/db'
+import { downloadJsonBackup } from '../lib/backup'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/Toast'
@@ -59,6 +60,10 @@ const MODES = {
   tvtime: {
     label: 'TV Time', icon: '📺', target: 'diary', needsPerson: false, multi: true,
     help: 'Upload your TV Time CSV export files together (movies, series-episodes, series). Watched movies & shows go to the diary, your per-episode history powers episode tracking, and not-started shows go to your watchlist. All for the chosen group.',
+  },
+  reelbook: {
+    label: 'ReelBook backup', icon: '🗂️', target: 'diary', needsPerson: false, reelbook: true,
+    help: 'Restore a ReelBook export (.json). Everything is matched by TMDB id (no lookups needed) and each item keeps its original group and dates. Pick which categories to bring back; anything already present is skipped, so re-running is safe.',
   },
 }
 
@@ -162,7 +167,10 @@ export default function Import() {
   const [reverting, setReverting] = useState(null)
   const [plan, setPlan] = useState(null)
   const [analyzing, setAnalyzing] = useState(false)
-  const [cats, setCats] = useState({ episodes: true, watched: true, watchlist: true })
+  const [cats, setCats] = useState({ episodes: true, watched: true, watchlist: true, seasonRatings: true })
+  const [backup, setBackup] = useState(null)      // parsed ReelBook export
+  const [groupMap, setGroupMap] = useState({})    // backup group name -> target group id
+  const [exporting, setExporting] = useState(false)
   const toast = useToast()
 
   const cfg = MODES[mode]
@@ -195,6 +203,7 @@ export default function Import() {
     setProgress({ done: 0, total: 0, ok: 0, skipped: 0 })
     const reader = new FileReader()
     reader.onload = () => {
+      if (cfg.reelbook) { loadBackup(reader.result); return }
       const parsed = extractItems(file.name, reader.result)
       setItems(parsed)
       setStatus(parsed.length ? null : { type: 'error', text: 'Could not find any titles in that file.' })
@@ -202,8 +211,35 @@ export default function Import() {
     reader.readAsText(file)
   }
 
+  // Parse a ReelBook export and auto-map its groups onto existing ones by name.
+  function loadBackup(text) {
+    let json
+    try { json = JSON.parse(text) } catch { setStatus({ type: 'error', text: 'That is not a valid JSON file.' }); return }
+    if (json?.app !== 'ReelBook') { setStatus({ type: 'error', text: 'That does not look like a ReelBook backup.' }); return }
+    setBackup(json)
+    const names = new Set()
+    for (const d of json.diary || []) if (d.groups?.name) names.add(d.groups.name)
+    for (const e of json.episodes || []) if (e.groups?.name) names.add(e.groups.name)
+    for (const w of json.watchlist || []) if (w.groups?.name) names.add(w.groups.name)
+    for (const r of json.season_ratings || []) if (r.group_name) names.add(r.group_name)
+    const map = {}
+    for (const n of names) {
+      const hit = groups.find((g) => g.name.toLowerCase() === n.toLowerCase())
+      map[n] = hit ? hit.id : (groups[0]?.id || '')
+    }
+    setGroupMap(map)
+  }
+
+  async function runBackupExport() {
+    setExporting(true)
+    try { const c = await downloadJsonBackup(); toast(`Exported ${c.diary} watches, ${c.episodes} episodes, ${c.watchlist} watchlist`) }
+    catch (e) { toast(e.message || 'Export failed', 'err') }
+    finally { setExporting(false) }
+  }
+
   function pickMode(m) {
     setMode(m); setItems([]); setFilename(''); setStatus(null); setTvFiles([]); setSkippedTitles([]); setPlan(null)
+    setBackup(null); setGroupMap({})
     setProgress({ done: 0, total: 0, ok: 0, skipped: 0 })
   }
 
@@ -430,6 +466,116 @@ export default function Import() {
     }
   }
 
+  // ---- Native ReelBook restore ----
+  async function analyzeReelbook() {
+    if (!backup) { setStatus({ type: 'error', text: 'Load a backup file first.' }); return }
+    const targets = [...new Set(Object.values(groupMap).filter(Boolean))]
+    if (!targets.length) { setStatus({ type: 'error', text: 'Map at least one group.' }); return }
+    setAnalyzing(true); setStatus(null)
+    try {
+      // Resolve every referenced title once (matched by TMDB id, no lookups).
+      const seeds = []
+      for (const d of backup.diary || []) if (d.titles?.tmdb_id) seeds.push(d.titles)
+      for (const e of backup.episodes || []) if (e.titles?.tmdb_id) seeds.push(e.titles)
+      for (const w of backup.watchlist || []) if (w.titles?.tmdb_id) seeds.push(w.titles)
+      for (const r of backup.season_ratings || []) if (r.tmdb_id) seeds.push({ tmdb_id: r.tmdb_id, media_type: r.media_type, title: r.title })
+      const map = await ensureTitlesBulk(seeds)
+
+      const snaps = {}, watchKeys = {}
+      for (const gid of targets) { snaps[gid] = await getGroupImportSnapshot(gid); watchKeys[gid] = await getExistingWatchKeys(gid) }
+
+      const watchRows = [], episodeMap = new Map(), watchlistRows = [], seasonRows = []
+      let skipWatch = 0, skipEp = 0, skipWl = 0
+      const gidOf = (name) => groupMap[name] || ''
+
+      for (const d of backup.diary || []) {
+        const tid = d.titles && map.get(keyOf(d.titles)); const gid = gidOf(d.groups?.name)
+        if (!tid || !gid) continue
+        const k = `${tid}|${d.watched_on || ''}`
+        if (watchKeys[gid].has(k)) { skipWatch++; continue }
+        watchKeys[gid].add(k)
+        watchRows.push({
+          title_id: tid, group_id: gid, watched_on: d.watched_on || null,
+          date_precision: d.date_precision || (d.watched_on ? 'day' : null),
+          note: d.note || null, service: d.service || null, where_watched: d.where_watched || null,
+          tags: d.tags || [], is_rewatch: !!d.is_rewatch, rewatch_count: d.rewatch_count || 0,
+          visibility: d.visibility || 'private', created_by: user.id,
+          _ratings: (d.ratings || []).filter((r) => r.score != null).map((r) => ({ profile_id: r.profile_id, score: r.score })),
+        })
+      }
+      for (const e of backup.episodes || []) {
+        const tid = e.titles && map.get(keyOf(e.titles)); const gid = gidOf(e.groups?.name)
+        if (!tid || !gid) continue
+        if (snaps[gid].episodes.has(`${tid}-${e.season_number}-${e.episode_number}`)) { skipEp++; continue }
+        const mk = `${tid}|${gid}`
+        if (!episodeMap.has(mk)) episodeMap.set(mk, { titleId: tid, groupId: gid, episodes: [] })
+        episodeMap.get(mk).episodes.push({ season: e.season_number, episode: e.episode_number, watchedOn: e.watched_on || null, rewatchCount: e.rewatch_count || 0 })
+      }
+      for (const w of backup.watchlist || []) {
+        const tid = w.titles && map.get(keyOf(w.titles)); const gid = gidOf(w.groups?.name)
+        if (!tid || !gid) continue
+        if (snaps[gid].watchlist.has(tid)) { skipWl++; continue }
+        watchlistRows.push({ title_id: tid, group_id: gid, added_by: user.id })
+      }
+      for (const r of backup.season_ratings || []) {
+        const tid = map.get(`${r.media_type}-${r.tmdb_id}`); const gid = gidOf(r.group_name)
+        if (!tid || !gid || r.score == null || !r.profile_id) continue
+        seasonRows.push({ title_id: tid, group_id: gid, profile_id: r.profile_id, season_number: r.season_number, score: r.score, created_by: user.id })
+      }
+
+      const episodeRows = [...episodeMap.values()]
+      const newEpisodes = episodeRows.reduce((a, g) => a + g.episodes.length, 0)
+      setPlan({
+        batchKind: 'ReelBook backup', reelbook: true, watchRows, episodeRows, watchlistRows, seasonRows,
+        counts: {
+          newWatches: watchRows.length, alreadyWatches: skipWatch,
+          newEpisodes, alreadyEpisodes: skipEp,
+          newWatchlist: watchlistRows.length, alreadyWatchlist: skipWl,
+          newSeasonRatings: seasonRows.length,
+        },
+      })
+    } catch (e) {
+      console.error('reelbook analyze', e)
+      setStatus({ type: 'error', text: `Analyze error: ${e.message}` })
+    } finally { setAnalyzing(false) }
+  }
+
+  async function applyReelbook() {
+    if (!plan?.reelbook) return
+    setRunning(true); setStatus(null)
+    const batchId = newId()
+    try {
+      let watches = 0, episodes = 0, watchlist = 0, seasons = 0
+      if (cats.watched && plan.watchRows.length) {
+        const rows = plan.watchRows.map(({ _ratings, ...rest }) => ({ ...rest, import_batch: batchId }))
+        const ids = await insertWatchesBulk(rows)
+        watches = ids.length
+        const ratingRows = []
+        ids.forEach((wid, i) => { for (const rr of plan.watchRows[i]._ratings) if (wid && rr.score) ratingRows.push({ watch_id: wid, profile_id: rr.profile_id, score: rr.score }) })
+        if (ratingRows.length) await insertRatingsBulk(ratingRows)
+      }
+      if (cats.episodes) {
+        for (const g of plan.episodeRows) { await markEpisodesBulk({ titleId: g.titleId, groupId: g.groupId, episodes: g.episodes, createdBy: user.id, importBatch: batchId }); episodes += g.episodes.length }
+      }
+      if (cats.watchlist && plan.watchlistRows.length) {
+        await insertWatchlistBulk(plan.watchlistRows.map((r) => ({ ...r, import_batch: batchId })))
+        watchlist = plan.watchlistRows.length
+      }
+      if (cats.seasonRatings && plan.seasonRows.length) {
+        await restoreSeasonRatingsBulk(plan.seasonRows); seasons = plan.seasonRows.length
+      }
+      if (watches + episodes + watchlist > 0) {
+        await createImportBatch({ id: batchId, ownerId: user.id, kind: 'ReelBook backup', groupId: Object.values(groupMap).find(Boolean), profileId: null, filename, watches, episodes, watchlist }).catch(() => {})
+        loadBatches()
+      }
+      setStatus({ type: 'ok', text: `Restored ${watches} watches · ${episodes} episodes · ${watchlist} watchlist · ${seasons} season ratings.` })
+      setPlan(null); setBackup(null); setGroupMap({}); setFilename('')
+    } catch (e) {
+      console.error('reelbook apply', e)
+      setStatus({ type: 'error', text: `Restore error: ${e.message}` })
+    } finally { setRunning(false) }
+  }
+
   return (
     <div className="page">
       <h1>Import</h1>
@@ -443,16 +589,30 @@ export default function Import() {
         ))}
       </div>
 
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div className="spread" style={{ alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 0 }}>
+            <strong>⬇️ Export everything</strong>
+            <div className="faint" style={{ marginTop: 4 }}>One categorized JSON with your diary, episodes, watchlist, season ratings, lists, favourites and subscriptions. Re-import it any time with the <strong>ReelBook backup</strong> option.</div>
+          </div>
+          <button className="btn primary" disabled={exporting} onClick={runBackupExport}>
+            {exporting ? 'Preparing…' : 'Download backup (.json)'}
+          </button>
+        </div>
+      </div>
+
       <div className="banner">{cfg.help}</div>
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <div className="field">
-          <label>{cfg.target === 'watchlist' ? 'Add to watchlist for group' : 'Log into group'}</label>
-          <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
-            {groups.length === 0 && <option value="">Create a group first</option>}
-            {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-          </select>
-        </div>
+        {!cfg.reelbook && (
+          <div className="field">
+            <label>{cfg.target === 'watchlist' ? 'Add to watchlist for group' : 'Log into group'}</label>
+            <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+              {groups.length === 0 && <option value="">Create a group first</option>}
+              {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+            </select>
+          </div>
+        )}
         {cfg.needsPerson && (
           <div className="field">
             <label>Ratings belong to</label>
@@ -462,11 +622,28 @@ export default function Import() {
           </div>
         )}
         <div className="field">
-          <label>{cfg.multi ? 'TV Time CSV files (pick all of them at once)' : 'File (.csv or .json)'}</label>
+          <label>{cfg.multi ? 'TV Time CSV files (pick all of them at once)' : cfg.reelbook ? 'ReelBook backup (.json)' : 'File (.csv or .json)'}</label>
           {cfg.multi
             ? <input type="file" accept=".csv" multiple onChange={onTvFiles} />
-            : <input type="file" accept=".csv,.json,text/csv,application/json" onChange={onFile} />}
+            : <input type="file" accept={cfg.reelbook ? '.json,application/json' : '.csv,.json,text/csv,application/json'} onChange={onFile} />}
         </div>
+        {cfg.reelbook && backup && Object.keys(groupMap).length > 0 && (
+          <div className="field">
+            <label>Map each backup group onto one of yours</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {Object.keys(groupMap).map((name) => (
+                <div key={name} className="row" style={{ gap: 8, alignItems: 'center' }}>
+                  <span style={{ flex: '0 0 40%', minWidth: 0, fontWeight: 600 }}>{name}</span>
+                  <span className="faint">→</span>
+                  <select style={{ flex: 1 }} value={groupMap[name]} onChange={(e) => setGroupMap((m) => ({ ...m, [name]: e.target.value }))}>
+                    <option value="">Skip this group</option>
+                    {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                  </select>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {status && <div className={`banner ${status.type === 'error' ? 'error' : ''}`}>{status.text}</div>}
@@ -524,7 +701,49 @@ export default function Import() {
         </>
       )}
 
-      {!cfg.multi && items.length > 0 && (
+      {cfg.reelbook && (
+        <>
+          {backup && !plan && (
+            <div className="card" style={{ marginBottom: 12 }}>
+              <strong>Backup loaded</strong>
+              <div className="faint" style={{ marginTop: 6 }}>
+                {backup.exported_at ? `Exported ${fmtDate(backup.exported_at)} · ` : ''}
+                {backup.counts?.diary || 0} watches · {backup.counts?.episodes || 0} episodes · {backup.counts?.watchlist || 0} watchlist · {backup.counts?.season_ratings || 0} season ratings
+              </div>
+            </div>
+          )}
+          {analyzing && <AnalyzeBar progress={progress} />}
+          {plan?.reelbook && (
+            <div className="card" style={{ marginBottom: 12 }}>
+              <strong>Restore preview</strong>
+              <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <CatToggle on={cats.watched} set={(v) => setCats((c) => ({ ...c, watched: v }))} label="Diary watches" n={plan.counts.newWatches} already={plan.counts.alreadyWatches} />
+                <CatToggle on={cats.episodes} set={(v) => setCats((c) => ({ ...c, episodes: v }))} label="Episodes" n={plan.counts.newEpisodes} already={plan.counts.alreadyEpisodes} />
+                <CatToggle on={cats.watchlist} set={(v) => setCats((c) => ({ ...c, watchlist: v }))} label="Watchlist" n={plan.counts.newWatchlist} already={plan.counts.alreadyWatchlist} />
+                <CatToggle on={cats.seasonRatings} set={(v) => setCats((c) => ({ ...c, seasonRatings: v }))} label="Season ratings" n={plan.counts.newSeasonRatings} already={0} />
+              </div>
+            </div>
+          )}
+          {backup ? (
+            plan?.reelbook ? (
+              <div className="row" style={{ gap: 8 }}>
+                <button className="btn primary" style={{ flex: 1 }} disabled={running || reelbookActions(plan, cats) === 0} onClick={applyReelbook}>
+                  {running ? 'Restoring…' : reelbookActions(plan, cats) > 0 ? `Restore ${reelbookActions(plan, cats)} items` : 'Nothing new to restore'}
+                </button>
+                <button className="btn ghost" disabled={running} onClick={() => setPlan(null)}>Re-analyze</button>
+              </div>
+            ) : (
+              <button className="btn primary block" disabled={analyzing} onClick={analyzeReelbook}>
+                {analyzing ? 'Analyzing…' : 'Analyze backup'}
+              </button>
+            )
+          ) : !status ? (
+            <Empty icon="🗂️">Choose a ReelBook backup .json file above to restore it.</Empty>
+          ) : null}
+        </>
+      )}
+
+      {!cfg.multi && !cfg.reelbook && items.length > 0 && (
         <>
           <div className="spread" style={{ marginBottom: 12 }}>
             <strong>{filename}</strong>
@@ -610,6 +829,27 @@ function planActions(p, cats) {
   if (!cats || cats.watched) t += num(c.newWatches) + num(c.ratingChanged)
   if (!cats || cats.watchlist) t += num(c.newWatchlist)
   return t
+}
+
+function reelbookActions(p, cats) {
+  if (!p) return 0
+  const c = p.counts; let t = 0
+  if (cats.watched) t += num(c.newWatches)
+  if (cats.episodes) t += num(c.newEpisodes)
+  if (cats.watchlist) t += num(c.newWatchlist)
+  if (cats.seasonRatings) t += num(c.newSeasonRatings)
+  return t
+}
+
+function CatToggle({ on, set, label, n, already }) {
+  return (
+    <label className="row" style={{ gap: 10, cursor: 'pointer', alignItems: 'center' }}>
+      <input type="checkbox" checked={on} onChange={(e) => set(e.target.checked)} style={{ width: 'auto' }} />
+      <span style={{ fontWeight: 600, flex: 1 }}>{label}</span>
+      <span style={{ color: n > 0 ? 'var(--green)' : 'var(--text-dim)' }}>{n > 0 ? `+${n} new` : 'none new'}</span>
+      {already > 0 && <span className="faint">· {already} already there</span>}
+    </label>
+  )
 }
 
 function exportUnmatched(titles) {

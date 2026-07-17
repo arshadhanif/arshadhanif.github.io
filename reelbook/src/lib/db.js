@@ -1050,20 +1050,88 @@ export async function reorderCollection(orderedIds) {
 
 // ---------- Backup / export ----------
 // Gather everything the household can see into one plain object for download.
+// Existing (title, date) watch keys for a group, so a native restore can skip
+// diary entries it already has instead of duplicating them.
+export async function getExistingWatchKeys(groupId) {
+  const rows = await pagedSelect('watches', 'title_id, watched_on', {
+    groupId, limit: 200000, order: (q) => q.order('id', { ascending: true }),
+  })
+  return new Set(rows.map((r) => `${r.title_id}|${r.watched_on || ''}`))
+}
+
+// Restore season ratings from a backup (skips ones already present).
+export async function restoreSeasonRatingsBulk(rows) {
+  for (let i = 0; i < rows.length; i += 500) {
+    const { error } = await supabase.from('season_ratings')
+      .upsert(rows.slice(i, i + 500), { onConflict: 'title_id,group_id,profile_id,season_number', ignoreDuplicates: true })
+    if (error) throw error
+  }
+}
+
+// Season ratings with everything needed to re-import (group + profile + title).
+async function exportSeasonRatings() {
+  const { data, error } = await supabase.from('season_ratings')
+    .select('season_number, score, group_id, profile_id, groups(name), profiles(name), titles(tmdb_id, media_type, title)')
+  if (error) throw error
+  return (data || []).map((r) => ({
+    tmdb_id: r.titles?.tmdb_id, media_type: r.titles?.media_type, title: r.titles?.title,
+    season_number: r.season_number, score: r.score,
+    group_id: r.group_id, group_name: r.groups?.name,
+    profile_id: r.profile_id, profile_name: r.profiles?.name,
+  }))
+}
+
+// Profile Top-4 favourites, portable by tmdb id + profile name.
+async function exportFavourites() {
+  const rows = await listFavorites()
+  return rows.map((f) => ({
+    profile_id: f.profile_id, position: f.position,
+    tmdb_id: f.titles?.tmdb_id, media_type: f.titles?.media_type, title: f.titles?.title,
+  }))
+}
+
+// Collections with their items (each item portable by tmdb id).
+async function exportCollections() {
+  const cols = await listCollections()
+  const out = []
+  for (const c of cols) {
+    let items = []
+    try {
+      const full = await getCollection(c.id)
+      items = (full.items || full.collection_items || []).map((it) => ({
+        tmdb_id: it.titles?.tmdb_id, media_type: it.titles?.media_type, title: it.titles?.title,
+        position: it.position, note: it.note || null,
+      }))
+    } catch { /* keep the collection even if items fail */ }
+    out.push({ name: c.name, description: c.description, emoji: c.emoji, ranked: c.ranked, items })
+  }
+  return out
+}
+
+// One categorized, re-importable file with everything the user owns.
 export async function exportAllData() {
-  const [profiles, groups, diary, episodes, watchlist, collections] = await Promise.all([
+  const [profiles, groups, diary, episodes, watchlist, collections, seasonRatings, favourites, subscriptions] = await Promise.all([
     listProfiles(),
     listGroups(),
     listDiary({ limit: 100000 }),
     listEpisodeDiary({ limit: 100000 }),
     listWatchlist(),
-    listCollections(),
+    exportCollections(),
+    exportSeasonRatings(),
+    exportFavourites(),
+    listSubscriptions(),
   ])
   return {
     app: 'ReelBook',
-    schema: 2,
-    counts: { profiles: profiles.length, groups: groups.length, diary: diary.length, episodes: episodes.length, watchlist: watchlist.length, collections: collections.length },
+    schema: 3,
+    exported_at: new Date().toISOString(),
+    counts: {
+      profiles: profiles.length, groups: groups.length, diary: diary.length,
+      episodes: episodes.length, watchlist: watchlist.length, collections: collections.length,
+      season_ratings: seasonRatings.length, favourites: favourites.length, subscriptions: subscriptions.length,
+    },
     profiles, groups, diary, episodes, watchlist, collections,
+    season_ratings: seasonRatings, favourites, subscriptions,
   }
 }
 
