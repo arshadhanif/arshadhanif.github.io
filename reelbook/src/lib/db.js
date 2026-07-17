@@ -429,13 +429,12 @@ async function episodeCountsByTitle() {
     }
   }
   if (!byTitle.size) return []
-  const ids = [...byTitle.keys()]
-  const titlesById = new Map()
-  for (let i = 0; i < ids.length; i += 300) {
-    const { data, error } = await supabase.from('titles').select('*').in('id', ids.slice(i, i + 300))
-    if (error) throw error
-    for (const t of (data || [])) titlesById.set(t.id, t)
-  }
+  // Load titles by paging the (small) titles table rather than a giant id=in.()
+  // URL, which can exceed the server's URL length limit and fail the whole call.
+  const allTitles = await pagedSelect('titles', 'id, tmdb_id, media_type, title, poster_path, year, total_episodes', {
+    limit: 200000, order: (q) => q.order('id', { ascending: true }),
+  })
+  const titlesById = new Map(allTitles.map((t) => [t.id, t]))
   return [...byTitle.entries()]
     .map(([tid, e]) => ({ title: titlesById.get(tid), watched: e.eps.size, last: e.last, first: e.first }))
     .filter((x) => x.title)

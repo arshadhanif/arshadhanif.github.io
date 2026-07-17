@@ -26,20 +26,25 @@ export default function Discover() {
     })
     listInProgressShows().then(async (shows) => {
       setContinueShows(shows)
-      // Refresh AIRED episode counts (TMDB's total counts unaired episodes),
-      // so shows you're fully caught up on drop off. Gated to once every 6h.
+      // Refresh AIRED episode counts (TMDB's total counts unaired episodes) so
+      // shows you're caught up on drop off. Gated to once every 6h. Only the most
+      // recent shows are checked (the rail is a scroller, and hitting TMDB for
+      // every tracked show at once gets rate-limited). Crucially, a failed check
+      // KEEPS the show as-is instead of dropping it from the rail.
       const KEY = 'reelbook.epRefresh'
       if (Date.now() - Number(localStorage.getItem(KEY) || 0) < 6 * 3600 * 1000) return
-      const out = await Promise.allSettled(shows.map(async (s) => {
-        const st = await getTvStatus(s.title.tmdb_id)
-        const aired = st.aired_episodes ?? st.number_of_episodes
-        if (aired && aired !== s.total) await setTitleTotalEpisodes(s.title.id, aired).catch(() => {})
-        return { ...s, total: aired ?? s.total }
+      const HEAD = 24
+      const refreshedHead = await Promise.all(shows.slice(0, HEAD).map(async (s) => {
+        try {
+          const st = await getTvStatus(s.title.tmdb_id)
+          const aired = st.aired_episodes ?? st.number_of_episodes
+          if (aired && aired !== s.total) await setTitleTotalEpisodes(s.title.id, aired).catch(() => {})
+          return { ...s, total: aired ?? s.total }
+        } catch { return s }
       }))
       try { localStorage.setItem(KEY, String(Date.now())) } catch {}
-      const refreshed = out.filter((r) => r.status === 'fulfilled').map((r) => r.value)
-        .filter((s) => !s.total || s.watched < s.total)
-      setContinueShows(refreshed)
+      const merged = [...refreshedHead, ...shows.slice(HEAD)]
+      setContinueShows(merged.filter((s) => !s.total || s.watched < s.total))
     }).catch(() => {})
 
     // "On your services": what's popular on the streaming services you pay for.
