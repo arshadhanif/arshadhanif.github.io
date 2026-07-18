@@ -851,6 +851,16 @@ export async function getLoggedTmdbIds() {
   return set
 }
 
+// Library TMDB ids split into watched vs watchlisted (aggregated in the DB), so
+// a person page can flag which of their credits you've seen.
+export async function getLibraryTmdbIds() {
+  const { data, error } = await supabase.rpc('library_tmdb_ids')
+  if (error) throw error
+  const watched = new Set(), watchlist = new Set()
+  for (const r of data || []) { if (r.watched) watched.add(r.tmdb_id); if (r.watchlisted) watchlist.add(r.tmdb_id) }
+  return { watched, watchlist }
+}
+
 // ---------- Where to watch (manual override + live API) ----------
 
 export async function getTitleServices(titleId) {

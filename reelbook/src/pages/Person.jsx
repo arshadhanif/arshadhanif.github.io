@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getPerson, IMG } from '../lib/tmdb'
-import { getLoggedTmdbIds } from '../lib/db'
-import { Spinner, Empty, Poster, TitleLink } from '../components/ui'
+import { getLibraryTmdbIds } from '../lib/db'
+import { Spinner, Empty, Poster, TitleLink, ScrollRow } from '../components/ui'
 import { fmtDate } from '../lib/dates'
 
 export default function Person() {
   const { id } = useParams()
   const [person, setPerson] = useState(null)
-  const [logged, setLogged] = useState(new Set())
+  const [lib, setLib] = useState({ watched: new Set(), watchlist: new Set() })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [role, setRole] = useState(null)        // 'Acting' | department
@@ -22,9 +22,26 @@ export default function Person() {
     getPerson(id).then((p) => { if (alive) { setPerson(p); setRole(p.cast.length ? 'Acting' : null) } })
       .catch(() => alive && setError(true))
       .finally(() => alive && setLoading(false))
-    getLoggedTmdbIds().then((s) => alive && setLogged(s)).catch(() => {})
+    getLibraryTmdbIds().then((s) => alive && setLib(s)).catch(() => {})
     return () => { alive = false }
   }, [id])
+
+  // Titles by this person that you've actually watched (across all their roles).
+  const seen = useMemo(() => {
+    if (!person) return []
+    const byId = new Map()
+    for (const c of [...person.cast, ...person.crew]) {
+      if (!lib.watched.has(c.tmdb_id)) continue
+      const k = `${c.media_type}-${c.tmdb_id}`
+      if (!byId.has(k)) byId.set(k, { ...c, labels: new Set() })
+      const e = byId.get(k)
+      if (c.character) e.labels.add(c.character)
+      if (c.job) e.labels.add(c.job)
+    }
+    return [...byId.values()]
+      .map((e) => ({ ...e, label: [...e.labels].slice(0, 2).join(', ') }))
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+  }, [person, lib])
 
   // Tabs: Acting (cast) + each crew department present, by credit count.
   const roles = useMemo(() => {
@@ -93,6 +110,27 @@ export default function Person() {
         </div>
       </div>
 
+      {seen.length > 0 && (
+        <div className="card" style={{ margin: '22px 0 8px' }}>
+          <div className="spread" style={{ marginBottom: 10 }}>
+            <strong>👁️ You’ve seen {person.name?.split(' ')[0] || 'them'} in</strong>
+            <span className="faint">{seen.length} title{seen.length === 1 ? '' : 's'}</span>
+          </div>
+          <ScrollRow className="rail">
+            {seen.map((c) => (
+              <TitleLink className="rail-item tile" key={`seen-${c.media_type}-${c.tmdb_id}`} tmdbId={c.tmdb_id} media={c.media_type}>
+                <div style={{ position: 'relative' }}>
+                  <Poster title={c.title} mediaType={c.media_type} posterPath={c.poster_path} />
+                  <span className="ep-badge" style={{ background: 'var(--green)', color: '#0b0d12' }}>✓</span>
+                </div>
+                <div className="tile-title">{c.title}</div>
+                <div className="tile-sub">{c.year || 'TBA'}{c.label ? ` · ${c.label}` : ''}</div>
+              </TitleLink>
+            ))}
+          </ScrollRow>
+        </div>
+      )}
+
       <div className="row" style={{ gap: 10, flexWrap: 'wrap', margin: '22px 0 16px' }}>
         {roles.length > 1 && (
           <select value={role || ''} onChange={(e) => setRole(e.target.value)} style={{ width: 'auto' }}>
@@ -120,7 +158,11 @@ export default function Person() {
             <TitleLink className="tile" key={`${c.media_type}-${c.tmdb_id}`} tmdbId={c.tmdb_id} media={c.media_type}>
               <div style={{ position: 'relative' }}>
                 <Poster title={c.title} mediaType={c.media_type} posterPath={c.poster_path} />
-                {logged.has(c.tmdb_id) && <span className="ep-badge" title="In your library">✓</span>}
+                {lib.watched.has(c.tmdb_id)
+                  ? <span className="ep-badge" style={{ background: 'var(--green)', color: '#0b0d12' }} title="You've watched this">✓</span>
+                  : lib.watchlist.has(c.tmdb_id)
+                    ? <span className="ep-badge" title="On your watchlist">🔖</span>
+                    : null}
               </div>
               <div className="tile-title">{c.title}</div>
               <div className="tile-sub">
