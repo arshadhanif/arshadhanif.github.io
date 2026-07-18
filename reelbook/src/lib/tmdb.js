@@ -336,6 +336,7 @@ export async function getSeason(tmdbId, seasonNumber) {
     overview: e.overview,
     still_path: e.still_path,
     runtime: e.runtime,
+    vote_average: e.vote_average,
   }))
 }
 

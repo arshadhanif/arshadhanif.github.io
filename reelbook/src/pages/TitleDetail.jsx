@@ -545,7 +545,10 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
         {seasons.map((s) => {
           const raw = episodesBySeason[s.season_number] || []
           const eps = desc ? [...raw].reverse() : raw
-          const watchedInSeason = raw.filter((e) => watched.has(`${s.season_number}-${e.episode_number}`)).length
+          // Count from the full watched set (+ TMDB episode_count), not the
+          // lazily-loaded episode list, so every season shows its progress
+          // without having to be opened first.
+          const watchedInSeason = [...watched].filter((k) => Number(k.split('-')[0]) === s.season_number).length
           const isOpen = openSeason === s.season_number
           return (
             <div className="card" key={s.season_number} style={{ padding: 0, overflow: 'hidden' }}>
@@ -553,7 +556,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
                 <span><strong>{s.name || `Season ${s.season_number}`}</strong> <span className="faint">· {s.episode_count} eps</span></span>
                 <span className="row" style={{ gap: 10 }}>
                   {(() => { const arr = Object.entries(seasonRatings[s.season_number] || {}).map(([pid, score]) => ({ profile_id: pid, score })); return arr.length ? <DualScore profiles={profiles} ratings={arr} /> : null })()}
-                  <span className="faint">{raw.length ? `${watchedInSeason}/${raw.length} watched` : ''} {isOpen ? '▾' : '▸'}</span>
+                  <span className="faint">{watchedInSeason > 0 ? `${watchedInSeason}/${s.episode_count} watched` : ''} {isOpen ? '▾' : '▸'}</span>
                 </span>
               </button>
               {isOpen && (
@@ -592,7 +595,8 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
                             <div className="ep2-body" onClick={() => openRow(s.season_number, e.episode_number, key)}>
                               <div className="ep2-title">
                                 <strong>{e.episode_number}. {e.name}</strong>
-                                {imdbRt ? <span className="imdb-rating sm">IMDb {imdbRt}</span> : null}
+                                {imdbRt ? <span className="imdb-rating sm">IMDb {imdbRt}</span>
+                                  : e.vote_average ? <span className="tmdb-rating sm">TMDB {e.vote_average.toFixed(1)}</span> : null}
                                 {rt ? <span className="ep2-rt">★ {rt}</span> : null}
                                 {epRewatch[key] > 0 ? <span className="rewatch-badge">↻ ×{epRewatch[key] + 1}</span> : null}
                               </div>
