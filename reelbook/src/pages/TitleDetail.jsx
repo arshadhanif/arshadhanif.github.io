@@ -72,8 +72,16 @@ export default function TitleDetail() {
 
   const isTv = media === 'tv'
   const backdrop = IMG.backdrop(full.backdrop_path)
-  // Most recent watch date, for the header badge.
-  const lastWatched = watches.map((w) => w.watched_on).filter(Boolean).sort().pop() || null
+  // Most recent watch (date + which group), for the header badge.
+  const sortedWatches = [...watches].filter((w) => w.watched_on).sort((a, b) => a.watched_on.localeCompare(b.watched_on))
+  const lastWatch = sortedWatches[sortedWatches.length - 1] || watches[0] || null
+  const lastWatched = lastWatch?.watched_on || null
+  // Distinct groups that logged this movie.
+  const watchGroups = (() => {
+    const m = new Map()
+    for (const w of watches) if (w.groups?.name && !m.has(w.group_id)) m.set(w.group_id, w.groups)
+    return [...m.values()]
+  })()
   // Aired range: "2004" for movies, "2004 - 2010" (or "- present") for TV runs.
   const airedRange = (() => {
     const fy = full.first_air_date ? String(full.first_air_date).slice(0, 4) : (full.year ? String(full.year) : '')
@@ -109,10 +117,18 @@ export default function TitleDetail() {
               {!isTv && watches.length > 0 && (
                 <span className="watched-chip">✓ Watched{lastWatched ? ` ${fmtDate(lastWatched)}` : ''}</span>
               )}
+              {!isTv && watchGroups.map((g) => (
+                <span key={g.id || g.name} style={{ color: g.color, fontWeight: 700 }}>{g.name}</span>
+              ))}
             </div>
             {isTv && epSpan && epSpan.count > 0 && (
               <div className="detail-progress">
                 <span className="watched-chip">▶ {epSpan.count}/{full.total_episodes || '?'} episodes</span>
+                {(epSpan.groups || []).map((g) => g.name && (
+                  <span key={g.id} style={{ color: g.color, fontWeight: 700 }}>
+                    {g.name}{epSpan.groups.length > 1 ? ` · ${g.count}` : ''}
+                  </span>
+                ))}
                 {epSpan.first && <span>Started {fmtDate(epSpan.first)}</span>}
                 {epSpan.last && epSpan.last !== epSpan.first && <span>Last watched {fmtDate(epSpan.last)}</span>}
               </div>

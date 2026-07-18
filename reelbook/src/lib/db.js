@@ -472,15 +472,19 @@ export async function listTrackedShows() {
 // user's groups). Used for the "you started / last watched" line on TV headers.
 export async function getEpisodeWatchSpan(titleId) {
   const { data, error } = await supabase.from('episode_watches')
-    .select('season_number, episode_number, watched_on').eq('title_id', titleId)
+    .select('season_number, episode_number, watched_on, group_id, groups(name, color)').eq('title_id', titleId)
   if (error) throw error
   const eps = new Set(); const dated = []
+  const byGroup = new Map()   // which group(s) watched this show
   for (const r of data || []) {
     eps.add(`${r.season_number}-${r.episode_number}`)
     if (r.watched_on) dated.push(r.watched_on)
+    if (!byGroup.has(r.group_id)) byGroup.set(r.group_id, { id: r.group_id, name: r.groups?.name, color: r.groups?.color, eps: new Set() })
+    byGroup.get(r.group_id).eps.add(`${r.season_number}-${r.episode_number}`)
   }
   dated.sort()
-  return { count: eps.size, first: dated[0] || null, last: dated[dated.length - 1] || null }
+  const groups = [...byGroup.values()].map((g) => ({ id: g.id, name: g.name, color: g.color, count: g.eps.size })).sort((a, b) => b.count - a.count)
+  return { count: eps.size, first: dated[0] || null, last: dated[dated.length - 1] || null, groups }
 }
 
 export async function setTitleTotalEpisodes(titleId, total) {
