@@ -1074,6 +1074,62 @@ export async function reorderCollection(orderedIds) {
     supabase.from('collection_items').update({ position: i }).eq('id', id)))
 }
 
+// ---------- Native restore for lists / favourites / subscriptions ----------
+
+// Restore Top-4 favourites (skips ones already set). rows: [{profileId, titleId, position}]
+export async function restoreFavouritesBulk(rows) {
+  for (const r of rows) {
+    if (!r.profileId || !r.titleId) continue
+    const { error } = await supabase.from('favorites')
+      .upsert({ profile_id: r.profileId, title_id: r.titleId, position: r.position ?? 0 }, { onConflict: 'profile_id,title_id', ignoreDuplicates: true })
+    if (error) throw error
+  }
+  return rows.length
+}
+
+// Restore subscriptions, skipping any whose name already exists (re-owned to the
+// importing user). rows: the raw subscription objects from the backup.
+export async function restoreSubscriptions(rows, ownerId) {
+  const existing = new Set((await listSubscriptions()).map((s) => (s.name || '').toLowerCase()))
+  let added = 0
+  for (const s of rows || []) {
+    if (!s?.name || existing.has(s.name.toLowerCase())) continue
+    existing.add(s.name.toLowerCase())
+    await createSubscription({
+      name: s.name, cost: s.cost, currency: s.currency, cycle: s.cycle, note: s.note,
+      category: s.category, plan: s.plan, paidBy: s.paid_by, provider: s.provider,
+      renewsOn: s.renews_on, autoRenew: s.auto_renew, priceAfterTrial: s.price_after_trial,
+      contractEnd: s.contract_end, termMonths: s.term_months, paymentMethod: s.payment_method,
+      parentId: null, ownerId,
+    }).catch(() => {})
+    added++
+  }
+  return added
+}
+
+// Restore custom lists and their items. Matches an existing list by name (case
+// insensitive) or creates it, then adds resolved items (dedup by title).
+// plan: [{name, description, emoji, ranked, items:[{titleId, note}]}]
+export async function restoreCollections(plan, ownerId) {
+  const existing = await listCollections()
+  const byName = new Map(existing.map((c) => [(c.name || '').toLowerCase(), c.id]))
+  let lists = 0, items = 0
+  for (const col of plan || []) {
+    if (!col.name) continue
+    let cid = byName.get(col.name.toLowerCase())
+    if (!cid) {
+      cid = await createCollection({ name: col.name, description: col.description, emoji: col.emoji, ranked: col.ranked, ownerId })
+      byName.set(col.name.toLowerCase(), cid); lists++
+    }
+    for (const it of col.items || []) {
+      if (!it.titleId) continue
+      await addToCollection({ collectionId: cid, titleId: it.titleId, note: it.note }).catch(() => {})
+      items++
+    }
+  }
+  return { lists, items }
+}
+
 // ---------- Backup / export ----------
 // Gather everything the household can see into one plain object for download.
 // Existing (title, date) watch keys for a group, so a native restore can skip

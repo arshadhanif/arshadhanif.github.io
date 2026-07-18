@@ -4,6 +4,7 @@ import {
   ensureTitlesBulk, insertWatchesBulk, insertRatingsBulk, insertWatchlistBulk, markEpisodesBulk,
   createImportBatch, listImportBatches, revertImportBatch, dismissImportBatch, getGroupImportSnapshot,
   updateEpisodeRewatches, setRating, getExistingWatchKeys, restoreSeasonRatingsBulk,
+  restoreFavouritesBulk, restoreSubscriptions, restoreCollections,
 } from '../lib/db'
 import { downloadJsonBackup, runCustomExport } from '../lib/backup'
 import { useAppData } from '../context/AppData'
@@ -168,7 +169,7 @@ export default function Import() {
   const [reverting, setReverting] = useState(null)
   const [plan, setPlan] = useState(null)
   const [analyzing, setAnalyzing] = useState(false)
-  const [cats, setCats] = useState({ episodes: true, watched: true, watchlist: true, seasonRatings: true })
+  const [cats, setCats] = useState({ episodes: true, watched: true, watchlist: true, seasonRatings: true, collections: true, favourites: true, subscriptions: true })
   const [backup, setBackup] = useState(null)      // parsed ReelBook export
   const [groupMap, setGroupMap] = useState({})    // backup group name -> target group id
   const [exporting, setExporting] = useState(false)
@@ -485,6 +486,8 @@ export default function Import() {
       for (const e of backup.episodes || []) if (e.titles?.tmdb_id) seeds.push(e.titles)
       for (const w of backup.watchlist || []) if (w.titles?.tmdb_id) seeds.push(w.titles)
       for (const r of backup.season_ratings || []) if (r.tmdb_id) seeds.push({ tmdb_id: r.tmdb_id, media_type: r.media_type, title: r.title })
+      for (const col of backup.collections || []) for (const it of col.items || []) if (it.tmdb_id) seeds.push({ tmdb_id: it.tmdb_id, media_type: it.media_type, title: it.title })
+      for (const f of backup.favourites || []) if (f.tmdb_id) seeds.push({ tmdb_id: f.tmdb_id, media_type: f.media_type, title: f.title })
       const map = await ensureTitlesBulk(seeds)
       const titleKey = (row) => row.titles ? keyOf(row.titles) : (row.tmdb_id ? `${row.media_type}-${row.tmdb_id}` : null)
       const groupNameOf = (row) => row.groups?.name ?? row.group ?? null
@@ -548,13 +551,28 @@ export default function Import() {
 
       const episodeRows = [...episodeMap.values()]
       const newEpisodes = episodeRows.reduce((a, g) => a + g.episodes.length, 0)
+
+      // Lists / favourites / subscriptions (title-matched by TMDB id where relevant).
+      const collectionsPlan = (backup.collections || []).map((col) => ({
+        name: col.name, description: col.description, emoji: col.emoji, ranked: col.ranked,
+        items: (col.items || []).map((it) => ({ titleId: map.get(`${it.media_type}-${it.tmdb_id}`), note: it.note })).filter((x) => x.titleId),
+      })).filter((c) => c.name)
+      const favouritesPlan = (backup.favourites || []).map((f) => ({
+        profileId: f.profile_id, titleId: map.get(`${f.media_type}-${f.tmdb_id}`), position: f.position,
+      })).filter((f) => f.titleId && validProfiles.has(f.profileId))
+      const subscriptionsPlan = backup.subscriptions || []
+
       setPlan({
         batchKind: 'ReelBook backup', reelbook: true, watchRows, episodeRows, watchlistRows, seasonRows,
+        collectionsPlan, favouritesPlan, subscriptionsPlan,
         counts: {
           newWatches: watchRows.length, alreadyWatches: skipWatch,
           newEpisodes, alreadyEpisodes: skipEp,
           newWatchlist: watchlistRows.length, alreadyWatchlist: skipWl,
           newSeasonRatings: seasonRows.length,
+          newCollections: collectionsPlan.length,
+          newFavourites: favouritesPlan.length,
+          newSubscriptions: subscriptionsPlan.length,
         },
       })
     } catch (e) {
@@ -587,11 +605,22 @@ export default function Import() {
       if (cats.seasonRatings && plan.seasonRows.length) {
         await restoreSeasonRatingsBulk(plan.seasonRows); seasons = plan.seasonRows.length
       }
+      let lists = 0, favourites = 0, subs = 0
+      if (cats.collections && plan.collectionsPlan?.length) {
+        const r = await restoreCollections(plan.collectionsPlan, user.id); lists = r.lists
+      }
+      if (cats.favourites && plan.favouritesPlan?.length) {
+        favourites = await restoreFavouritesBulk(plan.favouritesPlan)
+      }
+      if (cats.subscriptions && plan.subscriptionsPlan?.length) {
+        subs = await restoreSubscriptions(plan.subscriptionsPlan, user.id)
+      }
       if (watches + episodes + watchlist > 0) {
         await createImportBatch({ id: batchId, ownerId: user.id, kind: 'ReelBook backup', groupId: Object.values(groupMap).find(Boolean), profileId: null, filename, watches, episodes, watchlist }).catch(() => {})
         loadBatches()
       }
-      setStatus({ type: 'ok', text: `Restored ${watches} watches · ${episodes} episodes · ${watchlist} watchlist · ${seasons} season ratings.` })
+      const extras = [seasons && `${seasons} season ratings`, lists && `${lists} lists`, favourites && `${favourites} favourites`, subs && `${subs} subscriptions`].filter(Boolean).join(' · ')
+      setStatus({ type: 'ok', text: `Restored ${watches} watches · ${episodes} episodes · ${watchlist} watchlist${extras ? ` · ${extras}` : ''}.` })
       setPlan(null); setBackup(null); setGroupMap({}); setFilename('')
     } catch (e) {
       console.error('reelbook apply', e)
@@ -743,6 +772,9 @@ export default function Import() {
                 <CatToggle on={cats.episodes} set={(v) => setCats((c) => ({ ...c, episodes: v }))} label="Episodes" n={plan.counts.newEpisodes} already={plan.counts.alreadyEpisodes} />
                 <CatToggle on={cats.watchlist} set={(v) => setCats((c) => ({ ...c, watchlist: v }))} label="Watchlist" n={plan.counts.newWatchlist} already={plan.counts.alreadyWatchlist} />
                 <CatToggle on={cats.seasonRatings} set={(v) => setCats((c) => ({ ...c, seasonRatings: v }))} label="Season ratings" n={plan.counts.newSeasonRatings} already={0} />
+                <CatToggle on={cats.collections} set={(v) => setCats((c) => ({ ...c, collections: v }))} label="Lists" n={plan.counts.newCollections} already={0} />
+                <CatToggle on={cats.favourites} set={(v) => setCats((c) => ({ ...c, favourites: v }))} label="Top-4 favourites" n={plan.counts.newFavourites} already={0} />
+                <CatToggle on={cats.subscriptions} set={(v) => setCats((c) => ({ ...c, subscriptions: v }))} label="Subscriptions" n={plan.counts.newSubscriptions} already={0} />
               </div>
             </div>
           )}
@@ -861,6 +893,9 @@ function reelbookActions(p, cats) {
   if (cats.episodes) t += num(c.newEpisodes)
   if (cats.watchlist) t += num(c.newWatchlist)
   if (cats.seasonRatings) t += num(c.newSeasonRatings)
+  if (cats.collections) t += num(c.newCollections)
+  if (cats.favourites) t += num(c.newFavourites)
+  if (cats.subscriptions) t += num(c.newSubscriptions)
   return t
 }
 
@@ -902,7 +937,7 @@ function ExportPanel({ groups, myProfileId, onFullBackup, exporting }) {
         <div className="spread" style={{ alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ minWidth: 0 }}>
             <strong>🗂️ Full backup</strong>
-            <div className="faint" style={{ marginTop: 4 }}>Everything you own in one compact JSON, ready to restore from the Import tab (ReelBook backup).</div>
+            <div className="faint" style={{ marginTop: 4 }}>Everything in one compact JSON, and the Import tab (ReelBook backup) restores all of it: diary, episodes, watchlist, season ratings, lists, favourites and subscriptions.</div>
           </div>
           <button className="btn primary" disabled={exporting} onClick={onFullBackup}>{exporting ? 'Preparing…' : 'Download full backup (.json)'}</button>
         </div>
