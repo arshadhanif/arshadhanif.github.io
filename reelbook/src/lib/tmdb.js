@@ -230,6 +230,12 @@ export async function getFullDetail(tmdbId, mediaType) {
           episode_count: s.episode_count,
           air_date: s.air_date,
         }))
+        // Regular seasons first (ascending); Specials (season 0) always last.
+        .sort((a, b) => {
+          if (a.season_number === 0) return 1
+          if (b.season_number === 0) return -1
+          return a.season_number - b.season_number
+        })
     : []
 
   return {

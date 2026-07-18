@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getFullDetail, getSeason, getRecommendations, getEpisodeExternalIds, IMG, providerRegions } from '../lib/tmdb'
 import {
@@ -443,7 +443,18 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
   const [epImdb, setEpImdb] = useState({})             // "s-e" -> imdb_id | null (fetched lazily)
   const [desc, setDesc] = useState(false)              // newest episode first
   const [bulkBusy, setBulkBusy] = useState(false)
+  const manualSeason = useRef(false)   // true once the user opens a season themselves
   const today = todayLocal()
+
+  // Open the season to resume from: the first regular season that still has
+  // unwatched episodes (Specials never resume). Stops once the user navigates.
+  useEffect(() => { manualSeason.current = false }, [titleId, trackGroupId])
+  function resumeSeason(watchedSet) {
+    const regular = seasons.filter((s) => s.season_number >= 1)   // already ordered, specials last
+    const countIn = (sn) => { let c = 0; for (const k of watchedSet) if (Number(k.split('-')[0]) === sn) c++; return c }
+    for (const s of regular) if (countIn(s.season_number) < (s.episode_count || 0)) return s.season_number
+    return regular.length ? regular[regular.length - 1].season_number : (seasons[0]?.season_number ?? null)
+  }
 
   // Expand a row; fetch its IMDb id the first time it's opened.
   function openRow(season, ep, key) {
@@ -460,7 +471,9 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
   const reload = useCallback(async () => {
     if (!trackGroupId) { setWatched(new Set()); setEpRatings({}); setEpDates({}); setEpRewatch({}); setSeasonRatings({}); return }
     const rows = await listEpisodeWatches(titleId, trackGroupId)
-    setWatched(new Set(rows.map((r) => `${r.season_number}-${r.episode_number}`)))
+    const watchedSet = new Set(rows.map((r) => `${r.season_number}-${r.episode_number}`))
+    setWatched(watchedSet)
+    if (!manualSeason.current) { const rs = resumeSeason(watchedSet); if (rs != null) setOpenSeason(rs) }
     setEpRatings(Object.fromEntries(rows.filter((r) => r.rating != null).map((r) => [`${r.season_number}-${r.episode_number}`, r.rating])))
     setEpDates(Object.fromEntries(rows.filter((r) => r.watched_on).map((r) => [`${r.season_number}-${r.episode_number}`, r.watched_on])))
     setEpRewatch(Object.fromEntries(rows.filter((r) => r.rewatch_count > 0).map((r) => [`${r.season_number}-${r.episode_number}`, r.rewatch_count])))
@@ -594,7 +607,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
             <div className="faint" style={{ marginBottom: 8 }}>Your season scores</div>
             <div className="cols">
               {bars.map((b) => (
-                <button className="col" key={b.n} title={`Season ${b.n}: ${b.avg.toFixed(1)}/10`} onClick={() => setOpenSeason(b.n)}>
+                <button className="col" key={b.n} title={`Season ${b.n}: ${b.avg.toFixed(1)}/10`} onClick={() => { manualSeason.current = true; setOpenSeason(b.n) }}>
                   <div className="fill" style={{ height: `${b.avg * 10}%`, background: b.avg >= 8 ? 'var(--green)' : b.avg >= 6 ? 'var(--accent)' : 'var(--pink)' }} />
                   <span className="cl">S{b.n}</span>
                 </button>
@@ -612,7 +625,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
           const isOpen = openSeason === s.season_number
           return (
             <div className="card" key={s.season_number} style={{ padding: 0, overflow: 'hidden' }}>
-              <button className="season-head" onClick={() => setOpenSeason(isOpen ? null : s.season_number)}>
+              <button className="season-head" onClick={() => { manualSeason.current = true; setOpenSeason(isOpen ? null : s.season_number) }}>
                 <span><strong>{s.name || `Season ${s.season_number}`}</strong> <span className="faint">· {s.episode_count} eps</span></span>
                 <span className="row" style={{ gap: 10 }}>
                   {(() => { const arr = Object.entries(seasonRatings[s.season_number] || {}).map(([pid, score]) => ({ profile_id: pid, score })); return arr.length ? <DualScore profiles={profiles} ratings={arr} /> : null })()}
