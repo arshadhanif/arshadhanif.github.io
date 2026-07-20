@@ -248,7 +248,11 @@ export async function getFullDetail(tmdbId, mediaType) {
     backdrop_path: data.backdrop_path || null,
     overview: data.overview || null,
     genre: (data.genres || []).map((g) => g.name).join(', ') || null,
-    total_episodes: isMovie ? null : data.number_of_episodes ?? null,
+    // Store AIRED episodes, not number_of_episodes: the latter counts announced
+    // unaired episodes, which inflates "X to go" and keeps caught-up shows stuck
+    // on Continue Watching. airedEpisodes falls back to number_of_episodes when
+    // nothing has aired yet.
+    total_episodes: isMovie ? null : airedEpisodes(data),
     runtime,
     tagline: data.tagline || null,
     vote_average: data.vote_average ? Math.round(data.vote_average * 10) / 10 : null,
