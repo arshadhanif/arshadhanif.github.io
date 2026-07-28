@@ -367,13 +367,13 @@ export default function Subscriptions() {
 
 function SubForm({ initial, people, parents = [], defaultCur, submitLabel, onSubmit, onCancel }) {
   const init = initial || {}
-  const [svcSel, svcOtherInit] = splitOther(init.name || '', SERVICES)
   const [provSel, provOtherInit] = splitOther(init.provider || '', PROVIDERS)
   const [paidSel, paidOtherInit] = splitOther(init.paidBy || '', people)
   const [paySel, payOtherInit] = splitOther(init.paymentMethod || '', PAYMENT_METHODS)
 
-  const [service, setService] = useState(svcSel)
-  const [serviceOther, setServiceOther] = useState(svcOtherInit)
+  // Service is a free-type combobox (type anything; SERVICES are just suggestions),
+  // so we keep the raw name rather than a select value + "Other" split.
+  const [service, setService] = useState(init.name || '')
   const [cost, setCost] = useState(init.cost || '')
   const [cur, setCur] = useState(init.currency || defaultCur)
   const [cycle, setCycle] = useState(init.cycle || 'monthly')
@@ -398,7 +398,7 @@ function SubForm({ initial, people, parents = [], defaultCur, submitLabel, onSub
   const isFree = isFreeCycle(cycle)
   const isTrial = cycle === 'trial'
   const isRecurring = cycle === 'monthly' || cycle === 'yearly'
-  const name = (service === OTHER ? serviceOther : service).trim()
+  const name = service.trim()
   const providerVal = (provider === OTHER ? providerOther : provider).trim()
   const paidByVal = (paidBy === OTHER ? paidByOther : paidBy).trim()
   const payMethodVal = (payMethod === OTHER ? payMethodOther : payMethod).trim()
@@ -419,12 +419,11 @@ function SubForm({ initial, people, parents = [], defaultCur, submitLabel, onSub
   return (
     <form onSubmit={submit}>
       <Field label="Service">
-        <select value={service} onChange={(e) => setService(e.target.value)}>
-          <option value="" disabled>Choose a service…</option>
-          {SERVICES.map((s) => <option key={s} value={s}>{s}</option>)}
-          <option value={OTHER}>{OTHER}</option>
-        </select>
-        {service === OTHER && <input value={serviceOther} onChange={(e) => setServiceOther(e.target.value)} autoFocus placeholder="Type the service name" style={{ marginTop: 8 }} />}
+        <input list="sub-service-list" value={service} onChange={(e) => setService(e.target.value)}
+          placeholder="Type a service, e.g. Netflix" autoComplete="off" />
+        <datalist id="sub-service-list">
+          {SERVICES.map((s) => <option key={s} value={s} />)}
+        </datalist>
       </Field>
 
       <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>

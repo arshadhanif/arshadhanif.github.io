@@ -1,16 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getFullDetail, getSeason, getRecommendations, getEpisodeExternalIds, IMG, providerRegions } from '../lib/tmdb'
 import {
   ensureTitleFromFull, getWatchesForTitle, addToWatchlist,
-  listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, markEpisodesBulk, unmarkAllEpisodes, setEpisodeRating,
-  getTitleServices, setTitleServices, getStreamingAvailability,
+  listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, markEpisodesBulk, unmarkAllEpisodes, setEpisodeRating, setEpisodeWatchedDate,
+  getTitleServices, setTitleServices, getStreamingAvailability, getEpisodeWatchSpan,
   getImdbRating, getImdbSeasonRatings, getSeasonRatings, setSeasonRating,
 } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/Toast'
-import { Poster, Spinner, DualScore, Modal, TitleLink, StarRating } from '../components/ui'
+import { Poster, Spinner, DualScore, Modal, TitleLink, StarRating, ScrollRow } from '../components/ui'
 import MarkWatchedModal from '../components/MarkWatchedModal'
 import AddToCollectionModal from '../components/AddToCollectionModal'
 import { getPref, DEFAULT_REGION } from '../lib/prefs'
@@ -29,6 +29,8 @@ export default function TitleDetail() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState(null)
   const [watchModal, setWatchModal] = useState(false)
+  const [castAll, setCastAll] = useState(false)
+  const [epSpan, setEpSpan] = useState(null)
   const [listModal, setListModal] = useState(false)
   const preferred = getPref('region', DEFAULT_REGION)
   const [region, setRegion] = useState(preferred)
@@ -55,6 +57,7 @@ export default function TitleDetail() {
           if (!alive) return
           setTitleId(tid)
           loadWatches(tid)
+          if (f.media_type === 'tv') getEpisodeWatchSpan(tid).then((sp) => alive && setEpSpan(sp)).catch(() => {})
         } catch (e) { console.warn('cache title', e) }
       })
       .catch((e) => alive && setErr(e.message))
@@ -69,6 +72,42 @@ export default function TitleDetail() {
 
   const isTv = media === 'tv'
   const backdrop = IMG.backdrop(full.backdrop_path)
+  // Most recent watch (date + which group), for the header badge.
+  const sortedWatches = [...watches].filter((w) => w.watched_on).sort((a, b) => a.watched_on.localeCompare(b.watched_on))
+  const lastWatch = sortedWatches[sortedWatches.length - 1] || watches[0] || null
+  const lastWatched = lastWatch?.watched_on || null
+  // Distinct groups that logged this movie.
+  const watchGroups = (() => {
+    const m = new Map()
+    for (const w of watches) if (w.groups?.name && !m.has(w.group_id)) m.set(w.group_id, w.groups)
+    return [...m.values()]
+  })()
+  // Mark-watched button. For a movie, a title-level watch is one full viewing,
+  // so "Watched ×N" (N rewatches) is meaningful. For a TV series it is not: a
+  // whole-show watch marker (e.g. one per group from an import) says nothing
+  // about how many episodes you actually saw, so we drive the label off episode
+  // progress instead and never show a misleading ×N on the header.
+  const markBtn = (() => {
+    if (isTv) {
+      const total = full.total_episodes || 0
+      const seen = epSpan?.count || 0
+      if (total > 0 && seen >= total) return { label: '✓ Completed · log again', green: true, title: 'Log another full watch' }
+      if (seen > 0) return { label: '✓ Mark whole show watched', green: false, title: 'Log the whole series as watched' }
+      return { label: '✓ Mark watched', green: false, title: undefined }
+    }
+    return watches.length > 0
+      ? { label: `✓ Watched${watches.length > 1 ? ` ×${watches.length}` : ''} · log again`, green: true, title: 'Log another watch (rewatch)' }
+      : { label: '✓ Mark watched', green: false, title: undefined }
+  })()
+  // Aired range: "2004" for movies, "2004 - 2010" (or "- present") for TV runs.
+  const airedRange = (() => {
+    const fy = full.first_air_date ? String(full.first_air_date).slice(0, 4) : (full.year ? String(full.year) : '')
+    if (!isTv) return fy
+    const ly = full.last_air_date ? String(full.last_air_date).slice(0, 4) : ''
+    const ongoing = /return|progress/i.test(full.status || '') || !ly
+    if (!fy) return ''
+    return ongoing ? `${fy} - present` : (ly && ly !== fy ? `${fy} - ${ly}` : fy)
+  })()
 
   return (
     <div className="detail">
@@ -85,19 +124,41 @@ export default function TitleDetail() {
             <h1>{full.title}</h1>
             {full.tagline && <p className="detail-tagline">“{full.tagline}”</p>}
             <div className="detail-meta">
-              {full.year && <span>{full.year}</span>}
+              {airedRange && <span>{airedRange}</span>}
               <span>{isTv ? 'TV Series' : 'Movie'}</span>
               {full.runtime ? <span>{full.runtime} min{isTv ? '/ep' : ''}</span> : null}
               {isTv && full.number_of_seasons ? <span>{full.number_of_seasons} season{full.number_of_seasons > 1 ? 's' : ''}</span> : null}
               {full.total_episodes ? <span>{full.total_episodes} episodes</span> : null}
               {imdb?.rating ? <span className="imdb-rating">★ {imdb.rating} IMDb</span> : null}
               {full.vote_average ? <span className="tmdb-rating">★ {full.vote_average} TMDB</span> : null}
+              {!isTv && watches.length > 0 && (
+                <span className="watched-chip">✓ Watched{lastWatched ? ` ${fmtDate(lastWatched)}` : ''}</span>
+              )}
+              {!isTv && watchGroups.map((g) => (
+                <span key={g.id || g.name} style={{ color: g.color, fontWeight: 700 }}>{g.name}</span>
+              ))}
             </div>
+            {isTv && epSpan && epSpan.count > 0 && (
+              <div className="detail-progress">
+                <span className="watched-chip">▶ {epSpan.count}/{full.total_episodes || '?'} episodes</span>
+                {(epSpan.groups || []).map((g) => g.name && (
+                  <span key={g.id} style={{ color: g.color, fontWeight: 700 }}>
+                    {g.name}{epSpan.groups.length > 1 ? ` · ${g.count}` : ''}
+                  </span>
+                ))}
+                {epSpan.first && <span>Started {fmtDate(epSpan.first)}</span>}
+                {epSpan.last && epSpan.last !== epSpan.first && <span>Last watched {fmtDate(epSpan.last)}</span>}
+              </div>
+            )}
             <div className="scroll-x" style={{ margin: '4px 0 14px' }}>
               {full.genres.map((g) => <span className="chip" key={g}>{g}</span>)}
             </div>
             <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
-              <button className="btn primary" onClick={() => setWatchModal(true)}>✓ Mark watched</button>
+              <button className="btn primary" onClick={() => setWatchModal(true)}
+                style={markBtn.green ? { background: 'var(--green)', color: '#0b0d12' } : undefined}
+                title={markBtn.title}>
+                {markBtn.label}
+              </button>
               <AddWatchlist titleId={titleId} groups={groups} userId={user.id} />
               <button className="btn" onClick={() => setListModal(true)}>📚 Add to list</button>
               {full.trailer_key && (
@@ -136,9 +197,9 @@ export default function TitleDetail() {
 
         {full.cast.length > 0 && (
           <Block title="Cast">
-            <div className="scroll-x cast-row">
-              {full.cast.map((c) => (
-                <div className="cast" key={c.id} onClick={() => navigate(`/person/${c.id}`)} style={{ cursor: 'pointer' }}>
+            <div className={castAll ? 'cast-grid' : 'scroll-x cast-row'}>
+              {(castAll ? full.cast : full.cast.slice(0, 12)).map((c, i) => (
+                <div className="cast" key={`${c.id}-${i}`} onClick={() => navigate(`/person/${c.id}`)} style={{ cursor: 'pointer' }}>
                   <div className="cast-photo">
                     {IMG.profile(c.profile_path)
                       ? <img src={IMG.profile(c.profile_path)} alt={c.name} loading="lazy" />
@@ -149,6 +210,11 @@ export default function TitleDetail() {
                 </div>
               ))}
             </div>
+            {full.cast.length > 12 && (
+              <button className="btn sm" style={{ marginTop: 12 }} onClick={() => setCastAll((v) => !v)}>
+                {castAll ? 'Show less' : `See full cast (${full.cast.length})`}
+              </button>
+            )}
           </Block>
         )}
 
@@ -158,7 +224,7 @@ export default function TitleDetail() {
 
         {recs.length > 0 && (
           <Block title="More like this">
-            <div className="scroll-x rail">
+            <ScrollRow className="rail">
               {recs.map((r) => (
                 <TitleLink className="rail-item tile" key={`${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
                   <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
@@ -166,7 +232,7 @@ export default function TitleDetail() {
                   <div className="tile-sub">{r.year || 'N/A'}</div>
                 </TitleLink>
               ))}
-            </div>
+            </ScrollRow>
           </Block>
         )}
 
@@ -392,7 +458,18 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
   const [epImdb, setEpImdb] = useState({})             // "s-e" -> imdb_id | null (fetched lazily)
   const [desc, setDesc] = useState(false)              // newest episode first
   const [bulkBusy, setBulkBusy] = useState(false)
+  const manualSeason = useRef(false)   // true once the user opens a season themselves
   const today = todayLocal()
+
+  // Open the season to resume from: the first regular season that still has
+  // unwatched episodes (Specials never resume). Stops once the user navigates.
+  useEffect(() => { manualSeason.current = false }, [titleId, trackGroupId])
+  function resumeSeason(watchedSet) {
+    const regular = seasons.filter((s) => s.season_number >= 1)   // already ordered, specials last
+    const countIn = (sn) => { let c = 0; for (const k of watchedSet) if (Number(k.split('-')[0]) === sn) c++; return c }
+    for (const s of regular) if (countIn(s.season_number) < (s.episode_count || 0)) return s.season_number
+    return regular.length ? regular[regular.length - 1].season_number : (seasons[0]?.season_number ?? null)
+  }
 
   // Expand a row; fetch its IMDb id the first time it's opened.
   function openRow(season, ep, key) {
@@ -409,7 +486,9 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
   const reload = useCallback(async () => {
     if (!trackGroupId) { setWatched(new Set()); setEpRatings({}); setEpDates({}); setEpRewatch({}); setSeasonRatings({}); return }
     const rows = await listEpisodeWatches(titleId, trackGroupId)
-    setWatched(new Set(rows.map((r) => `${r.season_number}-${r.episode_number}`)))
+    const watchedSet = new Set(rows.map((r) => `${r.season_number}-${r.episode_number}`))
+    setWatched(watchedSet)
+    if (!manualSeason.current) { const rs = resumeSeason(watchedSet); if (rs != null) setOpenSeason(rs) }
     setEpRatings(Object.fromEntries(rows.filter((r) => r.rating != null).map((r) => [`${r.season_number}-${r.episode_number}`, r.rating])))
     setEpDates(Object.fromEntries(rows.filter((r) => r.watched_on).map((r) => [`${r.season_number}-${r.episode_number}`, r.watched_on])))
     setEpRewatch(Object.fromEntries(rows.filter((r) => r.rewatch_count > 0).map((r) => [`${r.season_number}-${r.episode_number}`, r.rewatch_count])))
@@ -458,9 +537,11 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
     const next = new Set(watched)
     if (next.has(key)) {
       next.delete(key); setWatched(next)
+      setEpDates((m) => { const n = { ...m }; delete n[key]; return n })
       await unmarkEpisode({ titleId, groupId: trackGroupId, season, episode: ep }).catch(reload)
     } else {
       next.add(key); setWatched(next)
+      setEpDates((m) => ({ ...m, [key]: today }))   // default to today, editable below
       await markEpisode({ titleId, groupId: trackGroupId, season, episode: ep, watchedOn: today, createdBy: userId }).catch(reload)
     }
   }
@@ -468,7 +549,17 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
     const key = `${season}-${ep}`
     setEpRatings((r) => ({ ...r, [key]: score }))
     setWatched((w) => new Set(w).add(key))
+    setEpDates((m) => (m[key] ? m : { ...m, [key]: today }))
     await setEpisodeRating({ titleId, groupId: trackGroupId, season, episode: ep, rating: score, watchedOn: today, createdBy: userId }).catch(reload)
+  }
+  // Set or correct an episode's watched date. Picking a date also marks it
+  // watched; clearing keeps it watched but with no date.
+  async function setEpDate(season, ep, date) {
+    if (!trackGroupId) return
+    const key = `${season}-${ep}`
+    setEpDates((m) => { const n = { ...m }; if (date) n[key] = date; else delete n[key]; return n })
+    if (date) setWatched((w) => new Set(w).add(key))
+    await setEpisodeWatchedDate({ titleId, groupId: trackGroupId, season, episode: ep, watchedOn: date || null, createdBy: userId }).catch(reload)
   }
   async function markWholeSeason(season, eps) {
     await markSeason({ titleId, groupId: trackGroupId, season, episodes: eps.map((e) => e.episode_number), watchedOn: today, createdBy: userId })
@@ -531,7 +622,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
             <div className="faint" style={{ marginBottom: 8 }}>Your season scores</div>
             <div className="cols">
               {bars.map((b) => (
-                <button className="col" key={b.n} title={`Season ${b.n}: ${b.avg.toFixed(1)}/10`} onClick={() => setOpenSeason(b.n)}>
+                <button className="col" key={b.n} title={`Season ${b.n}: ${b.avg.toFixed(1)}/10`} onClick={() => { manualSeason.current = true; setOpenSeason(b.n) }}>
                   <div className="fill" style={{ height: `${b.avg * 10}%`, background: b.avg >= 8 ? 'var(--green)' : b.avg >= 6 ? 'var(--accent)' : 'var(--pink)' }} />
                   <span className="cl">S{b.n}</span>
                 </button>
@@ -552,7 +643,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
           const isOpen = openSeason === s.season_number
           return (
             <div className="card" key={s.season_number} style={{ padding: 0, overflow: 'hidden' }}>
-              <button className="season-head" onClick={() => setOpenSeason(isOpen ? null : s.season_number)}>
+              <button className="season-head" onClick={() => { manualSeason.current = true; setOpenSeason(isOpen ? null : s.season_number) }}>
                 <span><strong>{s.name || `Season ${s.season_number}`}</strong> <span className="faint">· {s.episode_count} eps</span></span>
                 <span className="row" style={{ gap: 10 }}>
                   {(() => { const arr = Object.entries(seasonRatings[s.season_number] || {}).map(([pid, score]) => ({ profile_id: pid, score })); return arr.length ? <DualScore profiles={profiles} ratings={arr} /> : null })()}
@@ -614,8 +705,20 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
                                 <div onClick={(ev) => ev.stopPropagation()} style={{ marginTop: 8 }}>
                                   <dl className="ep2-facts">
                                     <div><dt>Released</dt><dd>{e.air_date ? fmtDate(e.air_date) : 'N/A'}</dd></div>
-                                    <div><dt>Watched</dt><dd>{on ? (epDates[key] ? fmtDate(epDates[key]) : 'date not set') : 'Not yet'}</dd></div>
-                                    <div><dt>List / watched by</dt><dd>{trackGroup ? trackGroup.name : 'N/A'}</dd></div>
+                                    <div><dt>Watched on</dt><dd>
+                                      <input type="date" className="ep2-date" value={epDates[key] || ''} max={today} disabled={!trackGroupId}
+                                        onChange={(ev) => setEpDate(s.season_number, e.episode_number, ev.target.value)} />
+                                      {on && !epDates[key] && <span className="faint" style={{ marginLeft: 8, fontSize: 12 }}>date not set</span>}
+                                      {on && epDates[key] && (
+                                        <button className="ep2-date-clear" title="Clear date (stays watched)"
+                                          onClick={() => setEpDate(s.season_number, e.episode_number, '')}>clear</button>
+                                      )}
+                                    </dd></div>
+                                    <div><dt>List / watched by</dt><dd>
+                                      <select className="ep2-date" value={trackGroupId} onChange={(ev) => setTrackGroupId(ev.target.value)}>
+                                        {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                                      </select>
+                                    </dd></div>
                                   </dl>
                                   <div className="faint" style={{ margin: '4px 0' }}>Your rating</div>
                                   <StarRating value={rt || 0} color="var(--accent)" onChange={(sc) => rate(s.season_number, e.episode_number, sc)} />
