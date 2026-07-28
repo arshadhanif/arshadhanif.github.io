@@ -82,6 +82,23 @@ export default function TitleDetail() {
     for (const w of watches) if (w.groups?.name && !m.has(w.group_id)) m.set(w.group_id, w.groups)
     return [...m.values()]
   })()
+  // Mark-watched button. For a movie, a title-level watch is one full viewing,
+  // so "Watched ×N" (N rewatches) is meaningful. For a TV series it is not: a
+  // whole-show watch marker (e.g. one per group from an import) says nothing
+  // about how many episodes you actually saw, so we drive the label off episode
+  // progress instead and never show a misleading ×N on the header.
+  const markBtn = (() => {
+    if (isTv) {
+      const total = full.total_episodes || 0
+      const seen = epSpan?.count || 0
+      if (total > 0 && seen >= total) return { label: '✓ Completed · log again', green: true, title: 'Log another full watch' }
+      if (seen > 0) return { label: '✓ Mark whole show watched', green: false, title: 'Log the whole series as watched' }
+      return { label: '✓ Mark watched', green: false, title: undefined }
+    }
+    return watches.length > 0
+      ? { label: `✓ Watched${watches.length > 1 ? ` ×${watches.length}` : ''} · log again`, green: true, title: 'Log another watch (rewatch)' }
+      : { label: '✓ Mark watched', green: false, title: undefined }
+  })()
   // Aired range: "2004" for movies, "2004 - 2010" (or "- present") for TV runs.
   const airedRange = (() => {
     const fy = full.first_air_date ? String(full.first_air_date).slice(0, 4) : (full.year ? String(full.year) : '')
@@ -138,11 +155,9 @@ export default function TitleDetail() {
             </div>
             <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
               <button className="btn primary" onClick={() => setWatchModal(true)}
-                style={watches.length > 0 ? { background: 'var(--green)', color: '#0b0d12' } : undefined}
-                title={watches.length > 0 ? 'Log another watch (rewatch)' : undefined}>
-                {watches.length > 0
-                  ? `✓ Watched${watches.length > 1 ? ` ×${watches.length}` : ''} · log again`
-                  : '✓ Mark watched'}
+                style={markBtn.green ? { background: 'var(--green)', color: '#0b0d12' } : undefined}
+                title={markBtn.title}>
+                {markBtn.label}
               </button>
               <AddWatchlist titleId={titleId} groups={groups} userId={user.id} />
               <button className="btn" onClick={() => setListModal(true)}>📚 Add to list</button>
