@@ -115,7 +115,6 @@ export default function TitleDetail() {
       <div className="detail-hero">
         {backdrop && <div className="detail-backdrop" style={{ backgroundImage: `url(${backdrop})` }} />}
         <div className="detail-hero-grad" />
-        <button className="btn sm detail-back" onClick={() => navigate(-1)}>← Back</button>
         <div className="container detail-hero-inner">
           <div className="detail-poster">
             <Poster title={full.title} mediaType={full.media_type} posterPath={full.poster_path} />
