@@ -10,7 +10,7 @@ import { setTheme, setAccent, ACCENTS } from '../lib/theme'
 import { getPref } from '../lib/prefs'
 import {
   Compass, Sparkles, Bookmark, BookOpen, Library, BarChart3, Bell, Sun, Moon,
-  CalendarDays, Gift, Award, CreditCard, SlidersHorizontal, Users, Settings, UserRound, Upload, Info, LogOut, HeartHandshake,
+  CalendarDays, Gift, Award, CreditCard, SlidersHorizontal, Users, Settings, UserRound, Upload, Info, LogOut, HeartHandshake, ArrowLeft,
 } from 'lucide-react'
 
 const TABS = [
@@ -72,6 +72,15 @@ export default function Layout() {
     return () => { document.removeEventListener('mousedown', onClick); document.removeEventListener('keydown', onKey) }
   }, [])
 
+  // Primary destinations live in the bottom tab bar, so they never need a back
+  // button. Every other (drilled-into) route does, especially in the installed
+  // PWA where there is no browser chrome to go back with.
+  const tabPaths = new Set(TABS.map((t) => t.to))
+  const showBack = !tabPaths.has(location.pathname)
+  // Fall back to home if this was the first page loaded (deep link) and there is
+  // nothing in history to pop back to.
+  const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate('/'))
+
   const go = (path) => { setMenuOpen(false); navigate(path) }
   const toggleTheme = () => { const n = theme === 'light' ? 'dark' : 'light'; setThemeS(n); setTheme(n) }
   const pickAccent = (name) => { setAccentS(name); setAccent(name) }
@@ -79,7 +88,14 @@ export default function Layout() {
   return (
     <div className="app">
       <header className="topbar">
-        <NavLink to="/" className="brand">Reel<span>Book</span></NavLink>
+        <div className="row" style={{ gap: 8, alignItems: 'center', minWidth: 0 }}>
+          {showBack && (
+            <button className="bell" onClick={goBack} aria-label="Go back" title="Back">
+              <ArrowLeft size={20} />
+            </button>
+          )}
+          <NavLink to="/" className="brand">Reel<span>Book</span></NavLink>
+        </div>
         <nav className="nav-links">
           {TABS.map((t) => <NavLink key={t.to} to={t.to} end={t.end}>{t.label}</NavLink>)}
         </nav>
