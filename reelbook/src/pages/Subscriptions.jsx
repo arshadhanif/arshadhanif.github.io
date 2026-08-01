@@ -6,7 +6,7 @@ import { getPref, setPref } from '../lib/prefs'
 import { getRates, convert } from '../lib/fx'
 import { todayLocal, fmtDate } from '../lib/dates'
 import { catColor } from '../lib/categories'
-import { Spinner, Empty, Modal } from '../components/ui'
+import { Spinner, Empty, Modal, Combobox } from '../components/ui'
 
 const SERVICES = ['Netflix', 'OSN+', 'Prime Video', 'Disney+', 'Apple TV+', 'Shahid VIP', 'StarzPlay', 'Max', 'Hulu', 'YouTube Premium', 'Spotify', 'Crunchyroll']
 const CURRENCIES = ['PKR', 'SAR', 'AED', 'USD', 'GBP', 'EUR', 'INR', 'QAR']
@@ -419,11 +419,7 @@ function SubForm({ initial, people, parents = [], defaultCur, submitLabel, onSub
   return (
     <form onSubmit={submit}>
       <Field label="Service">
-        <input list="sub-service-list" value={service} onChange={(e) => setService(e.target.value)}
-          placeholder="Type a service, e.g. Netflix" autoComplete="off" />
-        <datalist id="sub-service-list">
-          {SERVICES.map((s) => <option key={s} value={s} />)}
-        </datalist>
+        <Combobox value={service} onChange={setService} options={SERVICES} placeholder="Type a service, e.g. Netflix" />
       </Field>
 
       <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>

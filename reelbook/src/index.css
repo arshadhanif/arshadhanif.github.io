@@ -495,6 +495,12 @@ input:focus, select:focus, textarea:focus {
 .fab:active { transform: scale(.92); }
 @media (min-width: 820px) { .fab { bottom: 24px; right: 24px; } }
 
+/* Combobox: free-type input + real-DOM suggestion menu (works on iOS) */
+.combobox { position: relative; }
+.combobox-menu { position: absolute; z-index: 60; top: calc(100% + 4px); left: 0; right: 0; margin: 0; padding: 4px; list-style: none; max-height: 240px; overflow-y: auto; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); -webkit-overflow-scrolling: touch; }
+.combobox-opt { display: block; width: 100%; text-align: left; padding: 11px 12px; background: none; border: 0; color: var(--text); font-size: 15px; font-family: inherit; border-radius: 7px; cursor: pointer; }
+.combobox-opt:hover, .combobox-opt:focus { background: var(--bg-hover); }
+
 /* IMDb rating badge */
 .imdb-rating { display: inline-flex; align-items: center; gap: 4px; background: #f5c518; color: #0b0d12; font-weight: 800; font-size: 13px; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
 .imdb-rating.sm { font-size: 11px; padding: 1px 6px; }

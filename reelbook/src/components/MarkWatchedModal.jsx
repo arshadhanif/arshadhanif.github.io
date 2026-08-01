@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Modal, StarRating, TagInput } from './ui'
+import { Modal, StarRating, TagInput, Combobox } from './ui'
 import { markWatched } from '../lib/db'
 import { useAuth } from '../context/AuthContext'
 import { getPref } from '../lib/prefs'
@@ -127,10 +127,7 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
         </div>
         <div className="field" style={{ flex: 1 }}>
           <label>Streaming service</label>
-          <input list="service-list" value={service} onChange={(e) => setService(e.target.value)} placeholder="e.g. Netflix" />
-          <datalist id="service-list">
-            {SERVICE_OPTIONS.map((o) => <option key={o} value={o} />)}
-          </datalist>
+          <Combobox value={service} onChange={setService} options={SERVICE_OPTIONS} placeholder="e.g. Netflix" />
         </div>
       </div>
 
