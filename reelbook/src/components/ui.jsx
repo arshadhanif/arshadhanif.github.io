@@ -66,6 +66,41 @@ export function TagInput({ value = [], onChange, suggestions = TAG_SUGGESTIONS }
   )
 }
 
+// Free-type input with a tap-to-fill suggestion list. Unlike a native
+// <datalist> (which iOS Safari does not render), the menu is real DOM, so the
+// list of values shows on mobile while you can still type any value freely.
+export function Combobox({ value = '', onChange, options = [], placeholder, autoFocus }) {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef(null)
+  useEffect(() => {
+    const onDoc = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('touchstart', onDoc)
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('touchstart', onDoc) }
+  }, [])
+  const q = (value || '').trim().toLowerCase()
+  // Show everything on an empty field; otherwise filter, but never hide an exact
+  // match-in-progress behind itself.
+  const matches = options.filter((o) => !q || o.toLowerCase().includes(q))
+  const show = open && matches.length > 0
+  return (
+    <div className="combobox" ref={wrapRef}>
+      <input value={value} placeholder={placeholder} autoComplete="off" autoFocus={autoFocus}
+        onChange={(e) => { onChange(e.target.value); setOpen(true) }}
+        onFocus={() => setOpen(true)} />
+      {show && (
+        <ul className="combobox-menu">
+          {matches.map((o) => (
+            <li key={o}>
+              <button type="button" className="combobox-opt" onClick={() => { onChange(o); setOpen(false) }}>{o}</button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 // Wraps content in a link to the title detail page (/title/:media/:tmdbId).
 export function TitleLink({ tmdbId, media, className, style, children }) {
   if (!tmdbId || !media) return <div className={className} style={style}>{children}</div>
