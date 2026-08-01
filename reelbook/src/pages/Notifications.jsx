@@ -5,6 +5,15 @@ import { initBaselines, buildNotifications, dismiss, markAllRead, syncNotifState
 import { Poster, Spinner, Empty, TitleLink } from '../components/ui'
 import { fmtDate } from '../lib/dates'
 
+// Reject if a promise takes too long, so one hung TMDB request can't stall the
+// whole background refresh (the underlying fetch is left to resolve on its own).
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+  ])
+}
+
 export default function Notifications() {
   const [shows, setShows] = useState([])
   const [notif, setNotif] = useState({ newItems: [], comingItems: [], catchItems: [], unread: 0 })
@@ -14,22 +23,40 @@ export default function Notifications() {
   useEffect(() => {
     let alive = true
     ;(async () => {
-      await syncNotifState().catch(() => {})
-      const tracked = (await listTrackedShows()).slice(0, 60)
-      const out = await Promise.allSettled(tracked.map(async (s) => {
-        const st = await getTvStatus(s.title.tmdb_id)
-        const aired = st.aired_episodes ?? st.number_of_episodes ?? s.cachedTotal
-        if (aired && aired !== s.cachedTotal) setTitleTotalEpisodes(s.title.id, aired).catch(() => {})
-        return { id: s.title.id, title: s.title, tmdb_id: s.title.tmdb_id, media_type: 'tv', poster_path: s.title.poster_path, watched: s.watched, aired, next: st.next_episode }
-      }))
-      const objs = out.filter((r) => r.status === 'fulfilled').map((r) => r.value)
-      if (!alive) return
-      setShows(objs)
-      initBaselines(objs)
-      const n = buildNotifications(objs)
-      setNotif(n)
-      setTab(n.newItems.length ? 'new' : n.comingItems.length ? 'coming' : 'catch')
-      setLoading(false)
+      try {
+        await syncNotifState().catch(() => {})
+        let tracked = []
+        try { tracked = (await listTrackedShows()).slice(0, 60) } catch { tracked = [] }
+        // Render immediately from cached episode counts. The page must never
+        // block on TMDB: a single hung request would otherwise freeze it.
+        const base = tracked.map((s) => ({
+          id: s.title.id, title: s.title, tmdb_id: s.title.tmdb_id, media_type: 'tv',
+          poster_path: s.title.poster_path, watched: s.watched, aired: s.cachedTotal || null, next: null,
+        }))
+        if (alive) {
+          setShows(base)
+          initBaselines(base)
+          const n = buildNotifications(base)
+          setNotif(n)
+          setTab(n.newItems.length ? 'new' : n.comingItems.length ? 'coming' : 'catch')
+          setLoading(false)
+        }
+        // Enrich with live TMDB status (aired counts + next episode) in the
+        // background, each with a timeout, keeping the cached row on failure.
+        const out = await Promise.allSettled(base.map(async (s) => {
+          const st = await withTimeout(getTvStatus(s.tmdb_id), 8000)
+          const aired = st.aired_episodes ?? st.number_of_episodes ?? s.aired
+          if (aired && aired !== s.aired) setTitleTotalEpisodes(s.id, aired).catch(() => {})
+          return { ...s, aired, next: st.next_episode }
+        }))
+        const objs = out.map((r, i) => (r.status === 'fulfilled' ? r.value : base[i]))
+        if (!alive) return
+        setShows(objs)
+        initBaselines(objs)
+        setNotif(buildNotifications(objs))
+      } finally {
+        if (alive) setLoading(false)
+      }
     })()
     return () => { alive = false }
   }, [])
