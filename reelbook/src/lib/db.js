@@ -325,10 +325,9 @@ export async function setSeasonRating({ titleId, groupId, profileId, season, sco
 
 // All season ratings across the household, with title + profile, for analytics.
 export async function listAllSeasonRatings() {
-  const { data, error } = await supabase.from('season_ratings')
-    .select('season_number, score, profile_id, titles(id, tmdb_id, title, media_type, poster_path), profiles(name, color)')
-  if (error) throw error
-  return data || []
+  return pagedSelect('season_ratings',
+    'id, season_number, score, profile_id, titles(id, tmdb_id, title, media_type, poster_path), profiles(name, color)',
+    { limit: 100000, order: (q) => q.order('id', { ascending: true }) })
 }
 
 export async function markEpisode({ titleId, groupId, season, episode, watchedOn, createdBy }) {
@@ -337,6 +336,21 @@ export async function markEpisode({ titleId, groupId, season, episode, watchedOn
       title_id: titleId, group_id: groupId,
       season_number: season, episode_number: episode,
       watched_on: watchedOn || undefined, created_by: createdBy,
+    },
+    { onConflict: 'title_id,group_id,season_number,episode_number' }
+  )
+  if (error) throw error
+}
+
+// Set (or clear) the watched date on an episode. Upserts so it works whether
+// the episode was already marked or is being marked for the first time; passing
+// an empty date keeps it watched but with no date.
+export async function setEpisodeWatchedDate({ titleId, groupId, season, episode, watchedOn, createdBy }) {
+  const { error } = await supabase.from('episode_watches').upsert(
+    {
+      title_id: titleId, group_id: groupId,
+      season_number: season, episode_number: episode,
+      watched_on: watchedOn || null, created_by: createdBy,
     },
     { onConflict: 'title_id,group_id,season_number,episode_number' }
   )
@@ -369,6 +383,7 @@ export async function markEpisodesBulk({ titleId, groupId, episodes, createdBy, 
     season_number: e.season, episode_number: e.episode,
     watched_on: e.watchedOn || null, created_by: createdBy, import_batch: importBatch,
     rewatch_count: e.rewatchCount || 0,
+    ...(e.rating != null ? { rating: e.rating } : {}),
   }))
   for (let i = 0; i < rows.length; i += 500) {
     const { error } = await supabase
@@ -394,48 +409,65 @@ export async function markSeason({ titleId, groupId, season, episodes, watchedOn
 }
 
 // Shows with episodes ticked off but not yet complete - for "Continue watching".
+// Distinct watched episodes + last-watched date per TV show, aggregated across
+// all groups. Pages through episode_watches (PostgREST caps at 1000/response,
+// and the library now runs to 10k+ rows) using minimal columns, then batch-loads
+// the titles so we never join titles(*) across every episode row.
+// In-progress shows, split per GROUP so "Continue watching" can tell your solo
+// list apart from a shared one (a show can be in progress in one group and
+// finished in another). Each entry carries its group so the UI can label/filter.
 export async function listInProgressShows() {
-  const { data, error } = await supabase
-    .from('episode_watches')
-    .select('title_id, season_number, episode_number, watched_on, titles(*)')
+  // Aggregated in the DB (see the in_progress_shows() function) so we transfer
+  // ~200 rows instead of every episode watch. Split per (show, group).
+  const { data, error } = await supabase.rpc('in_progress_shows')
   if (error) throw error
-  const byTitle = new Map()
-  for (const row of data || []) {
-    const t = row.titles
-    if (!t || t.media_type !== 'tv') continue
-    if (!byTitle.has(row.title_id)) byTitle.set(row.title_id, { title: t, eps: new Set(), last: row.watched_on })
-    const e = byTitle.get(row.title_id)
-    e.eps.add(`${row.season_number}-${row.episode_number}`)
-    if (row.watched_on && (!e.last || row.watched_on > e.last)) e.last = row.watched_on
-  }
-  const out = []
-  for (const { title, eps, last } of byTitle.values()) {
-    const total = title.total_episodes || 0
-    const watched = eps.size
-    if (total && watched >= total) continue // finished
-    out.push({ title, watched, total, last })
-  }
-  return out.sort((a, b) => (b.last || '').localeCompare(a.last || ''))
+  return (data || [])
+    .map((r) => ({
+      title: { id: r.title_id, tmdb_id: r.tmdb_id, media_type: r.media_type, title: r.title, poster_path: r.poster_path, year: r.year, total_episodes: r.total_episodes },
+      group: r.group_id ? { id: r.group_id, name: r.group_name, color: r.group_color } : null,
+      groupId: r.group_id,
+      watched: r.watched,
+      total: r.total_episodes || 0,
+      last: r.last_watched,
+    }))
+    .sort((a, b) => (b.last || '').localeCompare(a.last || ''))
 }
 
 // All TV shows you've ticked episodes for (watched count + cached total).
 export async function listTrackedShows() {
-  const { data, error } = await supabase
-    .from('episode_watches')
-    .select('title_id, season_number, episode_number, watched_on, titles(*)')
+  // Aggregated in the DB (tracked_shows()) so we transfer ~one row per show
+  // instead of every episode watch. Fetching the whole watch history and
+  // counting client-side was the main reason this was slow to load on mobile.
+  const { data, error } = await supabase.rpc('tracked_shows')
   if (error) throw error
-  const byTitle = new Map()
-  for (const row of data || []) {
-    const t = row.titles
-    if (!t || t.media_type !== 'tv') continue
-    if (!byTitle.has(row.title_id)) byTitle.set(row.title_id, { title: t, eps: new Set(), last: row.watched_on })
-    const e = byTitle.get(row.title_id)
-    e.eps.add(`${row.season_number}-${row.episode_number}`)
-    if (row.watched_on && (!e.last || row.watched_on > e.last)) e.last = row.watched_on
-  }
-  return [...byTitle.values()].map(({ title, eps, last }) => ({
-    title, watched: eps.size, cachedTotal: title.total_episodes || 0, last,
+  return (data || []).map((r) => ({
+    title: {
+      id: r.title_id, tmdb_id: r.tmdb_id, media_type: r.media_type,
+      title: r.title, poster_path: r.poster_path, year: r.year, total_episodes: r.total_episodes,
+    },
+    watched: r.watched,
+    cachedTotal: r.total_episodes || 0,
+    last: r.last_watched,
   }))
+}
+
+// Distinct episodes watched + first/last watched date for one title (across the
+// user's groups). Used for the "you started / last watched" line on TV headers.
+export async function getEpisodeWatchSpan(titleId) {
+  const { data, error } = await supabase.from('episode_watches')
+    .select('season_number, episode_number, watched_on, group_id, groups(name, color)').eq('title_id', titleId)
+  if (error) throw error
+  const eps = new Set(); const dated = []
+  const byGroup = new Map()   // which group(s) watched this show
+  for (const r of data || []) {
+    eps.add(`${r.season_number}-${r.episode_number}`)
+    if (r.watched_on) dated.push(r.watched_on)
+    if (!byGroup.has(r.group_id)) byGroup.set(r.group_id, { id: r.group_id, name: r.groups?.name, color: r.groups?.color, eps: new Set() })
+    byGroup.get(r.group_id).eps.add(`${r.season_number}-${r.episode_number}`)
+  }
+  dated.sort()
+  const groups = [...byGroup.values()].map((g) => ({ id: g.id, name: g.name, color: g.color, count: g.eps.size })).sort((a, b) => b.count - a.count)
+  return { count: eps.size, first: dated[0] || null, last: dated[dated.length - 1] || null, groups }
 }
 
 export async function setTitleTotalEpisodes(titleId, total) {
@@ -504,15 +536,12 @@ export async function deleteGroup(groupId) {
 
 // ---------- Watchlist ----------
 
-export async function listWatchlist(groupId = null) {
-  let q = supabase
-    .from('watchlist')
-    .select('id, group_id, added_by, created_at, titles(*), groups(id, name, color)')
-    .order('created_at', { ascending: false })
-  if (groupId) q = q.eq('group_id', groupId)
-  const { data, error } = await q
-  if (error) throw error
-  return data
+export async function listWatchlist(groupId = null, limit = 100000) {
+  // Paginated so a watchlist over 1000 rows isn't silently truncated.
+  return pagedSelect('watchlist', 'id, group_id, added_by, created_at, titles(*), groups(id, name, color)', {
+    groupId, limit,
+    order: (q) => q.order('created_at', { ascending: false }).order('id', { ascending: true }),
+  })
 }
 
 export async function addToWatchlist({ seed, groupId, addedBy }) {
@@ -537,6 +566,51 @@ export async function addToWatchlist({ seed, groupId, addedBy }) {
 export async function removeFromWatchlist(id) {
   const { error } = await supabase.from('watchlist').delete().eq('id', id)
   if (error) throw error
+}
+
+// Copy an existing title into another group's watchlist. No-op (returns the
+// existing row id) if that group already has it, so it is safe to run in bulk.
+export async function copyWatchlistToGroup(titleId, targetGroupId, addedBy) {
+  const { data: existing } = await supabase
+    .from('watchlist')
+    .select('id')
+    .eq('title_id', titleId)
+    .eq('group_id', targetGroupId)
+    .maybeSingle()
+  if (existing) return { id: existing.id, created: false }
+  const { data, error } = await supabase
+    .from('watchlist')
+    .insert({ title_id: titleId, group_id: targetGroupId, added_by: addedBy })
+    .select('id')
+    .single()
+  if (error) throw error
+  return { id: data.id, created: true }
+}
+
+// Move a single watchlist row to another group: copy across, then drop the
+// original. If the target already has the title we still drop the original.
+export async function moveWatchlistItem(watchlistId, titleId, targetGroupId, addedBy) {
+  await copyWatchlistToGroup(titleId, targetGroupId, addedBy)
+  await removeFromWatchlist(watchlistId)
+}
+
+// Bulk copy/move a whole group's watchlist into another group. Returns a
+// breakdown so the UI can report exactly what happened.
+export async function mergeWatchlists(sourceGroupId, targetGroupId, addedBy, { move = false } = {}) {
+  if (sourceGroupId === targetGroupId) return { copied: 0, skipped: 0, removed: 0 }
+  const src = await listWatchlist(sourceGroupId)
+  let copied = 0, skipped = 0
+  for (const it of src) {
+    const tid = it.titles?.id
+    if (!tid) continue
+    const { created } = await copyWatchlistToGroup(tid, targetGroupId, addedBy)
+    created ? copied++ : skipped++
+  }
+  let removed = 0
+  if (move) {
+    for (const it of src) { await removeFromWatchlist(it.id); removed++ }
+  }
+  return { copied, skipped, removed }
 }
 
 // ---------- Friends / social ----------
@@ -624,34 +698,44 @@ export async function markWatched({
 
 // Diary = all watches, newest first, with title + group + ratings.
 export async function listDiary({ groupId = null, limit = 200 } = {}) {
-  let q = supabase
-    .from('watches')
-    .select(
-      'id, watched_on, date_precision, note, episodes_watched, where_watched, service, group_id, created_by, created_at, tags, is_rewatch, rewatch_count, ' +
-        'titles(*), groups(id, name, color), ratings(id, profile_id, score)'
-    )
-    .order('watched_on', { ascending: false })
-    .order('created_at', { ascending: false })
-    .limit(limit)
-  if (groupId) q = q.eq('group_id', groupId)
-  const { data, error } = await q
-  if (error) throw error
-  return data
+  const cols = 'id, watched_on, date_precision, note, episodes_watched, where_watched, service, visibility, group_id, created_by, created_at, tags, is_rewatch, rewatch_count, ' +
+    'titles(*), groups(id, name, color), ratings(id, profile_id, score)'
+  // PostgREST caps any single response at 1000 rows, so page through with
+  // .range() up to `limit`. A stable id tiebreaker is required because bulk
+  // imports share watched_on/created_at, which would otherwise let rows shift
+  // between pages (causing duplicates or gaps).
+  return pagedSelect('watches', cols, {
+    groupId, limit,
+    order: (q) => q.order('watched_on', { ascending: false }).order('created_at', { ascending: false }).order('id', { ascending: true }),
+  })
+}
+
+// Page through a table with .range() until `limit` rows (or the data) run out.
+async function pagedSelect(table, cols, { groupId = null, limit = 1000, order }) {
+  const PAGE = 1000
+  const out = []
+  for (let from = 0; from < limit; from += PAGE) {
+    const to = Math.min(from + PAGE, limit) - 1
+    let q = supabase.from(table).select(cols)
+    q = order(q)
+    q = q.range(from, to)
+    if (groupId) q = q.eq('group_id', groupId)
+    const { data, error } = await q
+    if (error) throw error
+    out.push(...(data || []))
+    if (!data || data.length < (to - from + 1)) break
+  }
+  return out
 }
 
 // Episode-level diary: individual episode watches, newest first, with title + group.
 export async function listEpisodeDiary({ groupId = null, limit = 400 } = {}) {
-  let q = supabase
-    .from('episode_watches')
-    .select('id, season_number, episode_number, watched_on, rating, rewatch_count, created_at, group_id, ' +
-      'titles(id, tmdb_id, title, media_type, poster_path, year, runtime), groups(id, name, color)')
-    .order('watched_on', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false })
-    .limit(limit)
-  if (groupId) q = q.eq('group_id', groupId)
-  const { data, error } = await q
-  if (error) throw error
-  return data || []
+  const cols = 'id, season_number, episode_number, watched_on, rating, rewatch_count, created_at, created_by, group_id, ' +
+    'titles(id, tmdb_id, title, media_type, poster_path, year, runtime), groups(id, name, color)'
+  return pagedSelect('episode_watches', cols, {
+    groupId, limit,
+    order: (q) => q.order('watched_on', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }).order('id', { ascending: true }),
+  })
 }
 
 export async function updateWatch(id, fields) {
@@ -696,12 +780,19 @@ export async function setRating(watchId, profileId, score) {
 export async function loadNotifState() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
-  const { data, error } = await supabase
-    .from('notif_state')
-    .select('title_id, baseline_aired, dismissed')
-    .eq('user_id', user.id)
-  if (error) throw error
-  return data || []
+  const out = []
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase
+      .from('notif_state')
+      .select('title_id, baseline_aired, dismissed')
+      .eq('user_id', user.id)
+      .order('title_id', { ascending: true })
+      .range(from, from + 999)
+    if (error) throw error
+    out.push(...(data || []))
+    if (!data || data.length < 1000) break
+  }
+  return out
 }
 
 // Upsert one title's state. baseline/dismissed are optional (only set what changed).
@@ -736,14 +827,25 @@ export async function saveNotifBaselines(map) {
 // Set of TMDB ids the household has logged (watched or watchlisted) - used to
 // badge titles you've seen on person / discovery pages.
 export async function getLoggedTmdbIds() {
-  const [{ data: w }, { data: wl }] = await Promise.all([
-    supabase.from('watches').select('titles(tmdb_id)'),
-    supabase.from('watchlist').select('titles(tmdb_id)'),
+  const order = (q) => q.order('id', { ascending: true })
+  const [w, wl] = await Promise.all([
+    pagedSelect('watches', 'id, titles(tmdb_id)', { limit: 100000, order }),
+    pagedSelect('watchlist', 'id, titles(tmdb_id)', { limit: 100000, order }),
   ])
   const set = new Set()
-  for (const r of w || []) if (r.titles?.tmdb_id) set.add(r.titles.tmdb_id)
-  for (const r of wl || []) if (r.titles?.tmdb_id) set.add(r.titles.tmdb_id)
+  for (const r of w) if (r.titles?.tmdb_id) set.add(r.titles.tmdb_id)
+  for (const r of wl) if (r.titles?.tmdb_id) set.add(r.titles.tmdb_id)
   return set
+}
+
+// Library TMDB ids split into watched vs watchlisted (aggregated in the DB), so
+// a person page can flag which of their credits you've seen.
+export async function getLibraryTmdbIds() {
+  const { data, error } = await supabase.rpc('library_tmdb_ids')
+  if (error) throw error
+  const watched = new Set(), watchlist = new Set()
+  for (const r of data || []) { if (r.watched) watched.add(r.tmdb_id); if (r.watchlisted) watchlist.add(r.tmdb_id) }
+  return { watched, watchlist }
 }
 
 // ---------- Where to watch (manual override + live API) ----------
@@ -955,22 +1057,146 @@ export async function reorderCollection(orderedIds) {
     supabase.from('collection_items').update({ position: i }).eq('id', id)))
 }
 
+// ---------- Native restore for lists / favourites / subscriptions ----------
+
+// Restore Top-4 favourites (skips ones already set). rows: [{profileId, titleId, position}]
+export async function restoreFavouritesBulk(rows) {
+  for (const r of rows) {
+    if (!r.profileId || !r.titleId) continue
+    const { error } = await supabase.from('favorites')
+      .upsert({ profile_id: r.profileId, title_id: r.titleId, position: r.position ?? 0 }, { onConflict: 'profile_id,title_id', ignoreDuplicates: true })
+    if (error) throw error
+  }
+  return rows.length
+}
+
+// Restore subscriptions, skipping any whose name already exists (re-owned to the
+// importing user). rows: the raw subscription objects from the backup.
+export async function restoreSubscriptions(rows, ownerId) {
+  const existing = new Set((await listSubscriptions()).map((s) => (s.name || '').toLowerCase()))
+  let added = 0
+  for (const s of rows || []) {
+    if (!s?.name || existing.has(s.name.toLowerCase())) continue
+    existing.add(s.name.toLowerCase())
+    await createSubscription({
+      name: s.name, cost: s.cost, currency: s.currency, cycle: s.cycle, note: s.note,
+      category: s.category, plan: s.plan, paidBy: s.paid_by, provider: s.provider,
+      renewsOn: s.renews_on, autoRenew: s.auto_renew, priceAfterTrial: s.price_after_trial,
+      contractEnd: s.contract_end, termMonths: s.term_months, paymentMethod: s.payment_method,
+      parentId: null, ownerId,
+    }).catch(() => {})
+    added++
+  }
+  return added
+}
+
+// Restore custom lists and their items. Matches an existing list by name (case
+// insensitive) or creates it, then adds resolved items (dedup by title).
+// plan: [{name, description, emoji, ranked, items:[{titleId, note}]}]
+export async function restoreCollections(plan, ownerId) {
+  const existing = await listCollections()
+  const byName = new Map(existing.map((c) => [(c.name || '').toLowerCase(), c.id]))
+  let lists = 0, items = 0
+  for (const col of plan || []) {
+    if (!col.name) continue
+    let cid = byName.get(col.name.toLowerCase())
+    if (!cid) {
+      cid = await createCollection({ name: col.name, description: col.description, emoji: col.emoji, ranked: col.ranked, ownerId })
+      byName.set(col.name.toLowerCase(), cid); lists++
+    }
+    for (const it of col.items || []) {
+      if (!it.titleId) continue
+      await addToCollection({ collectionId: cid, titleId: it.titleId, note: it.note }).catch(() => {})
+      items++
+    }
+  }
+  return { lists, items }
+}
+
 // ---------- Backup / export ----------
 // Gather everything the household can see into one plain object for download.
+// Existing (title, date) watch keys for a group, so a native restore can skip
+// diary entries it already has instead of duplicating them.
+export async function getExistingWatchKeys(groupId) {
+  const rows = await pagedSelect('watches', 'title_id, watched_on', {
+    groupId, limit: 200000, order: (q) => q.order('id', { ascending: true }),
+  })
+  return new Set(rows.map((r) => `${r.title_id}|${r.watched_on || ''}`))
+}
+
+// Restore season ratings from a backup (skips ones already present).
+export async function restoreSeasonRatingsBulk(rows) {
+  for (let i = 0; i < rows.length; i += 500) {
+    const { error } = await supabase.from('season_ratings')
+      .upsert(rows.slice(i, i + 500), { onConflict: 'title_id,group_id,profile_id,season_number', ignoreDuplicates: true })
+    if (error) throw error
+  }
+}
+
+// Season ratings with everything needed to re-import (group + profile + title).
+async function exportSeasonRatings() {
+  const data = await pagedSelect('season_ratings',
+    'id, season_number, score, group_id, profile_id, groups(name), profiles(name), titles(tmdb_id, media_type, title)',
+    { limit: 100000, order: (q) => q.order('id', { ascending: true }) })
+  return (data || []).map((r) => ({
+    tmdb_id: r.titles?.tmdb_id, media_type: r.titles?.media_type, title: r.titles?.title,
+    season_number: r.season_number, score: r.score,
+    group_id: r.group_id, group_name: r.groups?.name,
+    profile_id: r.profile_id, profile_name: r.profiles?.name,
+  }))
+}
+
+// Profile Top-4 favourites, portable by tmdb id + profile name.
+async function exportFavourites() {
+  const rows = await listFavorites()
+  return rows.map((f) => ({
+    profile_id: f.profile_id, position: f.position,
+    tmdb_id: f.titles?.tmdb_id, media_type: f.titles?.media_type, title: f.titles?.title,
+  }))
+}
+
+// Collections with their items (each item portable by tmdb id).
+async function exportCollections() {
+  const cols = await listCollections()
+  const out = []
+  for (const c of cols) {
+    let items = []
+    try {
+      const full = await getCollection(c.id)
+      items = (full.items || full.collection_items || []).map((it) => ({
+        tmdb_id: it.titles?.tmdb_id, media_type: it.titles?.media_type, title: it.titles?.title,
+        position: it.position, note: it.note || null,
+      }))
+    } catch { /* keep the collection even if items fail */ }
+    out.push({ name: c.name, description: c.description, emoji: c.emoji, ranked: c.ranked, items })
+  }
+  return out
+}
+
+// One categorized, re-importable file with everything the user owns.
 export async function exportAllData() {
-  const [profiles, groups, diary, episodes, watchlist, collections] = await Promise.all([
+  const [profiles, groups, diary, episodes, watchlist, collections, seasonRatings, favourites, subscriptions] = await Promise.all([
     listProfiles(),
     listGroups(),
     listDiary({ limit: 100000 }),
     listEpisodeDiary({ limit: 100000 }),
     listWatchlist(),
-    listCollections(),
+    exportCollections(),
+    exportSeasonRatings(),
+    exportFavourites(),
+    listSubscriptions(),
   ])
   return {
     app: 'ReelBook',
-    schema: 2,
-    counts: { profiles: profiles.length, groups: groups.length, diary: diary.length, episodes: episodes.length, watchlist: watchlist.length, collections: collections.length },
+    schema: 3,
+    exported_at: new Date().toISOString(),
+    counts: {
+      profiles: profiles.length, groups: groups.length, diary: diary.length,
+      episodes: episodes.length, watchlist: watchlist.length, collections: collections.length,
+      season_ratings: seasonRatings.length, favourites: favourites.length, subscriptions: subscriptions.length,
+    },
     profiles, groups, diary, episodes, watchlist, collections,
+    season_ratings: seasonRatings, favourites, subscriptions,
   }
 }
 
