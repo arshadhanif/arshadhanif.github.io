@@ -413,33 +413,6 @@ export async function markSeason({ titleId, groupId, season, episodes, watchedOn
 // all groups. Pages through episode_watches (PostgREST caps at 1000/response,
 // and the library now runs to 10k+ rows) using minimal columns, then batch-loads
 // the titles so we never join titles(*) across every episode row.
-async function episodeCountsByTitle() {
-  const rows = await pagedSelect('episode_watches', 'title_id, season_number, episode_number, watched_on', {
-    limit: 200000,
-    order: (q) => q.order('id', { ascending: true }),
-  })
-  const byTitle = new Map()
-  for (const row of rows) {
-    if (!byTitle.has(row.title_id)) byTitle.set(row.title_id, { eps: new Set(), last: null, first: null })
-    const e = byTitle.get(row.title_id)
-    e.eps.add(`${row.season_number}-${row.episode_number}`)
-    if (row.watched_on) {
-      if (!e.last || row.watched_on > e.last) e.last = row.watched_on
-      if (!e.first || row.watched_on < e.first) e.first = row.watched_on
-    }
-  }
-  if (!byTitle.size) return []
-  // Load titles by paging the (small) titles table rather than a giant id=in.()
-  // URL, which can exceed the server's URL length limit and fail the whole call.
-  const allTitles = await pagedSelect('titles', 'id, tmdb_id, media_type, title, poster_path, year, total_episodes', {
-    limit: 200000, order: (q) => q.order('id', { ascending: true }),
-  })
-  const titlesById = new Map(allTitles.map((t) => [t.id, t]))
-  return [...byTitle.entries()]
-    .map(([tid, e]) => ({ title: titlesById.get(tid), watched: e.eps.size, last: e.last, first: e.first }))
-    .filter((x) => x.title)
-}
-
 // In-progress shows, split per GROUP so "Continue watching" can tell your solo
 // list apart from a shared one (a show can be in progress in one group and
 // finished in another). Each entry carries its group so the UI can label/filter.
@@ -462,10 +435,20 @@ export async function listInProgressShows() {
 
 // All TV shows you've ticked episodes for (watched count + cached total).
 export async function listTrackedShows() {
-  const all = await episodeCountsByTitle()
-  return all
-    .filter(({ title }) => title.media_type === 'tv')
-    .map(({ title, watched, last }) => ({ title, watched, cachedTotal: title.total_episodes || 0, last }))
+  // Aggregated in the DB (tracked_shows()) so we transfer ~one row per show
+  // instead of every episode watch. Fetching the whole watch history and
+  // counting client-side was the main reason this was slow to load on mobile.
+  const { data, error } = await supabase.rpc('tracked_shows')
+  if (error) throw error
+  return (data || []).map((r) => ({
+    title: {
+      id: r.title_id, tmdb_id: r.tmdb_id, media_type: r.media_type,
+      title: r.title, poster_path: r.poster_path, year: r.year, total_episodes: r.total_episodes,
+    },
+    watched: r.watched,
+    cachedTotal: r.total_episodes || 0,
+    last: r.last_watched,
+  }))
 }
 
 // Distinct episodes watched + first/last watched date for one title (across the
