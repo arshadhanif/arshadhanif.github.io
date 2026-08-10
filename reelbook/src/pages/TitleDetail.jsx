@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getFullDetail, getSeason, getRecommendations, getEpisodeExternalIds, IMG, providerRegions } from '../lib/tmdb'
 import {
-  ensureTitleFromFull, getWatchesForTitle, addToWatchlist,
+  ensureTitleFromFull, getWatchesForTitle, addToWatchlist, addToRewatchlist,
   listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, markEpisodesBulk, unmarkAllEpisodes, setEpisodeRating, setEpisodeWatchedDate,
   getTitleServices, setTitleServices, getStreamingAvailability, getEpisodeWatchSpan,
   getImdbRating, getImdbSeasonRatings, getSeasonRatings, setSeasonRating,
@@ -306,21 +306,23 @@ function AddWatchlist({ titleId, groups, userId }) {
   const [done, setDone] = useState(false)
   const [busy, setBusy] = useState(false)
   if (!titleId) return null
-  async function add() {
+  async function add(kind) {
     setBusy(true)
     try {
-      await addToWatchlist({ titleId, groupId, addedBy: userId })
-      setDone(true); toast('Added to watchlist'); setTimeout(() => setOpen(false), 800)
+      if (kind === 'rewatch') await addToRewatchlist({ titleId, groupId, addedBy: userId })
+      else await addToWatchlist({ titleId, groupId, addedBy: userId })
+      setDone(true); toast(kind === 'rewatch' ? 'Added to rewatch list' : 'Added to watchlist'); setTimeout(() => setOpen(false), 900)
     } catch (e) { toast(e.message || 'Could not add', 'err') }
     finally { setBusy(false) }
   }
-  if (!open) return <button className="btn" onClick={() => setOpen(true)}>🔖 Add to watchlist</button>
+  if (!open) return <button className="btn" onClick={() => setOpen(true)}>🔖 Add to list</button>
   return (
-    <span className="row" style={{ gap: 6 }}>
+    <span className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
       <select value={groupId} onChange={(e) => setGroupId(e.target.value)} style={{ width: 'auto' }}>
         {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
       </select>
-      <button className="btn" disabled={busy || done || !groupId} onClick={add}>{done ? '✓ Added' : 'Add'}</button>
+      <button className="btn" disabled={busy || done || !groupId} onClick={() => add('want')}>{done ? '✓ Added' : '🔖 To watch'}</button>
+      <button className="btn" disabled={busy || done || !groupId} onClick={() => add('rewatch')} title="Seen it, want to watch again">🔁 Rewatch</button>
     </span>
   )
 }

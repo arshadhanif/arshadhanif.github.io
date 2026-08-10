@@ -340,6 +340,8 @@ export async function markEpisode({ titleId, groupId, season, episode, watchedOn
     { onConflict: 'title_id,group_id,season_number,episode_number' }
   )
   if (error) throw error
+  // Starting a show means it is no longer "to watch": drop it from that list.
+  await removeFromWantList(titleId, groupId)
 }
 
 // Set (or clear) the watched date on an episode. Upserts so it works whether
@@ -537,11 +539,43 @@ export async function deleteGroup(groupId) {
 // ---------- Watchlist ----------
 
 export async function listWatchlist(groupId = null, limit = 100000) {
+  // The "to watch" list only (unseen). Rewatch items live under list_type 'rewatch'.
   // Paginated so a watchlist over 1000 rows isn't silently truncated.
-  return pagedSelect('watchlist', 'id, group_id, added_by, created_at, titles(*), groups(id, name, color)', {
+  return pagedSelect('watchlist', 'id, group_id, added_by, created_at, list_type, titles(*), groups(id, name, color)', {
     groupId, limit,
-    order: (q) => q.order('created_at', { ascending: false }).order('id', { ascending: true }),
+    order: (q) => q.eq('list_type', 'want').order('created_at', { ascending: false }).order('id', { ascending: true }),
   })
+}
+
+// The rewatch list: titles you've seen and want to watch again (per group).
+export async function listRewatchlist(groupId = null, limit = 100000) {
+  return pagedSelect('watchlist', 'id, group_id, added_by, created_at, list_type, titles(*), groups(id, name, color)', {
+    groupId, limit,
+    order: (q) => q.eq('list_type', 'rewatch').order('created_at', { ascending: false }).order('id', { ascending: true }),
+  })
+}
+
+// Add a title to a group's rewatch list. A title lives in exactly one list per
+// group, so if it was on the "to watch" list this moves it to rewatch.
+export async function addToRewatchlist({ seed, titleId, groupId, addedBy }) {
+  const tId = titleId || (await ensureTitle(seed))
+  const { data, error } = await supabase
+    .from('watchlist')
+    .upsert({ title_id: tId, group_id: groupId, added_by: addedBy, list_type: 'rewatch' }, { onConflict: 'group_id,title_id' })
+    .select('id')
+    .single()
+  if (error) throw error
+  return data.id
+}
+
+// When something is logged as watched, drop it from that group's "to watch"
+// list (it is no longer unseen). Rewatch-list rows are left untouched.
+async function removeFromWantList(titleId, groupId) {
+  if (!titleId || !groupId) return
+  try {
+    await supabase.from('watchlist').delete()
+      .eq('title_id', titleId).eq('group_id', groupId).eq('list_type', 'want')
+  } catch { /* non-fatal: never block a watch on watchlist cleanup */ }
 }
 
 export async function addToWatchlist({ seed, groupId, addedBy }) {
@@ -693,6 +727,7 @@ export async function markWatched({
     const { error: rErr } = await supabase.from('ratings').insert(ratingRows)
     if (rErr) throw rErr
   }
+  await removeFromWantList(tId, groupId)
   return watch.id
 }
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  listWatchlist, removeFromWatchlist, copyWatchlistToGroup, mergeWatchlists,
+  listWatchlist, listRewatchlist, removeFromWatchlist, copyWatchlistToGroup, mergeWatchlists,
 } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
@@ -14,6 +14,7 @@ export default function Watchlist() {
   const { user } = useAuth()
   const toast = useToast()
   const [groupId, setGroupId] = useState(null)
+  const [listMode, setListMode] = useState('want')   // 'want' | 'rewatch'
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [watchItem, setWatchItem] = useState(null)
@@ -29,9 +30,9 @@ export default function Watchlist() {
   // transfer between lists; the group chips just filter the deduped view.
   const load = useCallback(async () => {
     setLoading(true)
-    try { setRows(await listWatchlist(null)) }
+    try { setRows(await (listMode === 'rewatch' ? listRewatchlist(null) : listWatchlist(null))) }
     finally { setLoading(false) }
-  }, [])
+  }, [listMode])
 
   useEffect(() => { load() }, [load])
 
@@ -89,13 +90,19 @@ export default function Watchlist() {
   return (
     <div className="page">
       <div className="page-head">
-        <h1>Watchlist</h1>
+        <h1>{listMode === 'rewatch' ? 'Rewatch list' : 'Watchlist'}</h1>
         <div className="row" style={{ gap: 8 }}>
           {groups.length > 1 && (
             <button className="btn sm" onClick={() => setMerge(true)}>⇄ Merge lists</button>
           )}
           <button className="btn sm primary" onClick={() => setRoulette(true)}>🎲 Surprise me</button>
         </div>
+      </div>
+
+      <div className="seg" style={{ marginBottom: 14 }}>
+        {[['want', '🔖 To watch'], ['rewatch', '🔁 Rewatch']].map(([v, l]) => (
+          <button key={v} className={listMode === v ? 'on' : ''} onClick={() => setListMode(v)}>{l}</button>
+        ))}
       </div>
 
       <GroupChips groups={groups} value={groupId} onChange={setGroupId} />
@@ -122,7 +129,9 @@ export default function Watchlist() {
       </div>
 
       {loading ? <Spinner /> : byTitle.size === 0 ? (
-        <Empty>Nothing here yet. Add titles from <strong>Discover</strong>.</Empty>
+        listMode === 'rewatch'
+          ? <Empty icon="🔁">No rewatch titles yet. Open something you've seen and tap <strong>🔁 Rewatch</strong> to queue it for another watch.</Empty>
+          : <Empty>Nothing here yet. Add titles from <strong>Discover</strong>.</Empty>
       ) : view.length === 0 ? (
         <Empty icon="🔎">No items match these filters.</Empty>
       ) : (
