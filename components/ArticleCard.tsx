@@ -15,7 +15,11 @@ export default function ArticleCard({ post }: { post: PostMeta }) {
   return (
     <article className="group flex h-full flex-col rounded-xl border border-border bg-surface p-6 transition-colors hover:border-accent/50">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <CategoryBadge category={post.category} />
+        <CategoryBadge
+          category={post.category}
+          as="link"
+          href={`/blog?category=${encodeURIComponent(post.category)}`}
+        />
         <span className="text-xs text-muted">{post.readTime}</span>
       </div>
 
