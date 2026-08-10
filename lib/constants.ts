@@ -39,8 +39,7 @@ export const SOCIAL = {
  */
 export const CONTACT = {
   email: 'arshadhanif1999@gmail.com',
-  // TODO: replace with your real WhatsApp number
-  whatsapp: '923001234567',
+  whatsapp: '923332597950',
   whatsappMessage:
     "Hi Arshad, I found your website and I'd like to enquire about your services.",
 };
