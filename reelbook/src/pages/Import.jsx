@@ -307,6 +307,24 @@ export default function Import() {
         return { r, seed }
       }, 12, tick)
 
+      // Mismatch guard: if a matched title's earliest watch predates the show's
+      // first-air year, the fuzzy matcher almost certainly grabbed the wrong
+      // (usually newer) show. Drop the match so it is held for manual review
+      // instead of importing a wrong attribution.
+      const earliestYear = (dates) => {
+        const ys = (dates || []).map((d) => d && Number(String(d).slice(0, 4))).filter((y) => y > 1900)
+        return ys.length ? Math.min(...ys) : null
+      }
+      let heldMismatches = 0
+      for (const x of epR) {
+        const ey = earliestYear((x.s.watched || []).map((e) => e.watchedOn))
+        if (x.seed?.year && ey && ey < x.seed.year) { x.seed = null; heldMismatches++ }
+      }
+      for (const x of mvR) {
+        const ey = earliestYear([normDate(x.r.watched_at)])
+        if (x.seed?.year && ey && ey < x.seed.year) { x.seed = null; heldMismatches++ }
+      }
+
       const unmatchedTitles = [
         ...epR.filter((x) => !x.seed).map((x) => x.s.title),
         ...wlR.filter((x) => !x.seed).map((x) => x.r.title),
@@ -365,7 +383,7 @@ export default function Import() {
 
       setPlan({
         batchKind: 'TV Time', episodeRows, episodeUpdates, watchRows, watchlistRows,
-        counts: { newWatches: watchRows.length, alreadyWatches, newEpisodes, alreadyEpisodes, rewatchEpisodes, newWatchlist: watchlistRows.length, alreadyWatchlist, unmatched: unmatchedTitles.length },
+        counts: { newWatches: watchRows.length, alreadyWatches, newEpisodes, alreadyEpisodes, rewatchEpisodes, newWatchlist: watchlistRows.length, alreadyWatchlist, unmatched: unmatchedTitles.length, heldMismatches },
         unmatchedTitles,
       })
     } catch (e) {
@@ -1065,6 +1083,10 @@ function PlanPreview({ plan, cats, setCats, isTv }) {
       {updates.length > 0 && (<><div style={{ borderTop: '1px solid var(--border)' }} /><Row color="var(--accent)" label="🔁 Updates" value={updates.join(' · ')} /></>)}
       <div style={{ borderTop: '1px solid var(--border)' }} />
       <Row color="var(--text-dim)" label="⏭️ Already logged (skipped)" value={already.length ? already.join(' · ') : 'none'} />
+      {c.heldMismatches > 0 && (
+        <Row color="var(--text-dim)" label="⚠️ Held: watch date predates the show (likely wrong match)"
+          value={`${c.heldMismatches} title${c.heldMismatches === 1 ? '' : 's'} sent to review below`} />
+      )}
       {c.unmatched > 0 && (
         <>
           <div style={{ borderTop: '1px solid var(--border)' }} />

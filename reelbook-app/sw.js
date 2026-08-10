@@ -3,7 +3,7 @@
 // changes each release. That makes the browser detect a new service worker,
 // re-install, purge the old cache and claim clients with fresh assets. Without
 // it a PWA / mobile browser can serve a stale bundle indefinitely.
-const BUILD = 'CizeC1T_'
+const BUILD = 'EIDwS47W'
 const CACHE = `reelbook-${BUILD}`
 // Relative to the SW's own scope so this works whether served at '/' or a subpath.
 const SHELL = ['./', './icon-192.png', './icon-512.png', './manifest.webmanifest']
