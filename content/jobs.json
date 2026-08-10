@@ -1,5 +1,29 @@
 [
   {
+    "id": "job-40",
+    "title": "Oracle Fusion HCM Techno-Functional Consultant",
+    "company": "Persistent Systems",
+    "location": "Bengaluru, India",
+    "country": "India",
+    "module": "HCM",
+    "type": "Full-time",
+    "postedDate": "2026-08-08",
+    "url": "https://to.indeed.com/aa7bwgwq74rx",
+    "featured": false
+  },
+  {
+    "id": "job-33",
+    "title": "Oracle Fusion HCM Consultant",
+    "company": "Enfycon",
+    "location": "Bengaluru, India",
+    "country": "India",
+    "module": "HCM",
+    "type": "Full-time",
+    "postedDate": "2026-08-04",
+    "url": "https://to.indeed.com/aa8tgn7nnl7g",
+    "featured": false
+  },
+  {
     "id": "job-23",
     "title": "Senior Oracle Fusion Procurement Functional Consultant",
     "company": "BlackStone eIT",
@@ -72,6 +96,66 @@
     "featured": false
   },
   {
+    "id": "job-49",
+    "title": "Oracle Fusion Finance Functional Consultant",
+    "company": "Softomatic Technology Services",
+    "location": "Hyderabad, India",
+    "country": "India",
+    "module": "Financials",
+    "type": "Full-time",
+    "postedDate": "2026-07-29",
+    "url": "https://to.indeed.com/aa2ndccdvpxg",
+    "featured": false
+  },
+  {
+    "id": "job-31",
+    "title": "Oracle Fusion SCM Functional Consultant",
+    "company": "Aspire Systems",
+    "location": "Bengaluru, India",
+    "country": "India",
+    "module": "Procurement & SCM",
+    "type": "Full-time",
+    "postedDate": "2026-07-26",
+    "url": "https://to.indeed.com/aagfxg7mk42h",
+    "featured": false
+  },
+  {
+    "id": "job-45",
+    "title": "Oracle Fusion Financial Consultant",
+    "company": "Whitewhale Software Solutions",
+    "location": "Hyderabad, India",
+    "country": "India",
+    "module": "Financials",
+    "type": "Permanent",
+    "postedDate": "2026-07-23",
+    "url": "https://to.indeed.com/aaxvlgdf26jb",
+    "featured": false
+  },
+  {
+    "id": "job-32",
+    "title": "Senior Consultant — Fusion Financials & PPM",
+    "company": "Deloitte",
+    "location": "Bengaluru, India",
+    "country": "India",
+    "module": "Financials",
+    "type": "Full-time",
+    "postedDate": "2026-07-21",
+    "url": "https://to.indeed.com/aaww2rxbmbzz",
+    "featured": true
+  },
+  {
+    "id": "job-46",
+    "title": "Oracle Fusion Consultant",
+    "company": "Sandv Capitals",
+    "location": "Hyderabad, India",
+    "country": "India",
+    "module": "General",
+    "type": "Full-time",
+    "postedDate": "2026-07-20",
+    "url": "https://to.indeed.com/aa9lm6784kjb",
+    "featured": false
+  },
+  {
     "id": "job-26",
     "title": "Oracle Fusion HCM Consultant",
     "company": "Acenet Consulting",
@@ -81,6 +165,18 @@
     "type": "Full-time",
     "postedDate": "2026-07-17",
     "url": "https://to.indeed.com/aanw2l2xchtz",
+    "featured": false
+  },
+  {
+    "id": "job-44",
+    "title": "Oracle Fusion Cloud Financials Consultant",
+    "company": "Prolifics",
+    "location": "Hyderabad, India",
+    "country": "India",
+    "module": "Financials",
+    "type": "Permanent",
+    "postedDate": "2026-07-17",
+    "url": "https://to.indeed.com/aa4bl6hcbsrx",
     "featured": false
   },
   {
@@ -96,6 +192,30 @@
     "featured": false
   },
   {
+    "id": "job-35",
+    "title": "Oracle Fusion Financials Consultant",
+    "company": "Infosys",
+    "location": "Bengaluru, India",
+    "country": "India",
+    "module": "Financials",
+    "type": "Full-time",
+    "postedDate": "2026-07-14",
+    "url": "https://to.indeed.com/aaw9srs82r6j",
+    "featured": true
+  },
+  {
+    "id": "job-43",
+    "title": "Oracle Fusion ERP Lease Accounting Functional Consultant",
+    "company": "Oracle",
+    "location": "Hyderabad, India",
+    "country": "India",
+    "module": "Financials",
+    "type": "Full-time",
+    "postedDate": "2026-07-13",
+    "url": "https://to.indeed.com/aapstfh87mgt",
+    "featured": true
+  },
+  {
     "id": "job-24",
     "title": "Oracle Fusion Finance Consultant",
     "company": "Acenet",
@@ -105,7 +225,7 @@
     "type": "Full-time",
     "postedDate": "2026-07-11",
     "url": "https://to.indeed.com/aam7cvnhc9gv",
-    "featured": true
+    "featured": false
   },
   {
     "id": "job-15",
@@ -156,6 +276,30 @@
     "featured": false
   },
   {
+    "id": "job-38",
+    "title": "Technical Consultant — Oracle Fusion Technical",
+    "company": "Winfo Solutions",
+    "location": "Bengaluru, India",
+    "country": "India",
+    "module": "Technical",
+    "type": "Full-time",
+    "postedDate": "2026-06-22",
+    "url": "https://to.indeed.com/aatydnvdpspg",
+    "featured": false
+  },
+  {
+    "id": "job-48",
+    "title": "Oracle Fusion Technical Support Consultant",
+    "company": "AVEVA",
+    "location": "Hyderabad, India",
+    "country": "India",
+    "module": "Technical",
+    "type": "Full-time",
+    "postedDate": "2026-06-10",
+    "url": "https://to.indeed.com/aadqlydmpdkz",
+    "featured": false
+  },
+  {
     "id": "job-18",
     "title": "Project Manager (Oracle Fusion ERP) — 1-Year Engagement",
     "company": "MENA Consultant",
@@ -201,6 +345,18 @@
     "type": "Permanent",
     "postedDate": "2026-06-01",
     "url": "https://to.indeed.com/aakdz6lvbcy4",
+    "featured": false
+  },
+  {
+    "id": "job-42",
+    "title": "Lead Analyst — Oracle Fusion Financials Functional Consultant",
+    "company": "Mattel",
+    "location": "Hyderabad, India",
+    "country": "India",
+    "module": "Financials",
+    "type": "Full-time",
+    "postedDate": "2026-05-12",
+    "url": "https://to.indeed.com/aadfmjffxjkc",
     "featured": false
   },
   {

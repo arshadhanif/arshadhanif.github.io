@@ -4,7 +4,8 @@ import { getFeaturedProducts } from '@/lib/products';
 import ArticleCard from '@/components/ArticleCard';
 import ProductCard from '@/components/ProductCard';
 import NewsletterSignup from '@/components/NewsletterSignup';
-import { SITE_TAGLINE, HOMEPAGE_STATS } from '@/lib/constants';
+import FAQ from '@/components/FAQ';
+import { SITE_TAGLINE, HOMEPAGE_STATS, HOMEPAGE_FAQ } from '@/lib/constants';
 
 const VALUE_PROPS = [
   {
@@ -141,6 +142,14 @@ export default function HomePage() {
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="container-page py-12">
+        <FAQ
+          items={HOMEPAGE_FAQ}
+          subheading="Straight answers on Oracle Fusion, ERP consulting, and getting into the field."
+        />
       </section>
 
       {/* Newsletter CTA */}
