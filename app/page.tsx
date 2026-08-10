@@ -4,7 +4,7 @@ import { getFeaturedProducts } from '@/lib/products';
 import ArticleCard from '@/components/ArticleCard';
 import ProductCard from '@/components/ProductCard';
 import NewsletterSignup from '@/components/NewsletterSignup';
-import { SITE_TAGLINE } from '@/lib/constants';
+import { SITE_TAGLINE, HOMEPAGE_STATS } from '@/lib/constants';
 
 const VALUE_PROPS = [
   {
@@ -57,6 +57,24 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Trust stats bar */}
+      <section className="border-y border-border bg-surface">
+        <div className="container-page py-8">
+          <dl className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+            {HOMEPAGE_STATS.map((stat) => (
+              <div key={stat.label} className="text-center">
+                <dt className="text-2xl font-extrabold text-accent sm:text-3xl">
+                  {stat.value}
+                </dt>
+                <dd className="mt-1 text-xs text-muted sm:text-sm">
+                  {stat.label}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 

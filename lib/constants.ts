@@ -31,6 +31,28 @@ export const SOCIAL = {
   github: 'https://github.com/arshadhanif',
 };
 
+/**
+ * Contact details.
+ * whatsapp: international number with country code, no +, spaces, or dashes.
+ * e.g. UK → '447911123456', Pakistan → '923001234567'
+ * Update this one value and the WhatsApp button picks it up everywhere.
+ */
+export const CONTACT = {
+  email: 'arshadhanif1999@gmail.com',
+  // TODO: replace with your real WhatsApp number
+  whatsapp: '923001234567',
+  whatsappMessage:
+    "Hi Arshad, I found your website and I'd like to enquire about your services.",
+};
+
+/** Homepage trust stats — shown in the stats bar below the hero. */
+export const HOMEPAGE_STATS = [
+  { value: '13+', label: 'Clients served' },
+  { value: '6+', label: 'Industries covered' },
+  { value: 'ACCA', label: 'Qualified' },
+  { value: 'Oracle', label: 'Certified' },
+];
+
 // Blog categories (used for filter tags + badge styling).
 export const BLOG_CATEGORIES = [
   'Oracle Fusion',

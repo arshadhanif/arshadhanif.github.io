@@ -1,8 +1,18 @@
 import Link from 'next/link';
-import { SITE_NAME, SITE_TAGLINE, NAV_LINKS, SOCIAL } from '@/lib/constants';
+import {
+  SITE_NAME,
+  SITE_TAGLINE,
+  NAV_LINKS,
+  SOCIAL,
+  CONTACT,
+} from '@/lib/constants';
 
 export default function Footer() {
   const year = 2026;
+
+  const whatsappHref = `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent(
+    CONTACT.whatsappMessage
+  )}`;
 
   return (
     <footer className="mt-24 border-t border-border bg-surface">
@@ -31,6 +41,34 @@ export default function Footer() {
                 {link.label}
               </Link>
             ))}
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+              Get in touch
+            </h3>
+            <a
+              href={`mailto:${CONTACT.email}`}
+              className="text-sm text-muted transition-colors hover:text-accent"
+            >
+              {CONTACT.email}
+            </a>
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-muted transition-colors hover:text-accent"
+            >
+              WhatsApp
+            </a>
+            <a
+              href={SOCIAL.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-muted transition-colors hover:text-accent"
+            >
+              LinkedIn
+            </a>
           </div>
 
           <div className="flex flex-col gap-3">
@@ -64,8 +102,22 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-border pt-6 text-sm text-muted">
-          © {year} {SITE_NAME}. All rights reserved.
+        <div className="mt-10 flex flex-col gap-4 border-t border-border pt-6 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
+          <span>© {year} {SITE_NAME}. All rights reserved.</span>
+          <div className="flex gap-5">
+            <Link
+              href="/privacy"
+              className="transition-colors hover:text-accent"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              href="/terms"
+              className="transition-colors hover:text-accent"
+            >
+              Terms of Service
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

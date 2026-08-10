@@ -16,11 +16,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/services',
     '/about',
     '/newsletter',
+    '/privacy',
+    '/terms',
   ].map((route) => ({
     url: `${base}${route}/`,
     lastModified: new Date('2026-06-28'),
     changeFrequency: 'weekly' as const,
-    priority: route === '' ? 1 : 0.8,
+    priority: route === '' ? 1 : route === '/privacy' || route === '/terms' ? 0.3 : 0.8,
   }));
 
   const postRoutes = getAllPosts().map((post) => ({
