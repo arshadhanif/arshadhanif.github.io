@@ -1,0 +1,158 @@
+---
+title: 'Oracle Fusion Financials Interview Questions (and How to Answer Them)'
+date: '2026-08-10'
+category: 'Oracle Fusion'
+excerpt: 'The questions that actually come up in Oracle Fusion Financials interviews, with answers that show real understanding instead of memorised definitions. Part one of the interview prep series.'
+readTime: '13 min read'
+published: true
+---
+
+Most Oracle Fusion Financials interviews test the same thing. Not whether you can recite a definition, but whether you understand how the pieces fit together and why. An interviewer can tell within a few questions if you have actually worked on an instance or only read about one.
+
+This is the first article in an interview prep series. It covers Financials, which is the module I work in every day. The questions below are the ones that come up again and again, grouped the way a real interview flows: enterprise structure first, then General Ledger, then the subledgers, then close and reporting. For each one I give you a clear answer and, where it helps, a short note on what the interviewer is really checking.
+
+Read the answer, then say it in your own words. Memorised lines are easy to spot. Understanding is not.
+
+## Enterprise Structure
+
+This is where good interviewers start, because everything else sits on top of it. If you can talk about the enterprise structure with confidence, you have already set the right tone.
+
+### What are the four Cs of a ledger?
+
+A ledger in Oracle Fusion is defined by four things: Currency, Calendar, Chart of accounts, and accounting Convention (the subledger accounting method). Every ledger needs all four before it can be used.
+
+Currency is the functional currency the books are kept in. Calendar controls the accounting periods. Chart of accounts governs the segment structure the account combinations are built from. The accounting method drives how journals are created from subledger transactions.
+
+*What they are checking:* whether you know a ledger is more than a set of accounts. The four Cs answer proves you understand the foundation.
+
+### Explain the difference between a legal entity and a business unit.
+
+A legal entity is a registered organisation with statutory reporting obligations. It is what the tax authority and the regulators see. A business unit is where day-to-day transactions are processed, and it maps to the ORG_ID you see all through the subledger tables.
+
+One primary ledger can have several legal entities. When they share a ledger, they are told apart by balancing segment values in the chart of accounts. A business unit links to a ledger too, and it is the filter that actually matters for Payables, Receivables, and Procurement work.
+
+*What they are checking:* that you do not treat these as the same thing. New consultants often confuse them, and it leads to wrong filters and wrong numbers.
+
+### What is the difference between a primary and a secondary ledger?
+
+The primary ledger is where all your main transactional accounting lands. A secondary ledger is an optional extra set of books, usually kept for a different accounting requirement like local GAAP, a different chart of accounts, or a different accounting method.
+
+A reporting currency is different again. It holds the same transactions as the primary ledger but converted into another currency. When you are counting transactions or analysing activity, you work from the primary ledger.
+
+### How are several legal entities kept apart when they share one ledger?
+
+Through balancing segment values. The chart of accounts has a segment marked as the primary balancing segment, and each legal entity is assigned one or more values from it. Oracle keeps every journal balanced by that segment, so each entity's activity stays separate even inside a shared ledger.
+
+## General Ledger and Chart of Accounts
+
+### What is the chart of accounts made up of?
+
+The chart of accounts is a structure of segments. A common setup has segments for company, cost centre, natural account, and one or two future or intercompany segments. Each segment has a value set that controls which values are allowed.
+
+Two things matter beyond the segments themselves. Segment labels tell Oracle the job of each segment, such as primary balancing, natural account, and cost centre. Cross-validation rules stop invalid account combinations from being created.
+
+### What is a segment label and why does it matter?
+
+A segment label tells Oracle what a segment is used for. The three you must know are primary balancing segment, natural account segment, and cost centre segment. Oracle uses these labels to drive automatic processes like intercompany balancing and retained earnings.
+
+*What they are checking:* whether you understand that segments are not just columns. The labels are what make the accounting engine work.
+
+### What is a cross-validation rule?
+
+A cross-validation rule stops certain segment combinations from ever being created. For example, you might block a revenue account from being used with a balance sheet cost centre. The rule is checked when a new account combination is about to be made, not on combinations that already exist.
+
+### How does automatic intercompany balancing work?
+
+When a journal crosses balancing segment values and does not balance within each one, Oracle generates intercompany receivable and payable lines to bring each balancing segment back into balance. The accounts it uses come from the intercompany balancing rules you set up. This keeps every legal entity's books balanced on their own.
+
+## Subledger Accounting
+
+Subledger Accounting, often shortened to SLA, is a favourite topic because it separates people who understand the flow from people who only know the screens.
+
+### What is Subledger Accounting and what problem does it solve?
+
+Subledger Accounting is the engine that turns subledger transactions into journal entries. When you validate a Payables invoice or complete a Receivables transaction, the transaction itself does not create accounting. The Create Accounting process reads the transaction, applies your accounting rules, and produces the journal that goes to the General Ledger.
+
+The problem it solves is flexibility. Different companies want to account for the same event in different ways. Subledger Accounting lets you set those rules without changing the transaction, and it keeps a full audit trail from the journal back to the source.
+
+### Walk me through what happens when you run Create Accounting.
+
+Create Accounting takes transactions that are ready to be accounted, applies the accounting method and its rules, and generates subledger journal entries. You can run it in draft to review the result, or in final to post it. In final mode it can also transfer the entries to the General Ledger and post them there.
+
+If a transaction cannot be accounted, it goes into an error state with a reason, and you fix the setup or the data before running again.
+
+## Procure to Pay and Payables
+
+### Walk me through the procure to pay cycle.
+
+It starts with a requisition, which is a request to buy something. The requisition is turned into a purchase order and sent to the supplier. When the goods or services arrive, a receipt is recorded. The supplier sends an invoice, which is matched against the purchase order and the receipt. Once the invoice is validated and approved, it is paid.
+
+Each step creates its own accounting. A good answer names the documents in order and mentions that the invoice is matched before it is paid.
+
+### What is the difference between two-way, three-way, and four-way matching?
+
+Two-way matching checks the invoice against the purchase order. The price and quantity billed must agree with what was ordered. Three-way matching adds the receipt, so you also confirm the goods were actually received. Four-way matching adds inspection, so the goods must be received and accepted before the invoice can be paid.
+
+*What they are checking:* whether you understand matching as a control. More matching means more control and more steps. The client picks the level that fits their risk.
+
+### What is an invoice hold?
+
+A hold stops an invoice from being paid until something is resolved. Some holds are placed by the system, such as a price or quantity difference found during matching. Others are placed by hand when someone wants to review the invoice. The invoice cannot be paid while the hold is active, and holds are a common thing to explain during period close.
+
+### How does an invoice get from entry to payment?
+
+The invoice is entered or imported, then validated. Validation runs the matching checks and applies any holds. Once it is valid and approved, it is accounted through Create Accounting, and then it is available for payment. Payment is usually done through a payment process request that groups invoices due for payment and creates the payments in one run.
+
+## Period Close
+
+### What is the correct order to close periods?
+
+Close the subledgers first, then the General Ledger. Payables, Receivables, and the other subledgers are closed before you close the GL period. If you close the GL first, subledger entries could still be trying to reach a period that is already shut.
+
+*What they are checking:* that you understand close as a sequence, not a single button. Getting the order wrong is a real mistake with real consequences.
+
+### What happens to transactions that are not complete at close?
+
+You deal with them before the period closes. In Payables, for example, you can sweep incomplete or unaccounted transactions into the next open period so the current period can close cleanly. The point is that nothing is left stranded in a closed period, and the numbers for the period are final once it is shut.
+
+## Reporting: OTBI and BI Publisher
+
+Almost every Financials interview asks about reporting, because consultants are expected to answer questions with data.
+
+### When do you use OTBI and when do you use BI Publisher?
+
+OTBI is for live exploration. You build an analysis directly on top of Fusion data using subject areas, and you get answers in minutes with no extract and no waiting. It is the right tool when someone needs to explore or answer a question quickly.
+
+BI Publisher is for pixel-perfect, printable output. Think formal documents like a cheque, a statement, or a report that has to look exactly right every time. The simple rule is OTBI for exploring, BI Publisher for formal documents that leave the building.
+
+### What is a subject area in OTBI?
+
+A subject area is a business-friendly view of the data. It groups facts, which are the numbers, with dimensions, which are the ways you slice them. Picking the right subject area is the first and most important step. Most OTBI frustration comes from starting in the wrong one.
+
+### How do you load data into Oracle Fusion?
+
+The common route for bulk data is FBDI, which stands for File-Based Data Import. You fill an Oracle template, generate a file, and import it. For smaller, more interactive loads there are spreadsheet tools that let you enter or edit data in Excel and upload it straight into the application. Knowing FBDI by name is often enough to show you have done real data work.
+
+## Scenario and Behaviour Questions
+
+Technical answers get you part of the way. Interviewers also want to see how you think and how you work with people.
+
+### A user says a report shows the wrong numbers. What do you do?
+
+Do not jump to the report. Start by understanding what number they expected and why. Check the filters and the parameters first, since most wrong numbers come from the wrong date range, the wrong ledger, or the wrong business unit. Then check security, because two users can see different numbers if their data access is different. Only after that do you look at the report logic. A calm, ordered approach here is worth more than any single technical fact.
+
+### How do you handle a requirement that Fusion cannot meet as standard?
+
+Be honest about the gap, then look for the closest standard option before reaching for anything custom. Explain the trade-off to the client in plain terms. Consultants who force a heavy customisation for every gap create problems that show up years later at upgrade time. The best answer shows you respect standard functionality and only step outside it when there is a real reason.
+
+### Tell me about a time you fixed a problem on a live system.
+
+Have a real story ready. Keep it simple: what the problem was, what you found, what you did, and what the result was. Interviewers are not looking for a heroic tale. They want to see that you can stay calm, find the root cause instead of guessing, and communicate while you work.
+
+## How to Use This
+
+Do not try to memorise every answer word for word. Pick the topics you are weakest on and work through those until you can explain them out loud to someone else. If you can teach it, you know it.
+
+The strongest candidates do one more thing. They connect their answers back to real work. Instead of only defining a business unit, they mention the time a missing business unit filter pulled invoices for the whole instance. That kind of detail is impossible to fake, and it is what gets you the offer.
+
+Next in this series I will cover the same ground for interviews that lean more technical, including reports, integrations, and data. If you want help preparing for a specific role, that is exactly what the [CV and career coaching](/services) is for.
