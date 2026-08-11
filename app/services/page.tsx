@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { AUTHOR } from '@/lib/constants';
 
 export const metadata: Metadata = {
@@ -66,6 +67,23 @@ export default function ServicesPage() {
             </a>
           </div>
         ))}
+      </div>
+
+      {/* Teams banner */}
+      <div className="mt-12 flex flex-col items-start justify-between gap-4 rounded-xl border border-border bg-surface p-7 sm:flex-row sm:items-center">
+        <div>
+          <h2 className="text-xl font-semibold">Working with a team?</h2>
+          <p className="mt-1 text-sm text-muted">
+            Group advisory, upskilling, implementation support, and custom report
+            builds for finance and ERP teams.
+          </p>
+        </div>
+        <Link
+          href="/for-teams"
+          className="shrink-0 rounded-md border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-accent hover:text-accent"
+        >
+          See team options →
+        </Link>
       </div>
     </div>
   );

@@ -79,6 +79,7 @@ export const NAV_LINKS = [
   { href: '/store', label: 'Store' },
   { href: '/resources', label: 'Free Resources' },
   { href: '/services', label: 'Services' },
+  { href: '/for-teams', label: 'For Teams' },
   { href: '/about', label: 'About' },
 ];
 
