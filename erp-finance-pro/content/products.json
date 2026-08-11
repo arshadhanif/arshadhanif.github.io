@@ -2,7 +2,7 @@
   {
     "id": "oracle-fusion-reporting-toolkit",
     "title": "Oracle Fusion Reporting Toolkit",
-    "description": "A complete set of OTBI and BI Publisher report templates for Oracle Fusion Financials — covering GL, AP, AR, and FA. Plug in and go.",
+    "description": "A complete set of OTBI and BI Publisher report templates for Oracle Fusion Financials, covering GL, AP, AR, and FA. Plug in and go.",
     "price": "$79",
     "category": "Report Packages",
     "gumroadUrl": "https://gumroad.com/l/placeholder-fusion-reporting",
@@ -11,7 +11,7 @@
   {
     "id": "month-end-close-checklist",
     "title": "Month-End Close Checklist & Tracker",
-    "description": "An Excel workbook that turns your close into a controlled, repeatable process — task owners, dependencies, status dashboards, and a reconciliation log.",
+    "description": "An Excel workbook that turns your close into a controlled, repeatable process, task owners, dependencies, status dashboards, and a reconciliation log.",
     "price": "$29",
     "category": "Templates",
     "gumroadUrl": "https://gumroad.com/l/placeholder-month-end-close",
@@ -37,7 +37,7 @@
   },
   {
     "id": "oracle-fusion-financials-course",
-    "title": "Oracle Fusion Financials — Practical Course",
+    "title": "Oracle Fusion Financials, Practical Course",
     "description": "A hands-on video course covering the Oracle Fusion Financials modules consultants actually get asked about, with real-world configuration walkthroughs.",
     "price": "$249",
     "category": "Courses",

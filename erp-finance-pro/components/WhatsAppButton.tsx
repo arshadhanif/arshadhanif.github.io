@@ -3,7 +3,7 @@
 import { CONTACT } from '@/lib/constants';
 
 /**
- * Floating WhatsApp CTA button — fixed bottom-right on every page.
+ * Floating WhatsApp CTA button, fixed bottom-right on every page.
  * Updates automatically when CONTACT.whatsapp / CONTACT.whatsappMessage
  * are changed in lib/constants.ts.
  */
@@ -32,7 +32,7 @@ export default function WhatsAppButton() {
         <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.558 4.121 1.534 5.857L.057 23.882a.75.75 0 0 0 .92.92l6.056-1.478A11.946 11.946 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.946 9.946 0 0 1-5.076-1.386l-.364-.215-3.766.918.937-3.684-.237-.38A9.946 9.946 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
       </svg>
 
-      {/* Label — hidden on very small screens, visible from sm up */}
+      {/* Label, hidden on very small screens, visible from sm up */}
       <span className="hidden text-sm font-semibold sm:inline">Chat on WhatsApp</span>
     </a>
   );

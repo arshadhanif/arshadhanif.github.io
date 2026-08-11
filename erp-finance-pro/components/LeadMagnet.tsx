@@ -11,7 +11,7 @@ interface LeadMagnetProps {
 }
 
 /**
- * Email-gated free download — the core lead-magnet pattern for this niche.
+ * Email-gated free download, the core lead-magnet pattern for this niche.
  *
  * Placeholder behaviour: collects the email locally, then reveals the download
  * link. Before launch, POST the email to your Mailchimp/Beehiiv list first

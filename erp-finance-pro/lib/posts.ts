@@ -71,7 +71,7 @@ export function getAllPostSlugs(): string[] {
 }
 
 /**
- * Posts related to the given slug — same category first, then most recent,
+ * Posts related to the given slug, same category first, then most recent,
  * excluding the current post. Used for the "Keep reading" section.
  */
 export function getRelatedPosts(slug: string, limit = 2): PostMeta[] {

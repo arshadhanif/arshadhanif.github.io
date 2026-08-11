@@ -10,10 +10,15 @@ export const SITE_TAGLINE =
   'The go-to resource for ERP and finance professionals';
 
 export const SITE_DESCRIPTION =
-  'Premium templates, report packages, and expert guidance for Oracle Fusion, Excel, and ERP finance professionals — curated by an Oracle Fusion consultant.';
+  'Premium templates, report packages, and expert guidance for Oracle Fusion, Excel, and ERP finance professionals, curated by an Oracle Fusion consultant.';
 
 // Public URL of the deployed site (used for absolute URLs in metadata + sitemap).
 export const SITE_URL = 'https://arshadhanif.github.io';
+
+// Beehiiv publication URL, where newsletter sign-ups are actually captured.
+// Passing ?email=... prefills the subscribe form on Beehiiv.
+// (Publication: "ERP Finance Pro", pub_8dff2c42-095d-4a5d-8b19-e8fac3614f0f.)
+export const NEWSLETTER_URL = 'https://myvault.beehiiv.com/';
 
 // Default Open Graph image (relative to basePath).
 export const OG_IMAGE = '/og-image.svg';
@@ -21,7 +26,7 @@ export const OG_IMAGE = '/og-image.svg';
 export const AUTHOR = {
   name: 'Arshad Hanif',
   title: 'Oracle Fusion Consultant',
-  bio: 'Oracle Fusion consultant and finance professional. ACCA, Oracle certified, and part of the PwC network — helping 13+ clients streamline their ERP and finance operations.',
+  bio: 'Oracle Fusion consultant and finance professional. ACCA, Oracle certified, and part of the PwC network, helping 13+ clients streamline their ERP and finance operations.',
   email: 'arshadhanif1999@gmail.com',
 };
 
@@ -43,7 +48,7 @@ export const CONTACT = {
     "Hi Arshad, I found your website and I'd like to enquire about your services.",
 };
 
-/** Homepage trust stats — shown in the stats bar below the hero. */
+/** Homepage trust stats, shown in the stats bar below the hero. */
 export const HOMEPAGE_STATS = [
   { value: '13+', label: 'Clients served' },
   { value: '6+', label: 'Industries covered' },
@@ -82,13 +87,13 @@ export const NAV_LINKS = [
   { href: '/about', label: 'About' },
 ];
 
-// Homepage FAQ — chosen to match real search queries (SEO) and answer the
+// Homepage FAQ, chosen to match real search queries (SEO) and answer the
 // questions prospective clients and career-switchers actually ask.
 export const HOMEPAGE_FAQ = [
   {
     question: 'What does an Oracle Fusion consultant actually do?',
     answer:
-      'An Oracle Fusion consultant helps organisations implement, configure, and get real value from Oracle Fusion Cloud — mapping business processes to the system, setting up the enterprise structure and modules like Financials and Procurement, building reports, and fixing issues after go-live. My work centres on Oracle Fusion Financials, where finance knowledge and system expertise meet.',
+      'An Oracle Fusion consultant helps organisations implement, configure, and get real value from Oracle Fusion Cloud, mapping business processes to the system, setting up the enterprise structure and modules like Financials and Procurement, building reports, and fixing issues after go-live. My work centres on Oracle Fusion Financials, where finance knowledge and system expertise meet.',
   },
   {
     question: 'How do I move from finance or accounting into ERP consulting?',
@@ -98,31 +103,31 @@ export const HOMEPAGE_FAQ = [
   {
     question: 'Do I need an Oracle certification to get hired?',
     answer:
-      'Certification is not strictly required, but it opens doors and gets you past procurement filters on client bids. An Oracle certification paired with a finance qualification like ACCA is a powerful combination — it signals both the technical "what" and the accounting "why" that clients pay for.',
+      'Certification is not strictly required, but it opens doors and gets you past procurement filters on client bids. An Oracle certification paired with a finance qualification like ACCA is a powerful combination. It signals both the technical "what" and the accounting "why" that clients pay for.',
   },
   {
     question: "What's the difference between OTBI and BI Publisher?",
     answer:
-      'OTBI (Oracle Transactional Business Intelligence) is for fast, live exploration — build an analysis directly on Fusion data in minutes, no extract needed. BI Publisher is for pixel-perfect, printable, formal documents. The rule of thumb: OTBI for answering your own questions quickly, BIP for reports that leave the building.',
+      'OTBI (Oracle Transactional Business Intelligence) is for fast, live exploration. You build an analysis directly on Fusion data in minutes, with no extract needed. BI Publisher is for pixel-perfect, printable, formal documents. The rule of thumb: OTBI for answering your own questions quickly, BIP for reports that leave the building.',
   },
   {
     question: 'How long does an Oracle Fusion implementation take?',
     answer:
-      'It depends on scope, number of modules, and how many legal entities and business units are involved. A focused single-entity Financials rollout can go live in a few months; a multi-entity, multi-module programme runs longer. The biggest driver is not the software — it is decision-making speed and data readiness on the client side.',
+      'It depends on scope, number of modules, and how many legal entities and business units are involved. A focused single-entity Financials rollout can go live in a few months; a multi-entity, multi-module programme runs longer. The biggest driver is not the software. It is decision-making speed and data readiness on the client side.',
   },
   {
     question: 'Can you help with a specific Oracle Fusion problem or report?',
     answer:
-      'Yes. Beyond full implementations, I take focused advisory calls to work through a single reporting problem, a configuration question, or an ERP decision — you walk away with a clear, actionable plan. Book an advisory call from the Services page.',
+      'Yes. Beyond full implementations, I take focused advisory calls to work through a single reporting problem, a configuration question, or an ERP decision. You walk away with a clear, actionable plan. Book an advisory call from the Services page.',
   },
 ];
 
-// The headline lead magnet — the free offer used to grow the email list.
+// The headline lead magnet, the free offer used to grow the email list.
 // Swap the title/file once the real guide exists.
 export const LEAD_MAGNET = {
   title: "The ERP Finance Professional's Toolkit",
   description:
-    'A free starter kit: a month-end close checklist, an OTBI reporting cheat sheet, and a finance dashboard template — everything to get a quick win this week.',
+    'A free starter kit: a month-end close checklist, an OTBI reporting cheat sheet, and a finance dashboard template. Everything you need to get a quick win this week.',
   // Placeholder download (served from /public). Replace with the real asset.
   fileUrl: '/downloads/erp-finance-toolkit.pdf',
 };

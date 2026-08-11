@@ -24,7 +24,7 @@ export default function PrivacyPage() {
 
         <h2>Information we collect</h2>
         <p>
-          We only collect information you choose to give us — for example, your
+          We only collect information you choose to give us, for example, your
           name and email address when you subscribe to the newsletter, download a
           free resource, or contact us about a service. We do not sell, rent, or
           share your personal information with third parties for their marketing.

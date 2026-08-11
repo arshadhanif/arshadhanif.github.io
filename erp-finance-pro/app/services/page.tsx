@@ -5,11 +5,11 @@ import { AUTHOR } from '@/lib/constants';
 export const metadata: Metadata = {
   title: 'Services',
   description:
-    'Work with Arshad Hanif directly — expert advisory calls, CV & career coaching, and Oracle Fusion consulting.',
+    'Work with Arshad Hanif directly, expert advisory calls, CV & career coaching, and Oracle Fusion consulting.',
   openGraph: {
     title: 'Services',
     description:
-      'Work with Arshad Hanif directly — expert advisory calls, CV & career coaching, and Oracle Fusion consulting.',
+      'Work with Arshad Hanif directly, expert advisory calls, CV & career coaching, and Oracle Fusion consulting.',
   },
 };
 
@@ -29,7 +29,7 @@ const SERVICES = [
   {
     title: 'Oracle Fusion Consulting',
     description:
-      'Hands-on implementation, configuration, and optimisation support for Oracle Fusion Financials — from fit-gap through go-live and beyond.',
+      'Hands-on implementation, configuration, and optimisation support for Oracle Fusion Financials, from fit-gap through go-live and beyond.',
     subject: 'Oracle Fusion Consulting enquiry',
   },
 ];

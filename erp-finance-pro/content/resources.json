@@ -11,7 +11,7 @@
   {
     "id": "otbi-subject-area-cheatsheet",
     "title": "OTBI Subject Area Cheat Sheet",
-    "description": "The Oracle Fusion OTBI subject areas finance teams use most — and what each one is for. Stop guessing where to start your next analysis.",
+    "description": "The Oracle Fusion OTBI subject areas finance teams use most, and what each one is for. Stop guessing where to start your next analysis.",
     "format": "PDF",
     "fileUrl": "/downloads/otbi-subject-area-cheatsheet.pdf",
     "featured": true,
@@ -29,7 +29,7 @@
   {
     "id": "erp-implementation-raci",
     "title": "ERP Implementation RACI Template",
-    "description": "A ready-to-use RACI matrix for ERP projects — clarify who is Responsible, Accountable, Consulted, and Informed across every workstream.",
+    "description": "A ready-to-use RACI matrix for ERP projects, clarify who is Responsible, Accountable, Consulted, and Informed across every workstream.",
     "format": "Excel",
     "fileUrl": "/downloads/erp-implementation-raci.xlsx",
     "featured": false,

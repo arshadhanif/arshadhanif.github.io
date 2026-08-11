@@ -6,7 +6,7 @@ import JobsList from '@/components/JobsList';
 export const metadata: Metadata = {
   title: 'Oracle Fusion Jobs',
   description:
-    'A curated board of live Oracle Fusion consultant roles across the UAE, Saudi Arabia, and Pakistan — Financials, HCM, SCM, Technical, and more. Filter by module and location.',
+    'A curated board of live Oracle Fusion consultant roles across the UAE, Saudi Arabia, and Pakistan, Financials, HCM, SCM, Technical, and more. Filter by module and location.',
   openGraph: {
     title: 'Oracle Fusion Jobs',
     description:
@@ -36,7 +36,7 @@ export default function JobsPage() {
         </h1>
         <p className="mt-4 text-lg text-muted">
           A curated board of live Oracle Fusion roles across the UAE, Saudi
-          Arabia, and Pakistan — Financials, HCM, SCM, Technical, and more.
+          Arabia, and Pakistan, Financials, HCM, SCM, Technical, and more.
           Filter by module and location, then apply in one click.
         </p>
         <p className="mt-3 text-sm text-muted">
@@ -66,7 +66,7 @@ export default function JobsPage() {
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-muted">
           I help finance and ERP professionals position themselves for Oracle
-          Fusion consulting roles — CV, LinkedIn, and interview preparation from
+          Fusion consulting roles, CV, LinkedIn, and interview preparation from
           someone who works in the field every day.
         </p>
         <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">

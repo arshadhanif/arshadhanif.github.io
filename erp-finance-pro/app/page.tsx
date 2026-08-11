@@ -10,7 +10,7 @@ import { SITE_TAGLINE, HOMEPAGE_STATS, HOMEPAGE_FAQ } from '@/lib/constants';
 const VALUE_PROPS = [
   {
     title: 'Built by a practitioner',
-    body: 'Every template, report pack, and guide comes from real Oracle Fusion and finance engagements — not theory.',
+    body: 'Every template, report pack, and guide comes from real Oracle Fusion and finance engagements, not theory.',
   },
   {
     title: 'Save weeks of work',
@@ -117,7 +117,7 @@ export default function HomePage() {
             ))}
           </div>
         ) : (
-          <p className="text-muted">No articles published yet — check back soon.</p>
+          <p className="text-muted">No articles published yet, check back soon.</p>
         )}
       </section>
 

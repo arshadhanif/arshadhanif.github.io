@@ -19,7 +19,7 @@ export function getAllJobs(): Job[] {
   return jobsData as Job[];
 }
 
-/** The date the board was last refreshed — the most recent posting date. */
+/** The date the board was last refreshed, the most recent posting date. */
 export function getJobsLastUpdated(): string {
   const jobs = getAllJobs();
   if (jobs.length === 0) return '';

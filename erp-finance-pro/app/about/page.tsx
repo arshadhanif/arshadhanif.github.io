@@ -5,11 +5,11 @@ import { AUTHOR, SITE_NAME } from '@/lib/constants';
 export const metadata: Metadata = {
   title: 'About',
   description:
-    'Arshad Hanif — Oracle Fusion consultant, ACCA, and finance professional. The story and credentials behind ERP Finance Pro.',
+    'Arshad Hanif, Oracle Fusion consultant, ACCA, and finance professional. The story and credentials behind ERP Finance Pro.',
   openGraph: {
     title: 'About',
     description:
-      'Arshad Hanif — Oracle Fusion consultant, ACCA, and finance professional behind ERP Finance Pro.',
+      'Arshad Hanif, Oracle Fusion consultant, ACCA, and finance professional behind ERP Finance Pro.',
   },
 };
 
@@ -25,7 +25,7 @@ const CREDENTIALS = [
   'ACCA-qualified finance professional',
   'Part of the PwC professional network',
   'Delivered ERP outcomes for 13+ clients across industries',
-  'Hands-on across the full implementation lifecycle — fit-gap to go-live',
+  'Hands-on across the full implementation lifecycle, fit-gap to go-live',
 ];
 
 export default function AboutPage() {
@@ -37,7 +37,7 @@ export default function AboutPage() {
         </h1>
         <p className="mt-4 text-lg text-muted">
           {SITE_NAME} exists to give ERP and finance professionals a shortcut to
-          great work — the templates, knowledge, and guidance that usually take
+          great work, the templates, knowledge, and guidance that usually take
           years to accumulate.
         </p>
       </header>
@@ -60,14 +60,14 @@ export default function AboutPage() {
         <p>
           I&apos;m {AUTHOR.name}, an {AUTHOR.title} and finance professional. Over
           the years I&apos;ve helped 13+ clients implement, configure, and get
-          real value out of their ERP and finance systems — most of it centred on
+          real value out of their ERP and finance systems, most of it centred on
           Oracle Fusion Financials.
         </p>
         <p>
           My background blends formal finance training (ACCA) with deep technical
           ERP expertise (Oracle certified), shaped by working within the PwC
-          professional network. That combination — understanding both the numbers
-          and the systems behind them — is what {SITE_NAME} is built on.
+          professional network. That combination, understanding both the numbers
+          and the systems behind them, is what {SITE_NAME} is built on.
         </p>
 
         <h2>What you&apos;ll find here</h2>
@@ -93,7 +93,7 @@ export default function AboutPage() {
       <div className="mt-12 rounded-xl border border-border bg-surface p-7 text-center">
         <h2 className="text-xl font-semibold">Want to work together?</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-          From advisory calls to full Oracle Fusion engagements — see how I can
+          From advisory calls to full Oracle Fusion engagements, see how I can
           help.
         </p>
         <Link
