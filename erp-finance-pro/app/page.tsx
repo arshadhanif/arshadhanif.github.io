@@ -30,7 +30,7 @@ export default function HomePage() {
     <>
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,rgba(0,212,170,0.12),transparent)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,rgb(var(--accent)/0.14),transparent)]" />
         <div className="container-page relative py-20 sm:py-28 lg:py-32">
           <div className="mx-auto max-w-3xl text-center animate-fade-up">
             <span className="inline-flex items-center rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-accent">

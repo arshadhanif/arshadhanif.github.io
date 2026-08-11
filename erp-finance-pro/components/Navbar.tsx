@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SITE_NAME, NAV_LINKS } from '@/lib/constants';
+import ThemeSwitcher from './ThemeSwitcher';
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -47,16 +48,21 @@ export default function Navbar() {
           >
             Subscribe
           </Link>
+          <div className="ml-1">
+            <ThemeSwitcher />
+          </div>
         </div>
 
-        {/* Mobile hamburger */}
-        <button
-          type="button"
-          aria-label="Toggle menu"
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-          className="inline-flex items-center justify-center rounded-md p-2 text-foreground md:hidden"
-        >
+        {/* Mobile: theme switcher + hamburger, grouped on the right */}
+        <div className="flex items-center gap-1 md:hidden">
+          <ThemeSwitcher />
+          <button
+            type="button"
+            aria-label="Toggle menu"
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+            className="inline-flex items-center justify-center rounded-md p-2 text-foreground"
+          >
           <svg
             width="24"
             height="24"
@@ -81,7 +87,8 @@ export default function Navbar() {
               </>
             )}
           </svg>
-        </button>
+          </button>
+        </div>
       </nav>
 
       {/* Mobile menu panel */}

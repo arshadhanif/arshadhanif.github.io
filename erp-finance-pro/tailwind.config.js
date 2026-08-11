@@ -1,4 +1,13 @@
 /** @type {import('tailwindcss').Config} */
+
+// Colors are driven by CSS variables (space-separated RGB channels defined per
+// theme in globals.css), so the ThemeSwitcher can swap the whole palette by
+// setting data-theme on <html>. The <alpha-value> placeholder lets Tailwind
+// opacity utilities (e.g. bg-accent/15) keep working.
+function withVar(name) {
+  return `rgb(var(${name}) / <alpha-value>)`;
+}
+
 module.exports = {
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
@@ -8,17 +17,24 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: '#0A0A0A',
-        accent: '#00D4AA',
-        'accent-dim': '#00B594',
-        foreground: '#F5F5F5',
-        muted: '#A1A1A1',
-        surface: '#141414',
-        'surface-alt': '#1C1C1C',
-        border: '#262626',
+        background: withVar('--background'),
+        foreground: withVar('--foreground'),
+        muted: withVar('--muted'),
+        surface: withVar('--surface'),
+        'surface-alt': withVar('--surface-alt'),
+        border: withVar('--border'),
+        accent: withVar('--accent'),
+        'accent-dim': withVar('--accent-dim'),
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: [
+          'var(--font-display)',
+          'var(--font-inter)',
+          'ui-sans-serif',
+          'system-ui',
+          'sans-serif',
+        ],
       },
       maxWidth: {
         content: '72rem',
@@ -31,13 +47,6 @@ module.exports = {
       },
       animation: {
         'fade-up': 'fade-up 0.5s ease-out both',
-      },
-      typography: {
-        DEFAULT: {
-          css: {
-            color: '#F5F5F5',
-          },
-        },
       },
     },
   },

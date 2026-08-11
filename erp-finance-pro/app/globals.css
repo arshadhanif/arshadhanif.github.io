@@ -2,6 +2,85 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theme palettes. Colors are stored as space-separated RGB channels so Tailwind
+ * can apply opacity (e.g. bg-accent/15). Switch themes by setting
+ * data-theme="..." on <html> (handled by the ThemeSwitcher component).
+ * The default (no data-theme) is the light "Paper" theme.
+ */
+:root,
+[data-theme='paper'] {
+  color-scheme: light;
+  --background: 246 244 238;
+  --foreground: 22 21 15;
+  --muted: 106 102 90;
+  --surface: 255 255 255;
+  --surface-alt: 239 236 228;
+  --border: 224 219 206;
+  --accent: 15 138 114;
+  --accent-dim: 12 110 92;
+}
+
+[data-theme='midnight'] {
+  color-scheme: dark;
+  --background: 10 10 10;
+  --foreground: 245 245 245;
+  --muted: 161 161 161;
+  --surface: 20 20 20;
+  --surface-alt: 28 28 28;
+  --border: 38 38 38;
+  --accent: 0 212 170;
+  --accent-dim: 0 181 148;
+}
+
+[data-theme='slate'] {
+  color-scheme: dark;
+  --background: 15 23 42;
+  --foreground: 241 245 249;
+  --muted: 148 163 184;
+  --surface: 30 41 59;
+  --surface-alt: 51 65 85;
+  --border: 51 65 85;
+  --accent: 56 189 248;
+  --accent-dim: 14 165 233;
+}
+
+[data-theme='royal'] {
+  color-scheme: dark;
+  --background: 23 16 43;
+  --foreground: 245 243 255;
+  --muted: 167 160 190;
+  --surface: 33 24 58;
+  --surface-alt: 45 33 75;
+  --border: 58 44 92;
+  --accent: 167 139 250;
+  --accent-dim: 139 92 246;
+}
+
+[data-theme='ember'] {
+  color-scheme: dark;
+  --background: 18 14 10;
+  --foreground: 245 240 233;
+  --muted: 173 165 153;
+  --surface: 28 22 16;
+  --surface-alt: 38 30 22;
+  --border: 50 41 30;
+  --accent: 245 158 11;
+  --accent-dim: 217 119 6;
+}
+
+[data-theme='daylight'] {
+  color-scheme: light;
+  --background: 252 252 253;
+  --foreground: 13 17 23;
+  --muted: 88 96 110;
+  --surface: 255 255 255;
+  --surface-alt: 244 246 249;
+  --border: 224 228 234;
+  --accent: 13 148 136;
+  --accent-dim: 15 118 110;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -9,6 +88,21 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    /* Soft accent wash anchored top-centre, for depth instead of a flat fill. */
+    background-image: radial-gradient(
+      1100px 520px at 50% -10%,
+      rgb(var(--accent) / 0.08),
+      transparent 70%
+    );
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: theme('fontFamily.display');
+    letter-spacing: -0.02em;
   }
 
   ::selection {

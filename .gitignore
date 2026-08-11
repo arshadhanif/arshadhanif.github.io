@@ -5,3 +5,4 @@ node_modules/
 out/
 _site/
 next-env.d.ts
+_preview/
