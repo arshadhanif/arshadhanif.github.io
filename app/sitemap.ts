@@ -16,6 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/store',
     '/services',
     '/for-teams',
+    '/resources',
     '/about',
     '/newsletter',
     '/privacy',

@@ -5,7 +5,8 @@
     "description": "A one-page checklist covering the essential steps of a clean month-end close. The free version of the full tracker in the store.",
     "format": "PDF",
     "fileUrl": "/downloads/month-end-close-checklist-lite.pdf",
-    "featured": true
+    "featured": true,
+    "available": false
   },
   {
     "id": "otbi-subject-area-cheatsheet",
@@ -13,7 +14,8 @@
     "description": "The Oracle Fusion OTBI subject areas finance teams use most — and what each one is for. Stop guessing where to start your next analysis.",
     "format": "PDF",
     "fileUrl": "/downloads/otbi-subject-area-cheatsheet.pdf",
-    "featured": true
+    "featured": true,
+    "available": false
   },
   {
     "id": "excel-finance-shortcuts",
@@ -21,7 +23,8 @@
     "description": "A printable reference of the keyboard shortcuts that genuinely speed up finance work in Excel. Tape it to your monitor.",
     "format": "PDF",
     "fileUrl": "/downloads/excel-finance-shortcuts.pdf",
-    "featured": false
+    "featured": false,
+    "available": false
   },
   {
     "id": "erp-implementation-raci",
@@ -29,6 +32,7 @@
     "description": "A ready-to-use RACI matrix for ERP projects — clarify who is Responsible, Accountable, Consulted, and Informed across every workstream.",
     "format": "Excel",
     "fileUrl": "/downloads/erp-implementation-raci.xlsx",
-    "featured": false
+    "featured": false,
+    "available": false
   }
 ]

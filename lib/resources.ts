@@ -7,6 +7,12 @@ export interface Resource {
   format: string;
   fileUrl: string;
   featured: boolean;
+  /**
+   * Whether the actual file exists yet. When false, the resource shows a
+   * "Coming soon" state instead of a download link. Flip to true once the
+   * file is added under public/downloads.
+   */
+  available: boolean;
 }
 
 export function getAllResources(): Resource[] {
