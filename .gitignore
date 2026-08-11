@@ -1,0 +1,7 @@
+# Build artifacts / dependencies that must never be committed at the repo root.
+# (The ERP Finance Pro app under erp-finance-pro/ has its own .gitignore too.)
+node_modules/
+.next/
+out/
+_site/
+next-env.d.ts

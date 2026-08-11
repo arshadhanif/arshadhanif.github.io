@@ -3,11 +3,11 @@ name: Deploy site to GitHub Pages
 # Publishes a single GitHub Pages artifact containing:
 #   - the portfolio (repository root: index.html, Assets, reelbook, reelbook-app)
 #     served at  https://arshadhanif.github.io/
-#   - the MyVault Next.js site (built from ./myvault with basePath /myvault)
-#     served at  https://arshadhanif.github.io/myvault/
+#   - the ERP Finance Pro Next.js site (built from ./erp-finance-pro with
+#     basePath /erp-finance-pro) served at  https://arshadhanif.github.io/erp-finance-pro/
 #
 # The portfolio at the root is assembled verbatim from the existing static files,
-# so it is unaffected by the MyVault build.
+# so it is unaffected by the ERP Finance Pro build.
 
 on:
   push:
@@ -36,12 +36,12 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: myvault/package-lock.json
+          cache-dependency-path: erp-finance-pro/package-lock.json
 
-      - name: Build MyVault (basePath /myvault)
-        working-directory: myvault
+      - name: Build ERP Finance Pro (basePath /erp-finance-pro)
+        working-directory: erp-finance-pro
         env:
-          BASE_PATH: /myvault
+          BASE_PATH: /erp-finance-pro
         run: |
           npm ci
           npm run build
@@ -55,9 +55,9 @@ jobs:
               cp -r "$path" _site/
             fi
           done
-          # MyVault under /myvault/
-          mkdir -p _site/myvault
-          cp -r myvault/out/* _site/myvault/
+          # ERP Finance Pro under /erp-finance-pro/
+          mkdir -p _site/erp-finance-pro
+          cp -r erp-finance-pro/out/* _site/erp-finance-pro/
           # Ensure Jekyll is disabled (Next.js uses _next directories).
           touch _site/.nojekyll
 
