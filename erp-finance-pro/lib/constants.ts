@@ -79,7 +79,6 @@ export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 
 export const NAV_LINKS = [
   { href: '/blog', label: 'Blog' },
-  { href: '/jobs', label: 'Jobs' },
   { href: '/store', label: 'Store' },
   { href: '/resources', label: 'Free Resources' },
   { href: '/services', label: 'Services' },

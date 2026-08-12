@@ -34,14 +34,5 @@
     "category": "Templates",
     "gumroadUrl": "https://gumroad.com/l/placeholder-excel-dashboard",
     "featured": false
-  },
-  {
-    "id": "oracle-fusion-financials-course",
-    "title": "Oracle Fusion Financials, Practical Course",
-    "description": "A hands-on video course covering the Oracle Fusion Financials modules consultants actually get asked about, with real-world configuration walkthroughs.",
-    "price": "$249",
-    "category": "Courses",
-    "gumroadUrl": "https://gumroad.com/l/placeholder-fusion-course",
-    "featured": false
   }
 ]
