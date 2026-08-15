@@ -76,6 +76,30 @@ export async function searchMulti(query, page = 1) {
     .filter((r) => r.title)
 }
 
+// Like searchMulti but also returns PEOPLE (actors / directors), so you can
+// search by a person's name and jump to their profile. Each result carries a
+// `kind`: 'title' (movie/tv) or 'person'. Kept separate from searchMulti so the
+// title-only callers (quick add, favourites) are unaffected.
+export async function searchAll(query, page = 1) {
+  if (!query?.trim()) return []
+  const data = await tmdb('/search/multi', { query, page, include_adult: 'false' })
+  return (data.results || []).map((r) => {
+    if (r.media_type === 'person') {
+      return {
+        kind: 'person',
+        id: r.id,
+        name: r.name,
+        profile_path: r.profile_path || null,
+        department: r.known_for_department || null,
+        known_for: (r.known_for || []).map((k) => k.title || k.name).filter(Boolean).slice(0, 3).join(', '),
+        popularity: r.popularity || 0,
+      }
+    }
+    const n = normalizeResult(r)
+    return n && n.title ? { kind: 'title', ...n, popularity: r.popularity || 0 } : null
+  }).filter(Boolean)
+}
+
 // Look up a TMDB title from an IMDb id (tt0123456) - used by the IMDb importer.
 export async function findByImdbId(imdbId) {
   const data = await tmdb(`/find/${imdbId}`, { external_source: 'imdb_id' })
@@ -194,16 +218,24 @@ export async function getRecommendations(tmdbId, mediaType) {
 
 // Rich detail for the title page: core fields + credits + external ids + providers + videos.
 export async function getFullDetail(tmdbId, mediaType) {
-  const data = await tmdb(`/${mediaType}/${tmdbId}`, {
-    append_to_response: 'credits,external_ids,watch/providers,videos',
-  })
   const isMovie = mediaType === 'movie'
+  // TV `credits` only returns a small top-billed set; `aggregate_credits` spans
+  // the whole run (with a roles[] per person), which is the full cast users expect.
+  const append = isMovie
+    ? 'credits,external_ids,watch/providers,videos'
+    : 'aggregate_credits,credits,external_ids,watch/providers,videos'
+  const data = await tmdb(`/${mediaType}/${tmdbId}`, { append_to_response: append })
   const runtime = isMovie
     ? data.runtime ?? null
     : (data.episode_run_time && data.episode_run_time[0]) ?? null
 
-  const cast = (data.credits?.cast || []).slice(0, 18).map((c) => ({
-    id: c.id, name: c.name, character: c.character, profile_path: c.profile_path,
+  const castSource = isMovie
+    ? (data.credits?.cast || [])
+    : (data.aggregate_credits?.cast?.length ? data.aggregate_credits.cast : (data.credits?.cast || []))
+  const cast = castSource.slice(0, 60).map((c) => ({
+    id: c.id, name: c.name, profile_path: c.profile_path,
+    // aggregate_credits carries roles[]; a plain credit carries character.
+    character: c.character || (c.roles || []).map((r) => r.character).filter(Boolean).join(' / ') || '',
   }))
   let crew = []
   if (isMovie) {
@@ -222,6 +254,12 @@ export async function getFullDetail(tmdbId, mediaType) {
           episode_count: s.episode_count,
           air_date: s.air_date,
         }))
+        // Regular seasons first (ascending); Specials (season 0) always last.
+        .sort((a, b) => {
+          if (a.season_number === 0) return 1
+          if (b.season_number === 0) return -1
+          return a.season_number - b.season_number
+        })
     : []
 
   return {
@@ -243,6 +281,10 @@ export async function getFullDetail(tmdbId, mediaType) {
     tagline: data.tagline || null,
     vote_average: data.vote_average ? Math.round(data.vote_average * 10) / 10 : null,
     imdb_id: data.external_ids?.imdb_id || data.imdb_id || null,
+    // air range + status (TV): for "aired 2004 to 2010" style headers
+    first_air_date: isMovie ? (data.release_date || null) : (data.first_air_date || null),
+    last_air_date: isMovie ? null : (data.last_air_date || null),
+    status: data.status || null,
     // display-only extras
     vote_count: data.vote_count || 0,
     genres: (data.genres || []).map((g) => g.name),
@@ -266,9 +308,12 @@ function pickTrailer(videos = []) {
 // How many episodes have actually AIRED (TMDB's number_of_episodes also counts
 // announced/unaired episodes for ongoing shows, which breaks "caught up" logic).
 function airedEpisodes(data) {
-  if (!data.next_episode_to_air) return data.number_of_episodes ?? null // ended / fully aired
+  // Count up to the most recently AIRED episode. This must not fall back to
+  // number_of_episodes just because nothing is scheduled next: a show can have
+  // announced episodes with no air date (e.g. a "TBA" season premiere) that
+  // inflate number_of_episodes and make a caught-up viewer look "1 to go".
   const last = data.last_episode_to_air
-  if (!last) return data.number_of_episodes ?? null
+  if (!last) return data.number_of_episodes ?? null   // nothing aired yet: use total
   let count = (data.seasons || [])
     .filter((s) => (s.season_number || 0) >= 1 && s.season_number < last.season_number)
     .reduce((a, s) => a + (s.episode_count || 0), 0)

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { searchMulti, getTrending, getPopular, getTopRated, getTvStatus, getAnime, listWatchProviders, discoverByProviders, IMG } from '../lib/tmdb'
+import { searchAll, getTrending, getPopular, getTopRated, getTvStatus, getAnime, listWatchProviders, discoverByProviders, IMG } from '../lib/tmdb'
 import { listInProgressShows, setTitleTotalEpisodes, listSubscriptions } from '../lib/db'
 import { regionFromSubs, matchProviderIds } from '../lib/providers'
-import { Poster, Empty, SkeletonGrid, TitleLink } from '../components/ui'
+import { Poster, Empty, SkeletonGrid, TitleLink, ScrollRow } from '../components/ui'
 
 export default function Discover() {
   const [q, setQ] = useState('')
@@ -26,20 +26,37 @@ export default function Discover() {
     })
     listInProgressShows().then(async (shows) => {
       setContinueShows(shows)
-      // Refresh AIRED episode counts (TMDB's total counts unaired episodes),
-      // so shows you're fully caught up on drop off. Gated to once every 6h.
+      // Refresh AIRED episode counts (TMDB's total counts unaired episodes) so
+      // shows you're caught up on drop off. Gated to once every 6h. Only the most
+      // recent shows are checked (the rail is a scroller, and hitting TMDB for
+      // every tracked show at once gets rate-limited). Crucially, a failed check
+      // KEEPS the show as-is instead of dropping it from the rail.
       const KEY = 'reelbook.epRefresh'
       if (Date.now() - Number(localStorage.getItem(KEY) || 0) < 6 * 3600 * 1000) return
-      const out = await Promise.allSettled(shows.map(async (s) => {
-        const st = await getTvStatus(s.title.tmdb_id)
-        const aired = st.aired_episodes ?? st.number_of_episodes
-        if (aired && aired !== s.total) await setTitleTotalEpisodes(s.title.id, aired).catch(() => {})
-        return { ...s, total: aired ?? s.total }
-      }))
+      // Prioritise shows with an UNKNOWN total: without it they can never be
+      // marked caught up and cling to the rail forever. Then the most-recent
+      // shows (to catch newly-aired episodes). Dedupe by tmdb id, cap the work,
+      // and run in small batches so TMDB doesn't rate-limit. A failed check
+      // keeps the show as-is rather than dropping it.
+      const totals = {}
+      const seenTmdb = new Set()
+      const work = []
+      for (const s of [...shows.filter((s) => !s.total), ...shows.filter((s) => s.total)]) {
+        if (!seenTmdb.has(s.title.tmdb_id)) { seenTmdb.add(s.title.tmdb_id); work.push(s) }
+      }
+      const capped = work.slice(0, 120)
+      for (let i = 0; i < capped.length; i += 8) {
+        await Promise.all(capped.slice(i, i + 8).map(async (s) => {
+          try {
+            const st = await getTvStatus(s.title.tmdb_id)
+            const aired = st.aired_episodes ?? st.number_of_episodes
+            if (aired) { totals[s.title.tmdb_id] = aired; if (aired !== s.total) await setTitleTotalEpisodes(s.title.id, aired).catch(() => {}) }
+          } catch { /* keep the show as-is on failure */ }
+        }))
+      }
       try { localStorage.setItem(KEY, String(Date.now())) } catch {}
-      const refreshed = out.filter((r) => r.status === 'fulfilled').map((r) => r.value)
-        .filter((s) => !s.total || s.watched < s.total)
-      setContinueShows(refreshed)
+      const merged = shows.map((s) => (totals[s.title.tmdb_id] ? { ...s, total: totals[s.title.tmdb_id] } : s))
+      setContinueShows(merged.filter((s) => !s.total || s.watched < s.total))
     }).catch(() => {})
 
     // "On your services": what's popular on the streaming services you pay for.
@@ -69,7 +86,7 @@ export default function Discover() {
     setLoading(true)
     debounce.current = setTimeout(async () => {
       setErr(null)
-      try { setResults(await searchMulti(q)) }
+      try { setResults(await searchAll(q)) }
       catch (e) { setErr(e.message) }
       finally { setLoading(false) }
     }, 350)
@@ -77,7 +94,9 @@ export default function Discover() {
   }, [q])
 
   const searching = !!q.trim()
-  const filtered = type === 'all' ? results : results.filter((r) => r.media_type === type)
+  const titleResults = results.filter((r) => r.kind !== 'person')
+  const peopleResults = results.filter((r) => r.kind === 'person')
+  const filtered = type === 'all' ? titleResults : titleResults.filter((r) => r.media_type === type)
 
   return (
     <div className="page">
@@ -86,7 +105,7 @@ export default function Discover() {
         <Link className="btn sm" to="/browse">🧭 Advanced filters</Link>
       </div>
       <input
-        placeholder="Search movies & TV…"
+        placeholder="Search movies, TV & people…"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         style={{ marginBottom: 14 }}
@@ -105,18 +124,38 @@ export default function Discover() {
       {err && <div className="banner error">{err}</div>}
 
       {searching ? (
-        loading ? <SkeletonGrid count={12} /> : filtered.length === 0 && !err ? (
+        loading ? <SkeletonGrid count={12} /> : filtered.length === 0 && peopleResults.length === 0 && !err ? (
           <Empty icon="🔍">No {type !== 'all' ? (type === 'tv' ? 'TV' : 'movie') + ' ' : ''}results for “{q}”.</Empty>
         ) : (
-          <div className="grid">
-            {filtered.map((r) => (
-              <TitleLink className="tile" key={`${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
-                <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
-                <div className="tile-title">{r.title}</div>
-                <div className="tile-sub">{r.year || 'N/A'} · {r.media_type === 'tv' ? 'TV' : 'Movie'}</div>
-              </TitleLink>
-            ))}
-          </div>
+          <>
+            {type === 'all' && peopleResults.length > 0 && (
+              <div style={{ marginBottom: 22 }}>
+                <div className="section-head"><h2>People</h2></div>
+                <ScrollRow className="rail">
+                  {peopleResults.map((p) => (
+                    <Link className="rail-item tile" key={`person-${p.id}`} to={`/person/${p.id}`}>
+                      <div className="poster" style={{ borderRadius: '50%', overflow: 'hidden' }}>
+                        {IMG.profile(p.profile_path, 'w185')
+                          ? <img src={IMG.profile(p.profile_path, 'w185')} alt={p.name} loading="lazy" />
+                          : <div className="ph">{p.name?.[0]}</div>}
+                      </div>
+                      <div className="tile-title">{p.name}</div>
+                      <div className="tile-sub">{p.department || 'Person'}</div>
+                    </Link>
+                  ))}
+                </ScrollRow>
+              </div>
+            )}
+            <div className="grid">
+              {filtered.map((r) => (
+                <TitleLink className="tile" key={`${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
+                  <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
+                  <div className="tile-title">{r.title}</div>
+                  <div className="tile-sub">{r.year || 'N/A'} · {r.media_type === 'tv' ? 'TV' : 'Movie'}</div>
+                </TitleLink>
+              ))}
+            </div>
+          </>
         )
       ) : (
         <>
@@ -152,7 +191,7 @@ function Rail({ title, items }) {
   return (
     <div style={{ marginBottom: 26 }}>
       <div className="section-head"><h2>{title}</h2></div>
-      <div className="scroll-x rail">
+      <ScrollRow className="rail">
         {items.map((r) => (
           <TitleLink className="rail-item tile" key={`${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
             <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
@@ -160,32 +199,54 @@ function Rail({ title, items }) {
             <div className="tile-sub">{r.year || 'N/A'}</div>
           </TitleLink>
         ))}
-      </div>
+      </ScrollRow>
     </div>
   )
 }
 
 function ContinueRail({ shows }) {
+  const [gid, setGid] = useState(null)
+  // Distinct groups present, so we only show the filter when it's useful.
+  const groupsPresent = []
+  const seen = new Set()
+  for (const s of shows) if (s.group && !seen.has(s.group.id)) { seen.add(s.group.id); groupsPresent.push(s.group) }
+  const view = gid ? shows.filter((s) => s.groupId === gid) : shows
   return (
     <div style={{ marginBottom: 26 }}>
       <div className="section-head"><h2>▶ Continue watching</h2></div>
-      <div className="scroll-x rail">
-        {shows.map(({ title, watched, total }) => {
+      {groupsPresent.length > 1 && (
+        <div className="scroll-x" style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <button className={`chip ${!gid ? 'active' : ''}`}
+            style={!gid ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#0b0d12' } : undefined}
+            onClick={() => setGid(null)}>All</button>
+          {groupsPresent.map((g) => (
+            <button key={g.id} className={`chip ${gid === g.id ? 'active' : ''}`}
+              style={gid === g.id ? { background: g.color, borderColor: g.color, color: '#0b0d12' } : undefined}
+              onClick={() => setGid(g.id)}>{g.name}</button>
+          ))}
+        </div>
+      )}
+      <ScrollRow className="rail">
+        {view.map((s) => {
+          const { title, watched, total, group, groupId } = s
           const pct = total ? Math.round((watched / total) * 100) : 0
           const toGo = total ? total - watched : 0
           return (
-            <TitleLink className="rail-item tile" key={title.id} tmdbId={title.tmdb_id} media={title.media_type}>
+            <TitleLink className="rail-item tile" key={`${title.id}-${groupId}`} tmdbId={title.tmdb_id} media={title.media_type}>
               <div style={{ position: 'relative' }}>
                 <Poster title={title.title} mediaType="tv" posterPath={title.poster_path} />
                 {toGo > 0 && <span className="ep-badge">{toGo} to go</span>}
               </div>
               <div className="progress-track"><div className="progress-fill" style={{ width: `${pct}%` }} /></div>
               <div className="tile-title">{title.title}</div>
-              <div className="tile-sub">{watched}{total ? `/${total}` : ''} eps</div>
+              <div className="tile-sub">
+                {watched}{total ? `/${total}` : ''} eps
+                {group && <> · <span style={{ color: group.color }}>{group.name}</span></>}
+              </div>
             </TitleLink>
           )
         })}
-      </div>
+      </ScrollRow>
     </div>
   )
 }

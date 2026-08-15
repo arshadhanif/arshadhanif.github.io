@@ -44,13 +44,22 @@ const Person = lazy(() => import('./pages/Person'))
 const Subscriptions = lazy(() => import('./pages/Subscriptions'))
 const PublicProfile = lazy(() => import('./pages/PublicProfile'))
 
-// Register the service worker so ReelBook is installable on phones.
-// Only on a root deployment (Vercel) - on the GitHub Pages preview the app
-// lives under a subpath that shares its origin with the portfolio, so we skip
-// SW registration there to avoid controlling the whole origin.
-if ('serviceWorker' in navigator && import.meta.env.BASE_URL === '/') {
+// Register the service worker so ReelBook is installable and updates cleanly on
+// phones. Scoped to BASE_URL, so on the GitHub Pages preview it controls only
+// /reelbook-app/ and never the portfolio at the origin root. The SW is stamped
+// with the build hash each deploy, so a new release is detected, installed and
+// activated; when it takes control we reload once to pick up fresh assets
+// (without this a home-screen PWA can serve a stale bundle for days).
+if ('serviceWorker' in navigator) {
+  const base = import.meta.env.BASE_URL || '/'
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {})
+    navigator.serviceWorker.register(`${base}sw.js`, { scope: base }).catch(() => {})
+  })
+  let reloaded = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloaded) return
+    reloaded = true
+    window.location.reload()
   })
 }
 

@@ -11,6 +11,8 @@ export default function TasteMatch() {
   const [watchlist, setWatchlist] = useState([])
   const [seasonR, setSeasonR] = useState([])
   const [loading, setLoading] = useState(true)
+  // Diary ratings carry profile_id, not a name, so resolve names from profiles.
+  const nameOf = (pid) => profiles.find((p) => p.id === pid)?.name || 'Someone'
 
   useEffect(() => {
     Promise.all([listDiary({ limit: 2000 }), listWatchlist()])
@@ -52,7 +54,8 @@ export default function TasteMatch() {
     const byName = {}
     for (const e of entries) for (const r of e.ratings || []) {
       if (r.score == null) continue
-      ;(byName[r.name] = byName[r.name] || []).push(r.score)
+      const nm = nameOf(r.profile_id)
+      ;(byName[nm] = byName[nm] || []).push(r.score)
     }
     const critics = Object.entries(byName).map(([name, arr]) => ({ name, avg: +(arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1), n: arr.length }))
       .sort((a, b) => a.avg - b.avg)
@@ -69,7 +72,7 @@ export default function TasteMatch() {
     const together = watchlist.filter((w) => w.titles && !wseen.has(`${w.titles.media_type}-${w.titles.tmdb_id}`) && wseen.add(`${w.titles.media_type}-${w.titles.tmdb_id}`))
 
     return { both, matchPct, avgGap, critics, sharedLoves, clashes, together, count: both.length }
-  }, [entries, watchlist])
+  }, [entries, watchlist, profiles])
 
   if (loading) return <div className="page"><Spinner label="Comparing your tastes…" /></div>
 
@@ -129,7 +132,7 @@ export default function TasteMatch() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <strong>{e.titles.title}</strong>
                       <div className="row" style={{ gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
-                        {rs.map((r, idx) => <span key={idx} className="faint">{r.name}: <strong style={{ color: 'var(--text)' }}>{r.score}</strong></span>)}
+                        {rs.map((r, idx) => <span key={idx} className="faint">{nameOf(r.profile_id)}: <strong style={{ color: 'var(--text)' }}>{r.score}</strong></span>)}
                       </div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0, color: 'var(--pink)', fontWeight: 800 }}>{gap} apart</div>

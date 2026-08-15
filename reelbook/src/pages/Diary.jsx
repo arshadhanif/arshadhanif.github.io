@@ -40,7 +40,7 @@ export default function Diary() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [d, e] = await Promise.all([listDiary({ groupId }), listEpisodeDiary({ groupId })])
+      const [d, e] = await Promise.all([listDiary({ groupId, limit: 10000 }), listEpisodeDiary({ groupId, limit: 20000 })])
       setEntries(d); setEpEntries(e)
     } finally { setLoading(false) }
   }, [groupId])

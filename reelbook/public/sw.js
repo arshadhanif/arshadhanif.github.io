@@ -1,5 +1,10 @@
-// ReelBook service worker — minimal, safe app-shell caching.
-const CACHE = 'reelbook-v1'
+// ReelBook service worker: minimal, safe app-shell caching.
+// BUILD is stamped with the deployed bundle hash on every deploy, so this file
+// changes each release. That makes the browser detect a new service worker,
+// re-install, purge the old cache and claim clients with fresh assets. Without
+// it a PWA / mobile browser can serve a stale bundle indefinitely.
+const BUILD = '__BUILD__'
+const CACHE = `reelbook-${BUILD}`
 // Relative to the SW's own scope so this works whether served at '/' or a subpath.
 const SHELL = ['./', './icon-192.png', './icon-512.png', './manifest.webmanifest']
 
@@ -23,8 +28,8 @@ self.addEventListener('push', (e) => {
   const title = data.title || 'ReelBook'
   const options = {
     body: data.body || '',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
+    icon: './icon-192.png',
+    badge: './icon-192.png',
     data: { url: data.url || '/notifications' },
     tag: data.tag || undefined,
   }

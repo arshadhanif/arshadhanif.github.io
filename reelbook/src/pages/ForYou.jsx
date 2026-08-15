@@ -3,7 +3,7 @@ import { listDiary, listWatchlist, friendFeed } from '../lib/db'
 import { recommendFromHistory, recommendRails, keyOf } from '../lib/recommend'
 import { IMG } from '../lib/tmdb'
 import { useAppData } from '../context/AppData'
-import { Poster, Spinner, Empty, GroupChips, TitleLink, GridSkeleton } from '../components/ui'
+import { Poster, Spinner, Empty, GroupChips, TitleLink, GridSkeleton, ScrollRow } from '../components/ui'
 import { Shuffle, Settings2 } from 'lucide-react'
 import Roulette from '../components/Roulette'
 
@@ -155,7 +155,7 @@ export default function ForYou() {
       {friendsLoved.length > 0 && (
         <div style={{ marginTop: 24 }}>
           <div className="section-head"><h2 style={{ fontSize: 18 }}>❤️ Loved by friends</h2></div>
-          <div className="scroll-x rail">
+          <ScrollRow className="rail">
             {friendsLoved.map((r) => (
               <TitleLink className="tile rail-item" key={keyOf(r.media_type, r.tmdb_id)} tmdbId={r.tmdb_id} media={r.media_type}>
                 <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
@@ -163,7 +163,7 @@ export default function ForYou() {
                 <div className="tile-sub faint">{r.by}</div>
               </TitleLink>
             ))}
-          </div>
+          </ScrollRow>
         </div>
       )}
 
@@ -182,7 +182,7 @@ export default function ForYou() {
               <div className="section-head">
                 <h2 style={{ fontSize: 18 }}>Because you liked <TitleLink className="linklike" tmdbId={rail.seed.tmdb_id} media={rail.seed.media_type}>{rail.seed.title}</TitleLink></h2>
               </div>
-              <div className="scroll-x rail">
+              <ScrollRow className="rail">
                 {rail.items.map((r) => (
                   <TitleLink className="tile rail-item" key={keyOf(r.media_type, r.tmdb_id)} tmdbId={r.tmdb_id} media={r.media_type}>
                     <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
@@ -190,7 +190,7 @@ export default function ForYou() {
                     <div className="tile-sub">{r.year || 'N/A'} · {r.media_type === 'tv' ? 'TV' : 'Movie'}</div>
                   </TitleLink>
                 ))}
-              </div>
+              </ScrollRow>
             </div>
           ))}
 

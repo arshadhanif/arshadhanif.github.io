@@ -6,6 +6,7 @@ import { initBaselines, buildNotifications, getUnread, syncNotifState } from '..
 import { initials } from './ui'
 import Onboarding, { needsOnboarding } from './Onboarding'
 import QuickAdd from './QuickAdd'
+import GlobalSearch from './GlobalSearch'
 import { setTheme, setAccent, ACCENTS } from '../lib/theme'
 import { getPref } from '../lib/prefs'
 import {
@@ -32,7 +33,7 @@ const MENU = [
   ['/friends', 'Friends', Users],
   ['/settings', 'Settings', Settings],
   ['/groups', 'Groups & profile', UserRound],
-  ['/import', 'Import & history', Upload],
+  ['/import', 'Import & export', Upload],
   ['/about', 'About', Info],
 ]
 
@@ -100,6 +101,7 @@ export default function Layout() {
           {TABS.map((t) => <NavLink key={t.to} to={t.to} end={t.end}>{t.label}</NavLink>)}
         </nav>
         <div className="row" style={{ gap: 6 }}>
+        <GlobalSearch />
         <button className="bell" onClick={toggleTheme} aria-label="Toggle light or dark" title="Toggle light / dark">
           {theme === 'light' ? <Moon size={19} /> : <Sun size={19} />}
         </button>
