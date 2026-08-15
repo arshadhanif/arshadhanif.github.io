@@ -76,6 +76,30 @@ export async function searchMulti(query, page = 1) {
     .filter((r) => r.title)
 }
 
+// Like searchMulti but also returns PEOPLE (actors / directors), so you can
+// search by a person's name and jump to their profile. Each result carries a
+// `kind`: 'title' (movie/tv) or 'person'. Kept separate from searchMulti so the
+// title-only callers (quick add, favourites) are unaffected.
+export async function searchAll(query, page = 1) {
+  if (!query?.trim()) return []
+  const data = await tmdb('/search/multi', { query, page, include_adult: 'false' })
+  return (data.results || []).map((r) => {
+    if (r.media_type === 'person') {
+      return {
+        kind: 'person',
+        id: r.id,
+        name: r.name,
+        profile_path: r.profile_path || null,
+        department: r.known_for_department || null,
+        known_for: (r.known_for || []).map((k) => k.title || k.name).filter(Boolean).slice(0, 3).join(', '),
+        popularity: r.popularity || 0,
+      }
+    }
+    const n = normalizeResult(r)
+    return n && n.title ? { kind: 'title', ...n, popularity: r.popularity || 0 } : null
+  }).filter(Boolean)
+}
+
 // Look up a TMDB title from an IMDb id (tt0123456) - used by the IMDb importer.
 export async function findByImdbId(imdbId) {
   const data = await tmdb(`/find/${imdbId}`, { external_source: 'imdb_id' })

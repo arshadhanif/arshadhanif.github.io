@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, X } from 'lucide-react'
-import { searchMulti, IMG } from '../lib/tmdb'
+import { searchAll, IMG } from '../lib/tmdb'
 
 // Top-bar search available on every page. Click the icon to open an overlay,
 // type to search TMDB live, click a result to jump to its title page.
@@ -37,7 +37,7 @@ export default function GlobalSearch() {
     if (!q.trim()) { setResults([]); setLoading(false); return }
     setLoading(true)
     debounce.current = setTimeout(async () => {
-      try { setResults((await searchMulti(q)).slice(0, 8)); setActive(0) }
+      try { setResults((await searchAll(q)).slice(0, 8)); setActive(0) }
       catch { setResults([]) }
       finally { setLoading(false) }
     }, 300)
@@ -46,7 +46,8 @@ export default function GlobalSearch() {
 
   function pick(r) {
     setOpen(false)
-    navigate(`/title/${r.media_type}/${r.tmdb_id}`)
+    if (r.kind === 'person') navigate(`/person/${r.id}`)
+    else navigate(`/title/${r.media_type}/${r.tmdb_id}`)
   }
 
   function onInputKey(e) {
@@ -67,7 +68,7 @@ export default function GlobalSearch() {
             <div className="gsearch-bar">
               <Search size={18} className="gsearch-ico" />
               <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onInputKey}
-                placeholder="Search movies & TV…" />
+                placeholder="Search movies, TV & people…" />
               <button className="gsearch-x" onClick={() => setOpen(false)} aria-label="Close"><X size={18} /></button>
             </div>
             {q.trim() && (
@@ -77,7 +78,20 @@ export default function GlobalSearch() {
                 ) : results.length === 0 ? (
                   <div className="gsearch-empty">No matches for “{q}”.</div>
                 ) : (
-                  results.map((r, i) => (
+                  results.map((r, i) => r.kind === 'person' ? (
+                    <button key={`person-${r.id}`} className={`gsearch-row ${i === active ? 'active' : ''}`}
+                      onMouseEnter={() => setActive(i)} onClick={() => pick(r)}>
+                      <div className="gsearch-thumb" style={{ borderRadius: '50%' }}>
+                        {IMG.profile(r.profile_path, 'w185')
+                          ? <img src={IMG.profile(r.profile_path, 'w185')} alt="" loading="lazy" style={{ borderRadius: '50%' }} />
+                          : <span>{r.name?.[0]}</span>}
+                      </div>
+                      <div className="gsearch-info">
+                        <div className="gsearch-title">{r.name}</div>
+                        <div className="gsearch-sub">🎭 {r.department || 'Person'}{r.known_for ? ` · ${r.known_for}` : ''}</div>
+                      </div>
+                    </button>
+                  ) : (
                     <button key={`${r.media_type}-${r.tmdb_id}`} className={`gsearch-row ${i === active ? 'active' : ''}`}
                       onMouseEnter={() => setActive(i)} onClick={() => pick(r)}>
                       <div className="gsearch-thumb">

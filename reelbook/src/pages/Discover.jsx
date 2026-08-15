@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { searchMulti, getTrending, getPopular, getTopRated, getTvStatus, getAnime, listWatchProviders, discoverByProviders, IMG } from '../lib/tmdb'
+import { searchAll, getTrending, getPopular, getTopRated, getTvStatus, getAnime, listWatchProviders, discoverByProviders, IMG } from '../lib/tmdb'
 import { listInProgressShows, setTitleTotalEpisodes, listSubscriptions } from '../lib/db'
 import { regionFromSubs, matchProviderIds } from '../lib/providers'
 import { Poster, Empty, SkeletonGrid, TitleLink, ScrollRow } from '../components/ui'
@@ -86,7 +86,7 @@ export default function Discover() {
     setLoading(true)
     debounce.current = setTimeout(async () => {
       setErr(null)
-      try { setResults(await searchMulti(q)) }
+      try { setResults(await searchAll(q)) }
       catch (e) { setErr(e.message) }
       finally { setLoading(false) }
     }, 350)
@@ -94,7 +94,9 @@ export default function Discover() {
   }, [q])
 
   const searching = !!q.trim()
-  const filtered = type === 'all' ? results : results.filter((r) => r.media_type === type)
+  const titleResults = results.filter((r) => r.kind !== 'person')
+  const peopleResults = results.filter((r) => r.kind === 'person')
+  const filtered = type === 'all' ? titleResults : titleResults.filter((r) => r.media_type === type)
 
   return (
     <div className="page">
@@ -103,7 +105,7 @@ export default function Discover() {
         <Link className="btn sm" to="/browse">🧭 Advanced filters</Link>
       </div>
       <input
-        placeholder="Search movies & TV…"
+        placeholder="Search movies, TV & people…"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         style={{ marginBottom: 14 }}
@@ -122,18 +124,38 @@ export default function Discover() {
       {err && <div className="banner error">{err}</div>}
 
       {searching ? (
-        loading ? <SkeletonGrid count={12} /> : filtered.length === 0 && !err ? (
+        loading ? <SkeletonGrid count={12} /> : filtered.length === 0 && peopleResults.length === 0 && !err ? (
           <Empty icon="🔍">No {type !== 'all' ? (type === 'tv' ? 'TV' : 'movie') + ' ' : ''}results for “{q}”.</Empty>
         ) : (
-          <div className="grid">
-            {filtered.map((r) => (
-              <TitleLink className="tile" key={`${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
-                <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
-                <div className="tile-title">{r.title}</div>
-                <div className="tile-sub">{r.year || 'N/A'} · {r.media_type === 'tv' ? 'TV' : 'Movie'}</div>
-              </TitleLink>
-            ))}
-          </div>
+          <>
+            {type === 'all' && peopleResults.length > 0 && (
+              <div style={{ marginBottom: 22 }}>
+                <div className="section-head"><h2>People</h2></div>
+                <ScrollRow className="rail">
+                  {peopleResults.map((p) => (
+                    <Link className="rail-item tile" key={`person-${p.id}`} to={`/person/${p.id}`}>
+                      <div className="poster" style={{ borderRadius: '50%', overflow: 'hidden' }}>
+                        {IMG.profile(p.profile_path, 'w185')
+                          ? <img src={IMG.profile(p.profile_path, 'w185')} alt={p.name} loading="lazy" />
+                          : <div className="ph">{p.name?.[0]}</div>}
+                      </div>
+                      <div className="tile-title">{p.name}</div>
+                      <div className="tile-sub">{p.department || 'Person'}</div>
+                    </Link>
+                  ))}
+                </ScrollRow>
+              </div>
+            )}
+            <div className="grid">
+              {filtered.map((r) => (
+                <TitleLink className="tile" key={`${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
+                  <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
+                  <div className="tile-title">{r.title}</div>
+                  <div className="tile-sub">{r.year || 'N/A'} · {r.media_type === 'tv' ? 'TV' : 'Movie'}</div>
+                </TitleLink>
+              ))}
+            </div>
+          </>
         )
       ) : (
         <>
