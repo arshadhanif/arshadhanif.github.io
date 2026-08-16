@@ -433,8 +433,26 @@ export async function listInProgressShows() {
       watched: r.watched,
       total: r.total_episodes || 0,
       last: r.last_watched,
+      // Other lists you've logged this title in, so a card can offer "watching
+      // this with <list>". Shape: [{ group_id, name, color, watched }].
+      altGroups: Array.isArray(r.alt_groups) ? r.alt_groups : [],
     }))
     .sort((a, b) => (b.last || '').localeCompare(a.last || ''))
+}
+
+// Pin which list a show belongs to in Continue watching (its "home"). This is a
+// display choice only: no episodes move between lists, so per-list watch counts
+// and stats are untouched. One home per title; clearShowHome reverts to the
+// automatic "most recently watched list wins" behaviour.
+export async function setShowHome(titleId, groupId, createdBy) {
+  const { error } = await supabase.from('show_home')
+    .upsert({ title_id: titleId, group_id: groupId, created_by: createdBy }, { onConflict: 'title_id' })
+  if (error) throw error
+}
+
+export async function clearShowHome(titleId) {
+  const { error } = await supabase.from('show_home').delete().eq('title_id', titleId)
+  if (error) throw error
 }
 
 // Stop tracking a show in a group: it drops off Continue Watching but its
