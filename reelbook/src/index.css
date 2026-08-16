@@ -568,6 +568,19 @@ input:focus, select:focus, textarea:focus {
 .combobox-opt { display: block; width: 100%; text-align: left; padding: 11px 12px; background: none; border: 0; color: var(--text); font-size: 15px; font-family: inherit; border-radius: 7px; cursor: pointer; }
 .combobox-opt:hover, .combobox-opt:focus { background: var(--bg-hover); }
 
+/* Continue-watching: stop-tracking button */
+.continue-drop {
+  position: absolute; top: 6px; left: 6px; z-index: 2;
+  width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 13px; line-height: 1;
+  background: rgba(11,13,18,0.72); color: #fff; backdrop-filter: blur(4px);
+  opacity: 0; transition: opacity .15s, background .15s;
+}
+.rail-item:hover .continue-drop { opacity: 1; }
+.continue-drop:hover { background: var(--red); }
+/* Touch devices have no hover, so keep it visible there. */
+@media (hover: none) { .continue-drop { opacity: 0.85; } }
+
 /* Trivia & quotes */
 .trivia-list { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 9px; }
 .trivia-list li { line-height: 1.55; color: var(--text-dim); }
