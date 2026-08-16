@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { searchAll, getTrending, getPopular, getTopRated, getTvStatus, getAnime, listWatchProviders, discoverByProviders, IMG } from '../lib/tmdb'
-import { listInProgressShows, setTitleTotalEpisodes, listSubscriptions, dropShow } from '../lib/db'
+import { listInProgressShows, setTitleTotalEpisodes, listSubscriptions, dropShow, listDroppedShows, restoreShow } from '../lib/db'
 import { regionFromSubs, matchProviderIds } from '../lib/providers'
 import { Poster, Empty, SkeletonGrid, TitleLink, ScrollRow } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
@@ -17,6 +17,7 @@ export default function Discover() {
   const [err, setErr] = useState(null)
   const [rails, setRails] = useState({})
   const [continueShows, setContinueShows] = useState([])
+  const [droppedShows, setDroppedShows] = useState([])
   const [onServices, setOnServices] = useState(null) // { items, services } | null
   const debounce = useRef()
 
@@ -63,6 +64,8 @@ export default function Discover() {
       setContinueShows(merged.filter((s) => !s.total || s.watched < s.total))
     }).catch(() => {})
 
+    listDroppedShows().then(setDroppedShows).catch(() => {})
+
     // "On your services": what's popular on the streaming services you pay for.
     listSubscriptions().then(async (subs) => {
       const names = subs.filter((s) => s.active).map((s) => s.name).filter(Boolean)
@@ -99,9 +102,17 @@ export default function Discover() {
 
   async function dropContinue(s) {
     const name = s.title?.title || 'this show'
-    if (!confirm(`Stop tracking "${name}"${s.group ? ` (${s.group.name})` : ''}? It leaves Continue watching but your history is kept. Mark any episode to resume.`)) return
+    if (!confirm(`Stop tracking "${name}"${s.group ? ` (${s.group.name})` : ''}? It moves to the "Stopped tracking" list below (your history is kept). You can Resume it there any time, or just mark a new episode.`)) return
     setContinueShows((xs) => xs.filter((x) => !(x.title.id === s.title.id && x.groupId === s.groupId)))
-    try { await dropShow(s.title.id, s.groupId, user.id); toast('Stopped tracking. Mark an episode to resume.') }
+    setDroppedShows((xs) => [{ ...s }, ...xs.filter((x) => !(x.title.id === s.title.id && x.groupId === s.groupId))])
+    try { await dropShow(s.title.id, s.groupId, user.id); toast('Moved to Stopped tracking.') }
+    catch (e) { toast(e.message || 'Could not update', 'err') }
+  }
+
+  async function resumeDropped(s) {
+    setDroppedShows((xs) => xs.filter((x) => !(x.title.id === s.title.id && x.groupId === s.groupId)))
+    if (!s.total || s.watched < s.total) setContinueShows((xs) => [{ ...s }, ...xs])
+    try { await restoreShow(s.title.id, s.groupId); toast('Back in Continue watching.') }
     catch (e) { toast(e.message || 'Could not update', 'err') }
   }
 
@@ -174,6 +185,9 @@ export default function Discover() {
           {continueShows.length > 0 && (
             <ContinueRail shows={continueShows} onDrop={dropContinue} />
           )}
+          {droppedShows.length > 0 && (
+            <StoppedList shows={droppedShows} onResume={resumeDropped} />
+          )}
           {onServices && <Rail title="📺 On your services" items={onServices.items} />}
           <Rail title="🔥 Trending this week" items={rails.trending} />
           <Rail title="Popular movies" items={rails.popMovies} />
@@ -212,6 +226,41 @@ function Rail({ title, items }) {
           </TitleLink>
         ))}
       </ScrollRow>
+    </div>
+  )
+}
+
+// Shows you've stopped tracking. Collapsed by default so it stays out of the
+// way, with a one-tap Resume that drops each back into Continue watching.
+function StoppedList({ shows, onResume }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ marginBottom: 26 }}>
+      <button className="stopped-head" onClick={() => setOpen((v) => !v)}>
+        <span>⏸ Stopped tracking ({shows.length})</span>
+        <span className="chev">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <ScrollRow className="rail">
+          {shows.map((s) => {
+            const { title, watched, total, group, groupId } = s
+            return (
+              <div className="rail-item tile" key={`${title.id}-${groupId}`}>
+                <TitleLink tmdbId={title.tmdb_id} media={title.media_type} style={{ display: 'block', opacity: 0.72 }}>
+                  <Poster title={title.title} mediaType="tv" posterPath={title.poster_path} />
+                  <div className="tile-title">{title.title}</div>
+                  <div className="tile-sub">
+                    {watched}{total ? `/${total}` : ''} eps
+                    {group && <> · <span style={{ color: group.color }}>{group.name}</span></>}
+                  </div>
+                </TitleLink>
+                <button className="btn sm" style={{ width: '100%', marginTop: 6 }}
+                  onClick={() => onResume(s)}>↩ Resume</button>
+              </div>
+            )
+          })}
+        </ScrollRow>
+      )}
     </div>
   )
 }

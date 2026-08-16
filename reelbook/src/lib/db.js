@@ -450,6 +450,23 @@ export async function restoreShow(titleId, groupId) {
   if (error) throw error
 }
 
+// Shows you've stopped tracking (per group). Same shape as listInProgressShows
+// so the "Stopped tracking" list can render like Continue watching.
+export async function listDroppedShows() {
+  const { data, error } = await supabase.rpc('dropped_shows_detail')
+  if (error) throw error
+  return (data || [])
+    .map((r) => ({
+      title: { id: r.title_id, tmdb_id: r.tmdb_id, media_type: r.media_type, title: r.title, poster_path: r.poster_path, year: r.year, total_episodes: r.total_episodes },
+      group: r.group_id ? { id: r.group_id, name: r.group_name, color: r.group_color } : null,
+      groupId: r.group_id,
+      watched: r.watched,
+      total: r.total_episodes || 0,
+      last: r.last_watched,
+      droppedOn: r.dropped_on,
+    }))
+}
+
 // All TV shows you've ticked episodes for (watched count + cached total).
 export async function listTrackedShows() {
   // Aggregated in the DB (tracked_shows()) so we transfer ~one row per show
