@@ -568,6 +568,14 @@ input:focus, select:focus, textarea:focus {
 .combobox-opt { display: block; width: 100%; text-align: left; padding: 11px 12px; background: none; border: 0; color: var(--text); font-size: 15px; font-family: inherit; border-radius: 7px; cursor: pointer; }
 .combobox-opt:hover, .combobox-opt:focus { background: var(--bg-hover); }
 
+/* Trivia & quotes */
+.trivia-list { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 9px; }
+.trivia-list li { line-height: 1.55; color: var(--text-dim); }
+.trivia-list.spoiler li { color: var(--text); }
+.quote-list { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.quote { margin: 0; padding: 11px 14px; border-left: 3px solid var(--accent); background: var(--bg-elev); border-radius: 0 10px 10px 0; line-height: 1.55; }
+.quote div { margin: 2px 0; }
+
 /* IMDb rating badge */
 .imdb-rating { display: inline-flex; align-items: center; gap: 4px; background: #f5c518; color: #0b0d12; font-weight: 800; font-size: 13px; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
 .imdb-rating.sm { font-size: 11px; padding: 1px 6px; }

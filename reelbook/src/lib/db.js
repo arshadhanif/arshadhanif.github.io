@@ -929,6 +929,26 @@ export async function getImdbSeasonRatings(imdbId, season) {
   } catch { return {} }
 }
 
+// Trivia (spoiler-free + spoiler) for a title, from the imdb-extras function.
+export async function getTitleTrivia(imdbId) {
+  if (!imdbId) return { unspoilt: [], spoilt: [] }
+  try {
+    const { data, error } = await supabase.functions.invoke('imdb-extras', { body: { type: 'trivia', imdbId } })
+    if (error || !data?.ok) return { unspoilt: [], spoilt: [] }
+    return { unspoilt: data.unspoilt || [], spoilt: data.spoilt || [] }
+  } catch { return { unspoilt: [], spoilt: [] } }
+}
+
+// Memorable quotes (dialogue) for a title.
+export async function getTitleQuotes(imdbId) {
+  if (!imdbId) return []
+  try {
+    const { data, error } = await supabase.functions.invoke('imdb-extras', { body: { type: 'quotes', imdbId } })
+    if (error || !data?.ok) return []
+    return data.quotes || []
+  } catch { return [] }
+}
+
 // ---------- Public profile sharing ----------
 
 export async function getMyShare(profileId) {

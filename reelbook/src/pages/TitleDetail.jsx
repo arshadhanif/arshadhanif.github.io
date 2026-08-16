@@ -6,6 +6,7 @@ import {
   listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, markEpisodesBulk, unmarkAllEpisodes, setEpisodeRating, setEpisodeWatchedDate,
   getTitleServices, setTitleServices, getStreamingAvailability, getEpisodeWatchSpan,
   getImdbRating, getImdbSeasonRatings, getSeasonRatings, setSeasonRating,
+  getTitleTrivia, getTitleQuotes,
 } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
@@ -221,6 +222,8 @@ export default function TitleDetail() {
           <Episodes tmdbId={Number(id)} titleId={titleId} seasons={full.seasons} groups={groups} profiles={profiles} userId={user.id} imdbId={full.imdb_id} />
         )}
 
+        {full.imdb_id && <TriviaQuotes imdbId={full.imdb_id} />}
+
         {recs.length > 0 && (
           <Block title="More like this">
             <ScrollRow className="rail">
@@ -294,6 +297,85 @@ function Block({ title, children }) {
     <div className="detail-block">
       <div className="section-head"><h2>{title}</h2></div>
       {children}
+    </div>
+  )
+}
+
+// Trivia + memorable quotes from IMDb (via the imdb-extras function). Lazy: only
+// fetched when the user opens the section, so title pages stay fast and the
+// free API quota is spent only on demand. Spoiler trivia is hidden by default.
+function TriviaQuotes({ imdbId }) {
+  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [trivia, setTrivia] = useState(null)   // { unspoilt, spoilt }
+  const [quotes, setQuotes] = useState(null)
+  const [showSpoilers, setShowSpoilers] = useState(false)
+  const [triviaAll, setTriviaAll] = useState(false)
+
+  async function load() {
+    setOpen(true)
+    if (trivia || loading) return
+    setLoading(true)
+    try {
+      const [tr, qt] = await Promise.all([getTitleTrivia(imdbId), getTitleQuotes(imdbId)])
+      setTrivia(tr); setQuotes(qt)
+    } finally { setLoading(false) }
+  }
+
+  if (!open) {
+    return (
+      <div className="detail-block">
+        <button className="btn" onClick={load}>🎬 Trivia & quotes</button>
+      </div>
+    )
+  }
+
+  const unspoilt = trivia?.unspoilt || []
+  const spoilt = trivia?.spoilt || []
+  const shownTrivia = triviaAll ? unspoilt : unspoilt.slice(0, 5)
+  const nothing = !loading && unspoilt.length === 0 && spoilt.length === 0 && (quotes || []).length === 0
+
+  return (
+    <div className="detail-block">
+      <div className="section-head"><h2>🎬 Trivia & quotes</h2></div>
+      {loading && <Spinner label="Loading trivia…" />}
+      {nothing && <p className="faint">No trivia or quotes on IMDb for this title.</p>}
+
+      {unspoilt.length > 0 && (
+        <ul className="trivia-list">
+          {shownTrivia.map((t, i) => <li key={i}>{t.text}</li>)}
+        </ul>
+      )}
+      {unspoilt.length > 5 && (
+        <button className="btn sm" onClick={() => setTriviaAll((v) => !v)}>{triviaAll ? 'Show less' : `Show all ${unspoilt.length}`}</button>
+      )}
+
+      {spoilt.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          {!showSpoilers ? (
+            <button className="btn sm" onClick={() => setShowSpoilers(true)}>⚠️ Show {spoilt.length} spoiler trivia</button>
+          ) : (
+            <ul className="trivia-list spoiler">
+              {spoilt.map((t, i) => <li key={i}>{t.text}</li>)}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {(quotes || []).length > 0 && (
+        <>
+          <div className="section-head" style={{ marginTop: 18 }}><h3 style={{ fontSize: 16 }}>💬 Quotes</h3></div>
+          <div className="quote-list">
+            {quotes.map((q, i) => (
+              <blockquote className="quote" key={i}>
+                {q.lines.map((l, j) => (
+                  <div key={j}>{l.character && <strong>{l.character}: </strong>}{l.text}</div>
+                ))}
+              </blockquote>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }
