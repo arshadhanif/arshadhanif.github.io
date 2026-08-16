@@ -949,6 +949,16 @@ export async function getTitleQuotes(imdbId) {
   } catch { return [] }
 }
 
+// "Fans also like" recommendations (TasteDive, resolved to TMDB titles).
+export async function getSimilarByTaste(title, mediaType) {
+  if (!title) return []
+  try {
+    const { data, error } = await supabase.functions.invoke('tastedive', { body: { title, mediaType } })
+    if (error || !data?.ok) return []
+    return data.items || []
+  } catch { return [] }
+}
+
 // ---------- Public profile sharing ----------
 
 export async function getMyShare(profileId) {
