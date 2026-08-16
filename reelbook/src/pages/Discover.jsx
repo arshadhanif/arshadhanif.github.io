@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { searchAll, getTrending, getPopular, getTopRated, getTvStatus, getAnime, listWatchProviders, discoverByProviders, IMG } from '../lib/tmdb'
-import { listInProgressShows, setTitleTotalEpisodes, listSubscriptions } from '../lib/db'
+import { listInProgressShows, setTitleTotalEpisodes, listSubscriptions, dropShow } from '../lib/db'
 import { regionFromSubs, matchProviderIds } from '../lib/providers'
 import { Poster, Empty, SkeletonGrid, TitleLink, ScrollRow } from '../components/ui'
+import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/Toast'
 
 export default function Discover() {
+  const { user } = useAuth()
+  const toast = useToast()
   const [q, setQ] = useState('')
   const [type, setType] = useState('all') // all | movie | tv
   const [results, setResults] = useState([])
@@ -93,6 +97,14 @@ export default function Discover() {
     return () => clearTimeout(debounce.current)
   }, [q])
 
+  async function dropContinue(s) {
+    const name = s.title?.title || 'this show'
+    if (!confirm(`Stop tracking "${name}"${s.group ? ` (${s.group.name})` : ''}? It leaves Continue watching but your history is kept. Mark any episode to resume.`)) return
+    setContinueShows((xs) => xs.filter((x) => !(x.title.id === s.title.id && x.groupId === s.groupId)))
+    try { await dropShow(s.title.id, s.groupId, user.id); toast('Stopped tracking. Mark an episode to resume.') }
+    catch (e) { toast(e.message || 'Could not update', 'err') }
+  }
+
   const searching = !!q.trim()
   const titleResults = results.filter((r) => r.kind !== 'person')
   const peopleResults = results.filter((r) => r.kind === 'person')
@@ -160,7 +172,7 @@ export default function Discover() {
       ) : (
         <>
           {continueShows.length > 0 && (
-            <ContinueRail shows={continueShows} />
+            <ContinueRail shows={continueShows} onDrop={dropContinue} />
           )}
           {onServices && <Rail title="📺 On your services" items={onServices.items} />}
           <Rail title="🔥 Trending this week" items={rails.trending} />
@@ -204,7 +216,7 @@ function Rail({ title, items }) {
   )
 }
 
-function ContinueRail({ shows }) {
+function ContinueRail({ shows, onDrop }) {
   const [gid, setGid] = useState(null)
   // Distinct groups present, so we only show the filter when it's useful.
   const groupsPresent = []
@@ -236,6 +248,10 @@ function ContinueRail({ shows }) {
               <div style={{ position: 'relative' }}>
                 <Poster title={title.title} mediaType="tv" posterPath={title.poster_path} />
                 {toGo > 0 && <span className="ep-badge">{toGo} to go</span>}
+                {onDrop && (
+                  <button className="continue-drop" title="Stop tracking this show"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDrop(s) }}>✕</button>
+                )}
               </div>
               <div className="progress-track"><div className="progress-fill" style={{ width: `${pct}%` }} /></div>
               <div className="tile-title">{title.title}</div>

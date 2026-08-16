@@ -342,6 +342,8 @@ export async function markEpisode({ titleId, groupId, season, episode, watchedOn
   if (error) throw error
   // Starting a show means it is no longer "to watch": drop it from that list.
   await removeFromWantList(titleId, groupId)
+  // Marking a new episode = resuming, so undo any "stopped tracking" flag.
+  try { await supabase.from('dropped_shows').delete().eq('title_id', titleId).eq('group_id', groupId) } catch { /* non-fatal */ }
 }
 
 // Set (or clear) the watched date on an episode. Upserts so it works whether
@@ -433,6 +435,19 @@ export async function listInProgressShows() {
       last: r.last_watched,
     }))
     .sort((a, b) => (b.last || '').localeCompare(a.last || ''))
+}
+
+// Stop tracking a show in a group: it drops off Continue Watching but its
+// episode history is kept. Reversible (restoreShow, or just mark a new episode).
+export async function dropShow(titleId, groupId, createdBy) {
+  const { error } = await supabase.from('dropped_shows')
+    .upsert({ title_id: titleId, group_id: groupId, created_by: createdBy }, { onConflict: 'group_id,title_id' })
+  if (error) throw error
+}
+
+export async function restoreShow(titleId, groupId) {
+  const { error } = await supabase.from('dropped_shows').delete().eq('title_id', titleId).eq('group_id', groupId)
+  if (error) throw error
 }
 
 // All TV shows you've ticked episodes for (watched count + cached total).
