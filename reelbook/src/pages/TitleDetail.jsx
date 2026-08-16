@@ -6,7 +6,7 @@ import {
   listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, markEpisodesBulk, unmarkAllEpisodes, setEpisodeRating, setEpisodeWatchedDate,
   getTitleServices, setTitleServices, getStreamingAvailability, getEpisodeWatchSpan,
   getImdbRating, getImdbSeasonRatings, getSeasonRatings, setSeasonRating,
-  getTitleTrivia, getTitleQuotes,
+  getTitleTrivia, getTitleQuotes, getSimilarByTaste,
 } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
@@ -36,6 +36,7 @@ export default function TitleDetail() {
   const preferred = getPref('region', DEFAULT_REGION)
   const [region, setRegion] = useState(preferred)
   const [recs, setRecs] = useState([])
+  const [tasteRecs, setTasteRecs] = useState([])
   const [showTrailer, setShowTrailer] = useState(false)
   const [imdb, setImdb] = useState(null)
 
@@ -51,6 +52,7 @@ export default function TitleDetail() {
         if (!alive) return
         setFull(f)
         if (f.imdb_id) getImdbRating(f.imdb_id).then((r) => alive && setImdb(r)).catch(() => {})
+        getSimilarByTaste(f.title, media).then((r) => alive && setTasteRecs(r)).catch(() => {})
         const regions = providerRegions(f.providers)
         setRegion(regions.includes(preferred) ? preferred : regions.includes('US') ? 'US' : regions[0] || preferred)
         try {
@@ -229,6 +231,20 @@ export default function TitleDetail() {
             <ScrollRow className="rail">
               {recs.map((r) => (
                 <TitleLink className="rail-item tile" key={`${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
+                  <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
+                  <div className="tile-title">{r.title}</div>
+                  <div className="tile-sub">{r.year || 'N/A'}</div>
+                </TitleLink>
+              ))}
+            </ScrollRow>
+          </Block>
+        )}
+
+        {tasteRecs.length > 0 && (
+          <Block title="💞 Fans also like">
+            <ScrollRow className="rail">
+              {tasteRecs.map((r) => (
+                <TitleLink className="rail-item tile" key={`taste-${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
                   <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
                   <div className="tile-title">{r.title}</div>
                   <div className="tile-sub">{r.year || 'N/A'}</div>
