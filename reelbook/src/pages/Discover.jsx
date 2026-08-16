@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { searchAll, getTrending, getPopular, getTopRated, getTvStatus, getAnime, listWatchProviders, discoverByProviders, IMG } from '../lib/tmdb'
-import { listInProgressShows, setTitleTotalEpisodes, listSubscriptions, dropShow, listDroppedShows, restoreShow } from '../lib/db'
+import { listInProgressShows, setTitleTotalEpisodes, listSubscriptions, dropShow, listDroppedShows, restoreShow, setShowHome } from '../lib/db'
 import { regionFromSubs, matchProviderIds } from '../lib/providers'
-import { Poster, Empty, SkeletonGrid, TitleLink, ScrollRow } from '../components/ui'
+import { Poster, Empty, SkeletonGrid, TitleLink, ScrollRow, Modal } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/Toast'
 
@@ -109,6 +109,39 @@ export default function Discover() {
     catch (e) { toast(e.message || 'Could not update', 'err') }
   }
 
+  // Move a show to another list you already watch it in. Sets that list as the
+  // show's "home" so it appears there and stops showing under the old one. No
+  // episodes move, so neither list's counts change. Optimistic, reversible.
+  async function moveShow(s, toGroupId) {
+    const alts = [
+      { group_id: s.groupId, name: s.group?.name, color: s.group?.color, watched: s.watched },
+      ...(s.altGroups || []),
+    ]
+    const chosen = alts.find((a) => a.group_id === toGroupId)
+    if (!chosen || toGroupId === s.groupId) return
+    setContinueShows((xs) => xs.map((x) => {
+      if (x.title.id !== s.title.id) return x
+      const pool = [
+        { group_id: x.groupId, name: x.group?.name, color: x.group?.color, watched: x.watched },
+        ...(x.altGroups || []),
+      ]
+      const pick = pool.find((a) => a.group_id === toGroupId)
+      if (!pick) return x
+      return {
+        ...x,
+        group: { id: pick.group_id, name: pick.name, color: pick.color },
+        groupId: pick.group_id,
+        watched: pick.watched,
+        altGroups: pool.filter((a) => a.group_id !== toGroupId),
+      }
+    }))
+    try { await setShowHome(s.title.id, toGroupId, user.id); toast(`Now under ${chosen.name}.`) }
+    catch (e) {
+      toast(e.message || 'Could not move show', 'err')
+      listInProgressShows().then(setContinueShows).catch(() => {})
+    }
+  }
+
   async function resumeDropped(s) {
     setDroppedShows((xs) => xs.filter((x) => !(x.title.id === s.title.id && x.groupId === s.groupId)))
     if (!s.total || s.watched < s.total) setContinueShows((xs) => [{ ...s }, ...xs])
@@ -183,7 +216,7 @@ export default function Discover() {
       ) : (
         <>
           {continueShows.length > 0 && (
-            <ContinueRail shows={continueShows} onDrop={dropContinue} />
+            <ContinueRail shows={continueShows} onDrop={dropContinue} onMove={moveShow} />
           )}
           {droppedShows.length > 0 && (
             <StoppedList shows={droppedShows} onResume={resumeDropped} />
@@ -265,8 +298,9 @@ function StoppedList({ shows, onResume }) {
   )
 }
 
-function ContinueRail({ shows, onDrop }) {
+function ContinueRail({ shows, onDrop, onMove }) {
   const [gid, setGid] = useState(null)
+  const [picker, setPicker] = useState(null) // the show whose "watching with" sheet is open
   // Distinct groups present, so we only show the filter when it's useful.
   const groupsPresent = []
   const seen = new Set()
@@ -292,6 +326,7 @@ function ContinueRail({ shows, onDrop }) {
           const { title, watched, total, group, groupId } = s
           const pct = total ? Math.round((watched / total) * 100) : 0
           const toGo = total ? total - watched : 0
+          const canMove = onMove && group && (s.altGroups?.length > 0)
           return (
             <TitleLink className="rail-item tile" key={`${title.id}-${groupId}`} tmdbId={title.tmdb_id} media={title.media_type}>
               <div style={{ position: 'relative' }}>
@@ -306,12 +341,55 @@ function ContinueRail({ shows, onDrop }) {
               <div className="tile-title">{title.title}</div>
               <div className="tile-sub">
                 {watched}{total ? `/${total}` : ''} eps
-                {group && <> · <span style={{ color: group.color }}>{group.name}</span></>}
+                {group && !canMove && <> · <span style={{ color: group.color }}>{group.name}</span></>}
               </div>
+              {canMove && (
+                <button className="ww-pill" title="Which list are you watching this with?"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPicker(s) }}>
+                  <span className="ww-dot" style={{ background: group.color }} />
+                  <span style={{ color: group.color }}>{group.name}</span>
+                  <span className="ww-caret">▾</span>
+                </button>
+              )}
             </TitleLink>
           )
         })}
       </ScrollRow>
+      {picker && (
+        <WatchingWithSheet
+          show={picker}
+          onPick={(toId) => { onMove(picker, toId); setPicker(null) }}
+          onClose={() => setPicker(null)}
+        />
+      )}
     </div>
+  )
+}
+
+// Bottom-sheet picker: choose which list a show belongs to. Options are the
+// lists you've already logged episodes in (moving to a list you've never
+// watched it in would show nothing, so those aren't offered). Picking a list
+// pins it as the show's home; no episodes move between lists.
+function WatchingWithSheet({ show, onPick, onClose }) {
+  const options = [
+    { group_id: show.groupId, name: show.group?.name, color: show.group?.color, watched: show.watched, current: true },
+    ...(show.altGroups || []).map((a) => ({ ...a, current: false })),
+  ]
+  return (
+    <Modal title="Watching this with…" onClose={onClose}>
+      <div className="tile-sub" style={{ marginTop: -6, marginBottom: 12 }}>{show.title?.title}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {options.map((o) => (
+          <button key={o.group_id} className="ww-opt" disabled={o.current}
+            onClick={() => !o.current && onPick(o.group_id)}>
+            <span className="ww-dot" style={{ background: o.color }} />
+            <span className="ww-opt-name" style={{ color: o.color }}>{o.name}</span>
+            <span className="ww-opt-meta">
+              {o.watched}{show.total ? `/${show.total}` : ''} eps{o.current ? ' · current' : ''}
+            </span>
+          </button>
+        ))}
+      </div>
+    </Modal>
   )
 }
