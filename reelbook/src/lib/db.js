@@ -628,19 +628,21 @@ async function removeFromWantList(titleId, groupId) {
   } catch { /* non-fatal: never block a watch on watchlist cleanup */ }
 }
 
-export async function addToWatchlist({ seed, groupId, addedBy }) {
-  const titleId = await ensureTitle(seed)
+// Accepts either a resolved titleId (from the title page) or a search `seed`
+// to create the title from (QuickAdd / Browse). A title lives once per group.
+export async function addToWatchlist({ seed, titleId, groupId, addedBy }) {
+  const tId = titleId || (await ensureTitle(seed))
   // Avoid duplicates for the same group.
   const { data: existing } = await supabase
     .from('watchlist')
     .select('id')
-    .eq('title_id', titleId)
+    .eq('title_id', tId)
     .eq('group_id', groupId)
     .maybeSingle()
   if (existing) return existing.id
   const { data, error } = await supabase
     .from('watchlist')
-    .insert({ title_id: titleId, group_id: groupId, added_by: addedBy })
+    .insert({ title_id: tId, group_id: groupId, added_by: addedBy })
     .select('id')
     .single()
   if (error) throw error
