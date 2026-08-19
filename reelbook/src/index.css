@@ -603,6 +603,13 @@ input:focus, select:focus, textarea:focus {
 .ww-opt-name { font-weight: 700; }
 .ww-opt-meta { margin-left: auto; color: var(--text-faint-solid); font-size: 12.5px; }
 
+/* Title page: "add to your lists" picker rows (one per group) */
+.wl-row { display: flex; align-items: center; gap: 10px; }
+.wl-row-name { flex: 1; min-width: 0; font-weight: 700; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wl-row-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.wl-row-actions .chip { cursor: pointer; }
+.wl-row-actions .chip.active { background: var(--accent); border-color: var(--accent); }
+
 /* Stopped-tracking collapsible header */
 .stopped-head {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;

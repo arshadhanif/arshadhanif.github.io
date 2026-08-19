@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getFullDetail, getSeason, getRecommendations, getEpisodeExternalIds, IMG, providerRegions } from '../lib/tmdb'
 import {
-  ensureTitleFromFull, getWatchesForTitle, addToWatchlist, addToRewatchlist,
+  ensureTitleFromFull, getWatchesForTitle, getTitleListMembership, setTitleList,
   listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, markEpisodesBulk, unmarkAllEpisodes, setEpisodeRating, setEpisodeWatchedDate,
   getTitleServices, setTitleServices, getStreamingAvailability, getEpisodeWatchSpan,
   getImdbRating, getImdbSeasonRatings, getSeasonRatings, setSeasonRating,
@@ -400,28 +400,59 @@ function TriviaQuotes({ imdbId }) {
 function AddWatchlist({ titleId, groups, userId }) {
   const toast = useToast()
   const [open, setOpen] = useState(false)
-  const [groupId, setGroupId] = useState(groups[0]?.id || '')
-  const [done, setDone] = useState(false)
+  const [membership, setMembership] = useState([]) // [{ groupId, listType }]
   const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    if (!titleId) { setMembership([]); return }
+    getTitleListMembership(titleId).then(setMembership).catch(() => {})
+  }, [titleId])
   if (!titleId) return null
-  async function add(kind) {
+
+  const onList = membership.length > 0
+  const label = onList ? `🔖 On list (${membership.length})` : '🔖 Add to list'
+
+  // Tap a list to add, switch, or (if already there) remove it for that group.
+  async function toggle(groupId, listType) {
+    const current = membership.find((m) => m.groupId === groupId)?.listType
+    const next = current === listType ? null : listType
     setBusy(true)
     try {
-      if (kind === 'rewatch') await addToRewatchlist({ titleId, groupId, addedBy: userId })
-      else await addToWatchlist({ titleId, groupId, addedBy: userId })
-      setDone(true); toast(kind === 'rewatch' ? 'Added to rewatch list' : 'Added to watchlist'); setTimeout(() => setOpen(false), 900)
-    } catch (e) { toast(e.message || 'Could not add', 'err') }
+      await setTitleList({ titleId, groupId, listType: next, addedBy: userId })
+      setMembership(await getTitleListMembership(titleId))
+      toast(next === 'want' ? 'Added to watchlist' : next === 'rewatch' ? 'Added to rewatch list' : 'Removed from list')
+    } catch (e) { toast(e.message || 'Could not update', 'err') }
     finally { setBusy(false) }
   }
-  if (!open) return <button className="btn" onClick={() => setOpen(true)}>🔖 Add to list</button>
+
   return (
-    <span className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-      <select value={groupId} onChange={(e) => setGroupId(e.target.value)} style={{ width: 'auto' }}>
-        {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-      </select>
-      <button className="btn" disabled={busy || done || !groupId} onClick={() => add('want')}>{done ? '✓ Added' : '🔖 To watch'}</button>
-      <button className="btn" disabled={busy || done || !groupId} onClick={() => add('rewatch')} title="Seen it, want to watch again">🔁 Rewatch</button>
-    </span>
+    <>
+      <button className="btn" style={onList ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : undefined}
+        onClick={() => setOpen(true)}>{label}</button>
+      {open && (
+        <Modal title="Add to your lists" onClose={() => setOpen(false)}>
+          <div className="tile-sub" style={{ marginTop: -6, marginBottom: 12 }}>
+            Tap a list to add this title, or tap again to remove it.
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {groups.map((g) => {
+              const cur = membership.find((m) => m.groupId === g.id)?.listType
+              return (
+                <div className="wl-row" key={g.id}>
+                  <span className="wl-row-name" style={{ color: g.color }}>{g.name}</span>
+                  <div className="wl-row-actions">
+                    <button className={`chip ${cur === 'want' ? 'active' : ''}`} disabled={busy}
+                      onClick={() => toggle(g.id, 'want')}>{cur === 'want' ? '✓ To watch' : 'To watch'}</button>
+                    <button className={`chip ${cur === 'rewatch' ? 'active' : ''}`} disabled={busy}
+                      title="Seen it, want to watch again"
+                      onClick={() => toggle(g.id, 'rewatch')}>{cur === 'rewatch' ? '✓ Rewatch' : 'Rewatch'}</button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </Modal>
+      )}
+    </>
   )
 }
 
