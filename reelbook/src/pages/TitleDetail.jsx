@@ -162,7 +162,7 @@ export default function TitleDetail() {
                 {markBtn.label}
               </button>
               <AddWatchlist titleId={titleId} groups={groups} userId={user.id} />
-              <button className="btn" onClick={() => setListModal(true)}>📚 Add to list</button>
+              <button className="btn" onClick={() => setListModal(true)}>📚 Add to a list</button>
               {full.trailer_key && (
                 <button className="btn" onClick={() => setShowTrailer(true)}>▶ Trailer</button>
               )}
@@ -409,7 +409,7 @@ function AddWatchlist({ titleId, groups, userId }) {
   if (!titleId) return null
 
   const onList = membership.length > 0
-  const label = onList ? `🔖 On list (${membership.length})` : '🔖 Add to list'
+  const label = onList ? `🔖 On watchlist (${membership.length})` : '🔖 Add to watchlist'
 
   // Tap a list to add, switch, or (if already there) remove it for that group.
   async function toggle(groupId, listType) {
@@ -429,9 +429,9 @@ function AddWatchlist({ titleId, groups, userId }) {
       <button className="btn" style={onList ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : undefined}
         onClick={() => setOpen(true)}>{label}</button>
       {open && (
-        <Modal title="Add to your lists" onClose={() => setOpen(false)}>
+        <Modal title="Add to watchlist" onClose={() => setOpen(false)}>
           <div className="tile-sub" style={{ marginTop: -6, marginBottom: 12 }}>
-            Tap a list to add this title, or tap again to remove it.
+            Tap to add this title to a group, or tap again to remove it.
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {groups.map((g) => {
