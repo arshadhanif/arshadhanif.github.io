@@ -654,6 +654,38 @@ export async function removeFromWatchlist(id) {
   if (error) throw error
 }
 
+// Which of your lists (per group) this title is already on, so a title page can
+// show its current state instead of a blank "Add to list". Shape:
+// [{ id, groupId, listType: 'want'|'rewatch', group: { id, name, color } }].
+export async function getTitleListMembership(titleId) {
+  if (!titleId) return []
+  const { data, error } = await supabase
+    .from('watchlist')
+    .select('id, group_id, list_type, groups(id, name, color)')
+    .eq('title_id', titleId)
+  if (error) throw error
+  return (data || []).map((r) => ({
+    id: r.id, groupId: r.group_id, listType: r.list_type,
+    group: r.groups ? { id: r.groups.id, name: r.groups.name, color: r.groups.color } : null,
+  }))
+}
+
+// Set (or clear) this title's list membership for one group in a single call.
+// listType 'want' or 'rewatch' adds or switches; null removes. A title lives in
+// exactly one list per group, so the upsert moves it between the two.
+export async function setTitleList({ titleId, groupId, listType, addedBy }) {
+  if (!listType) {
+    const { error } = await supabase.from('watchlist').delete()
+      .eq('title_id', titleId).eq('group_id', groupId)
+    if (error) throw error
+    return
+  }
+  const { error } = await supabase.from('watchlist')
+    .upsert({ title_id: titleId, group_id: groupId, added_by: addedBy, list_type: listType },
+      { onConflict: 'group_id,title_id' })
+  if (error) throw error
+}
+
 // Copy an existing title into another group's watchlist. No-op (returns the
 // existing row id) if that group already has it, so it is safe to run in bulk.
 export async function copyWatchlistToGroup(titleId, targetGroupId, addedBy) {
