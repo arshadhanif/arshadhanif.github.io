@@ -1,0 +1,147 @@
+---
+title: 'Two Reports Every Oracle Fusion Finance Team Should Already Have'
+date: '2026-08-22'
+category: 'Oracle Fusion'
+excerpt: 'The native Oracle Fusion setup reports are thin and the data sits scattered across dozens of tables. Two portable BI Publisher reports, a Chart of Accounts report and an Enterprise Structure report, hand finance teams the full picture in clean Excel, proven across six very different companies.'
+readTime: '7 min read'
+published: true
+---
+
+Oracle Fusion Cloud holds everything you need to understand your chart of accounts and your enterprise structure. Getting it out in a form people can actually read is the hard part. The native setup reports are thin. The data sits scattered across dozens of tables. Anyone who wants the full picture ends up in spreadsheets, stitching it together by hand, and doing it all again the next time someone asks.
+
+We built two reports that fix this for good. Both run inside your own Fusion instance. Both output clean, native Excel. And both were proven on real production pods, across very different companies, before we called them finished. This article walks through what they do, why they are built the way they are, and why they belong in every serious Fusion finance team's toolkit.
+
+## The problem with what Oracle gives you
+
+Fusion is a powerful system, but its built-in reporting for setup and structure is weak. If you want to see your full chart of accounts, there is no single screen that shows every segment, every value, and every attribute together. If you want to understand your enterprise structure, the native Enterprise Structures Setup Report gives you a flat dump that leaves out the connections that actually matter.
+
+So teams improvise. A functional consultant writes a quick query and pastes the result into Excel. Someone else formats it. A third person notices a column is missing and the whole thing starts again. The output is different every time, it is tied to whoever built it, and nobody fully trusts the totals.
+
+That is the gap these two reports close. They turn a recurring, error-prone chore into a single button press that produces the same clean, complete, trustworthy workbook every time, on any instance.
+
+## The Chart of Accounts Report
+
+Your chart of accounts is the backbone of your finance system. Every journal, every balance, every report traces back to it. Yet most teams have no single place to see it laid out clearly.
+
+This report gives you exactly that. One run produces a full Excel workbook, and each part of it answers a real question.
+
+### One sheet with everything
+
+The first sheet holds every value in your chart of accounts, across every segment, in one filterable and sortable table. Segment name and segment number are pulled to the front so you can slice the whole chart by any segment in seconds. This is the sheet you open when you want to search, filter, or export the lot.
+
+### A sheet for each segment
+
+Then each segment gets its own tab. Company values on the Company sheet. Cost Center values on the Cost Center sheet. Natural Account values on their own sheet. No more scrolling through a giant mixed list to find the twelve cost centers you actually care about. Each segment is separated, clean, and self-contained.
+
+### The natural account segment gets special treatment
+
+The natural account segment is different from the others. Its values carry extra attributes that only accounts have, and this report surfaces all of them:
+
+- Account type (asset, liability, owner's equity, revenue, expense)
+- Whether posting is allowed
+- Whether budgeting is allowed
+- The third party control setting, which tells you whether an account is a supplier control account, a customer control account, an account that restricts manual journals, or an ordinary account
+- The financial category used for reporting
+
+These attributes appear only on the natural account sheet, where they belong, so the other segment sheets stay clean and uncluttered.
+
+### Descriptive flexfields, handled automatically
+
+Many companies add descriptive flexfields to their account values to capture extra information. Some do not. This report handles both without any change to the file.
+
+Where a segment has descriptive flexfields configured, the report shows them with their real labels, exactly as your team named them. Where a segment has none, it shows a tidy placeholder instead of a broken or empty column. You never have to tell the report what your instance has. It reads your setup and adapts.
+
+### The summary sheet that saves an afternoon
+
+The last sheet is the one people end up loving. It describes the structure of your chart of accounts itself, one row per segment, and answers the questions people usually spend hours chasing:
+
+- What is each segment called, and in what order do they sit?
+- What is the segment's role, its qualifier, in plain terms?
+- Which value set does it use, by both code and name?
+- How wide is the segment, and how many descriptive flexfields does it carry?
+- How many values does it hold, and how many are active versus disabled?
+- How do the values split between parent (summary) values and child (detail) values?
+
+Every count is a live total that updates as you filter. Want to know how many active cost centers you have? Filter to Cost Center and read it off. Want the total across the whole chart? Clear the filter. The totals move with you, the way a real subtotal should, and they always reconcile back to the detail.
+
+## The Enterprise Structure Report
+
+Oracle ships a native Enterprise Structures Setup Report. It is a starting point, but it flattens everything into one dump and leaves out the relationships that make an enterprise structure make sense.
+
+Our version is built as a set of lenses. Each sheet is designed for a specific person's question, so nobody has to read someone else's export and hunt for the rows that apply to them.
+
+- **Primary Ledgers.** Every primary ledger with its currency, accounting calendar, chart of accounts, and clear flags for whether budgetary control and average balances are switched on. This is the GL lead's home page.
+- **Legal Entities.** Each legal entity with its registration details, the ledger it reports to, and the business units under it. This is where the statutory and tax people go.
+- **Business Units.** Each business unit with its legal entity, ledger, currency, location, manager, and status, plus a flag for whether it is a financial business unit and which default set it uses.
+- **Chart of Accounts and Segments.** The structure itself, with each segment's role and value set, and a self-maintaining label that stays correct as the setup changes.
+- **Accounting Calendars.** Every calendar with a clear Yes or No flag for whether it carries budgetary control, so you can see at a glance which calendars drive commitments.
+- **Enterprise Matrix.** The big picture. Ledgers, legal entities, business units, asset books, and inventory organizations tied together in one grid, so you can trace any part of the structure to any other.
+
+A GL lead, a tax specialist, a functional consultant, and an SCM lead can each open the same workbook and go straight to the sheet built for them. That is the difference between a report and a data dump.
+
+## Why these are different from a quick export
+
+Anyone can write a query that dumps a table into Excel. These reports are built to a much higher standard, and that is where the real work went. Four things set them apart.
+
+### They are fully portable
+
+No client names. No hardcoded IDs. Nothing baked in from the instance they were built on. Drop the same files onto any Fusion pod and they run.
+
+This matters more than it sounds. Most Fusion reports are quietly tied to the instance they were written on, through a ledger name here or a chart of accounts ID there. Move them and they break. These reports find everything by its function, not by its label, so they work anywhere. We proved this across six different instances, and we will come back to that below because it is the strongest thing we can say about them.
+
+### They handle real complexity
+
+Real companies are messy, and these reports were built for that.
+
+A company with two charts of accounts gets each one cleanly separated, its own set of sheets, correctly named, with no mixing. Even when two charts share the same segment names, which is common, the report keeps them apart.
+
+A company that uses descriptive flexfields sees those labels appear automatically. A company that does not sees clean placeholders. A company whose accounts use third party control settings sees them decoded into plain language. A company whose accounts do not sees blanks, not errors.
+
+The report adapts to what your instance actually has, rather than assuming everyone is set up the same way.
+
+### The numbers are defensible
+
+Every total is built to reconcile, and we mean that literally. Active values plus disabled values equal the full count. Parent values plus child values equal the full count. The individual segment sheets add up to the consolidated sheet. An auditor can tie the summary back to the detail without a single manual step.
+
+We check this on every instance before we ship anything. If the numbers did not tie, the report would not go out. This is the difference between a report you glance at and a report you can put in front of an auditor.
+
+### Nothing is hidden or guessed
+
+Where a value is system generated or unusual, it is labelled, not silently dropped. Where an attribute is blank on one instance but real on another, the column stays and simply fills in where the data exists. You always get the complete picture.
+
+This is a deliberate design choice. A reviewer can always delete a column they do not want. They can never add back a column the report never gave them. So the reports are comprehensive by default, and you trim to taste.
+
+## Built to scale, and proven
+
+These are not one-off scripts dressed up as products. They are products, and we tested that claim directly rather than just asserting it.
+
+The same Chart of Accounts Report that runs on a single-entity company also runs on a group with two charts of accounts and thousands of account values. It separates everything correctly with no change to the file. The same Enterprise Structure Report that covers one ledger covers eight ledgers across four countries.
+
+Here is where we proved it:
+
+- A **single-entity real estate company** with one chart of accounts. The baseline. Everything clean, totals tying, on the first proper run.
+- A **media and broadcasting group** running eight ledgers and fifteen legal entities across Pakistan, the UAE, the UK, and the USA. The enterprise structure came out clean, and the chart of accounts report correctly decoded its supplier and customer control accounts, which a simpler report would have mislabelled.
+- A **manufacturing and food group** running two charts of accounts at once. This was the hardest test. One run produced a fully separated workbook, each chart's segments on their own clearly named sheets, the summary filtered correctly per chart, and every total reconciling.
+- A **logistics group**, also with two charts of accounts, which confirmed the multi-chart separation was not a one-off but a repeatable capability.
+- A **financial services group** with multiple ledgers and budgetary control switched off, which tested the reports against a very different configuration.
+- **Oracle's own multi-industry demo environment**, used as a neutral reference.
+
+That spread is the point. Real estate to media to manufacturing to logistics to financial services. Single entity to eight ledgers. One chart of accounts to two. The reports handled all of it without being rebuilt for each one.
+
+## What you get, and how it works
+
+Both reports are delivered as BI Publisher files that install directly into your Fusion environment. Each comes as a data model, an Excel template, and where needed a small preprocessing step. You run them from within Fusion like any other report. The output is native Excel, ready to filter, share, or drop straight into a board pack.
+
+There is no middleware. No external tool to buy or maintain. No ongoing licence beyond what you already pay Oracle. Once installed, they are yours to run whenever you need them.
+
+## The bottom line
+
+These are two reports that should have come in the box. A complete, readable view of your chart of accounts, and a proper lens-based view of your enterprise structure, both built to a standard your finance team can actually rely on.
+
+They are portable, so they work on your instance whatever shape it is in. They are comprehensive, so you never find yourself missing a column. They are defensible, so the totals hold up. And they are proven, across six very different companies, so you are not the test case.
+
+If your team is still assembling this by hand every quarter, these two reports pay for themselves the first time you run them.
+
+## Get the pack for your instance
+
+Want these two reports running inside your own Oracle Fusion environment? [Book a call](/services) to get started, or [message me on WhatsApp](https://wa.me/923332597950?text=Hi%20Arshad%2C%20I%20am%20interested%20in%20the%20Oracle%20Fusion%20reporting%20pack.).

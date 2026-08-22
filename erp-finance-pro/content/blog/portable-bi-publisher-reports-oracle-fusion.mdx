@@ -1,0 +1,186 @@
+---
+title: "Building Portable BI Publisher Reports for Oracle Fusion: A Consultant's Methodology"
+date: '2026-08-21'
+category: 'Oracle Fusion'
+excerpt: 'The methodology behind two Oracle Fusion reports that install into any instance and run correctly the first time. The portability principles, the traps we hit, and the patterns that made them work.'
+readTime: '11 min read'
+published: true
+---
+
+Most Oracle Fusion reporting work is one and done. You get a request, you write a query against the client's instance, you drop in their ledger name and their chart of accounts ID, and you move on. It works, but it only works there. Move it to another client and it breaks.
+
+We took a different approach with two reports: a Chart of Accounts report and an Enterprise Structure report. The goal was not to serve one client. It was to build reports we could ship to any Fusion instance, unchanged, and have them run correctly the first time. Both are now proven across six production pods spanning real estate, media, logistics, financial services, and manufacturing.
+
+This article is the methodology behind that. It is written for the consultant who wants to see how the work was actually done, the traps we hit, and the patterns that made these reports portable. If you build Fusion reports for a living, some of this will save you a round trip.
+
+## The core principle: portability is a design constraint, not an afterthought
+
+The first decision shaped everything else. No hardcoding. Not the ledger name, not the chart of accounts ID, not the segment names, not the value set IDs. Nothing that ties the report to the instance it was built on.
+
+This sounds obvious until you try it, because Fusion tempts you into hardcoding at every turn. The clearest example is the natural account segment. Your report needs to know which segment is the natural account, because that segment gets extra treatment: account type, posting flags, third party control, financial category. The easy way to find it is to look for the segment named "Account" or "Natural Account." But those names vary by client. One instance calls it "Account," another "Natural Account," a third something else entirely. Key off the name and your report is instantly non-portable.
+
+The portable way is to key off the segment qualifier. In Fusion, the natural account segment always carries the GL_ACCOUNT attribute in `FND_SEGMENT_ATTRIBUTE_VALUES`, regardless of what it is named. So we identify it by function:
+
+```sql
+SELECT sav.id_flex_num,
+       sav.application_column_name AS acct_col
+FROM fusion.fnd_segment_attribute_values sav
+WHERE sav.id_flex_code = 'GL#'
+  AND sav.application_id = 101
+  AND sav.segment_attribute_type = 'GL_ACCOUNT'
+  AND sav.attribute_value = 'Y'
+```
+
+Now the report finds the natural account segment on any instance, by what it does, not by what someone called it. This pattern repeats throughout both products. The segment label shown on the summary sheet, for instance, is resolved the same way, by reading the segment's qualifier attributes and turning them into readable text, with the generic global attribute excluded so the meaningful qualifier surfaces:
+
+```sql
+LISTAGG(NVL(sat.segment_prompt, sat.segment_attribute_type), ', ')
+  WITHIN GROUP (ORDER BY sat.segment_attribute_type)
+...
+WHERE sav.attribute_value = 'Y'
+  AND sav.segment_attribute_type <> 'GL_GLOBAL'
+```
+
+The rule is simple and it is absolute. Find the thing by what it is, never by what one client happened to call it.
+
+## Validate on a real pod before locking anything
+
+The second discipline is evidence over assumption. Every query, every join, every decode gets proven on a live Fusion instance before it goes into the product. Not tested against documentation. Not reasoned through on paper. Run on a real pod, output checked against known values.
+
+This caught more than one costly mistake. On the Enterprise Structure report, we needed to flag which accounting calendars carry budgetary control. The obvious approach is to exclude calendars that are linked to a project, since project control budgets generate their own calendars automatically. But when we ran it on a real instance, a manually created budgetary control calendar disappeared from the results.
+
+The reason turned out to be a sentinel value. Oracle does not use NULL to mean "no project" in `XCC_CONTROL_BUDGETS`. It uses -98. So the naive filter `project_id IS NOT NULL` was treating that -98 sentinel as a real project link and wrongly excluding the manual calendar. The correct test is:
+
+```sql
+project_id IS NOT NULL AND project_id <> -98
+```
+
+No amount of reading the documentation would have surfaced that. Only running it on a pod and noticing a calendar was missing did. Sentinel values like -98 are scattered through Fusion's data model, and the only reliable way to find them is to run your query against real data and check the edges.
+
+## Diagnose the data before you trust a decode
+
+The most instructive lesson came from the Chart of Accounts report, and it is a good example of why you check the raw data rather than trusting an existing decode.
+
+The natural account segment carries several attributes packed into a single column, `COMPILED_VALUE_ATTRIBUTES`. It is a whitespace-delimited string, and you pull out each attribute by position. One of the positions is the Third Party Control setting, which tells you whether an account is a supplier control account, a customer control account, and so on. We had a decode in place that mapped the stored codes to readable labels, and it had been running for a while.
+
+A colleague reviewing an output flagged that one label looked wrong. The instinct in that moment is to defend the existing logic. The right move is to dump the raw data and look. So we tokenized the packed string into every position, side by side, for every account, with the raw string alongside:
+
+```sql
+SELECT fv.flex_value,
+       fvt.description,
+       TRIM(REGEXP_SUBSTR(
+         REGEXP_REPLACE(fv.compiled_value_attributes,' {2,}',CHR(10)),
+         '[^' || CHR(10) || ']+', 1, 5)) AS token5,
+       fv.compiled_value_attributes AS raw_string
+FROM fusion.fnd_flex_values fv
+JOIN acct_value_set avs
+  ON avs.flex_value_set_id = fv.flex_value_set_id
+LEFT JOIN fusion.fnd_flex_values_tl fvt
+  ON fvt.flex_value_id = fv.flex_value_id
+ AND fvt.language = 'US'
+ORDER BY 1
+```
+
+The output settled it immediately. Ordinary fixed asset accounts, things like Office Equipment and Vehicles, were all carrying the code we had labelled as one kind of control account. No fixed asset is ever a subledger control account. The label was wrong, and the raw data proved it in seconds.
+
+We then checked Oracle's own Segment Values interface documentation, which spells out the valid values for that position: CUSTOMER, SUPPLIER, R for restrict manual journals, Y, and N. Our decode had two of them mapped incorrectly. The correct mapping is:
+
+- SUPPLIER means Supplier Control
+- CUSTOMER means Customer Control
+- R means Restrict GL Manual Journals
+- Y means Receivable/Payable Control
+- N means not a control account
+
+We fixed the decode, re-ran on the pod, and confirmed all values now classified correctly, including the hundreds of fixed asset accounts that now read "Restrict GL Manual Journals" instead of the wrong label. Then we recorded the corrected mapping in our metadata store so it can never be miscoded again.
+
+The lesson is simple and it is worth more than the specific fix. When a decode looks wrong, do not defend it. Dump the raw data and every token position, and let the data tell you what is really there.
+
+## The multi-sheet Excel problem
+
+Both reports needed to split flat query output across many Excel sheets: one sheet per segment, one sheet per structure lens. BI Publisher can do this through its Excel templates, but the mechanism is particular and it does not fit Fusion data out of the box.
+
+BI Publisher splits sheets by repeating a template sheet for each occurrence of a parent node in the XML. The problem is that Fusion query output is flat. Every row is a leaf with no parent node to split on. Point the split at the row element itself and you get one sheet per row, which for a chart of accounts with hundreds of values means hundreds of sheets. Oracle's own documentation is blunt about this: if your data is flat, you cannot use the split command unless you first preprocess the data to create a hierarchy.
+
+So that is what we do. Before the template runs, a preprocess XSL transformation groups the flat rows under parent nodes. For the Chart of Accounts report, it wraps all the rows for a given segment under a single segment group element, and the template splits on that. The flat data becomes a shallow hierarchy, and the split works cleanly, with no page-break artifacts and no blank rows.
+
+That preprocessing layer turned out to be the right place to solve several problems at once. It groups the rows for the split. It computes the descriptive flexfield column headers, working out for each segment whether to show a real label or a placeholder, and stamping the result onto the group element so the template can just read it. And it passes a second dataset through untouched so the summary sheet can use it. Putting the conditional logic in the transformation rather than in the template cells matters, because BI Publisher's in-cell expression engine chokes on anything complex. Compute the value in the XSLT, bind the cell to a plain element or attribute, and it works every time.
+
+## Handling two charts of accounts at once
+
+The hardest portability test is a client with more than one chart of accounts. Two of the instances we validated on run two charts each. When you run the report for all charts at once, the segments overlap: both charts have a segment named "Company," both have a "Natural Account." A report that splits by segment name alone collapses them onto one sheet and mixes two different charts together, which is worse than useless.
+
+The fix is to group by a composite key: the chart of accounts code combined with the segment name, not the segment name alone.
+
+```
+concat(COA_CODE, '|', SEGMENT_NAME)
+```
+
+That makes each chart's Company segment a distinct group, and the split produces separate sheets for each.
+
+There was a subtlety in the sheet naming that took a diagnostic to crack, and it is the kind of thing you only learn by hitting it. BI Publisher's sheet naming step reads a special `name` attribute off the group element, but it will not read arbitrary custom attributes you add. We first tried adding a separate chart code attribute to the group element and combining the two at naming time. It failed silently. The sheets came out named with a trailing space and both charts merged back together, which was baffling until we saw the pattern: the custom attribute was resolving to nothing, so the name was just the segment name with an empty chart code appended.
+
+Once we understood that, the fix was clean. Bake the full unique name into the `name` attribute inside the transformation, so the template reads the one attribute it does read:
+
+```
+name="{concat(SEGMENT_NAME, ' ', COA_CODE)}"
+```
+
+Now each sheet gets a unique name like "Company COA1" and "Company COA2," and the split produces separate, correctly named sheets per chart.
+
+We also confirmed something Oracle's documentation never shows. Two independent sheet splits can coexist in one template. The report splits the ordinary segments one way, on the segment group node, and the natural account segment another way, on its own node, in the same file, and both fire correctly. That was the piece that let the natural account sheet keep its extra columns while every other segment sheet stayed lean. Oracle's docs only ever show a single split, so we could not assume this would work. We built it, ran it on a two-chart instance, and confirmed it produced the full separated set: every segment separated per chart, plus a dedicated natural account sheet per chart, all in one render.
+
+## Every dataset carries its own filters
+
+One more portability trap worth naming, because it is easy to miss and it looks like a bug when it bites. When a report has a parameter, like "which chart of accounts," you might assume every dataset in the data model honors it. It does not. Each dataset is an independent query. A filter on one does not propagate to another.
+
+We hit this on the Chart of Accounts summary sheet. The main dataset filtered correctly by the chart of accounts parameter, so the detailed value sheets showed only the selected chart. But the summary dataset did not carry the same filter, so it showed every chart regardless of the selection. The value sheets were right and the summary was wrong, in the same report, which is a confusing thing to debug until you remember that datasets do not share filters.
+
+The fix is to add the same parameter filter to every dataset that should react to it, using the same portable multi-select pattern throughout:
+
+```sql
+WHERE (coa_id IN (:P_COA_ID) OR LEAST(:P_COA_ID) IS NULL)
+```
+
+That pattern is worth knowing on its own. It is the reliable way to build a multi-select parameter in these environments. When the parameter is empty, the LEAST expression is null and the whole condition passes, returning everything. When it has values, the IN clause filters. Other approaches to multi-select tend to fail in these query engines, so this is the one to reach for.
+
+## A note on caching
+
+While we are on things that look like bugs but are not: after you change a query, the data model preview will show the new result, but the rendered report can still show the old one. That is caching, not a query problem. When a query change shows in the preview but not the render, clear the data model cache and re-run the report fresh before you go back into the SQL looking for a fault that is not there. We lost a round trip to this before recognizing the signature.
+
+## Totals that survive and totals that move
+
+A report that ships to a finance team needs totals people can trust, and there is real subtlety in getting them right in an Excel template.
+
+First, a static total baked in at extract time is not a subtotal. If you compute a sum during the report run and drop it in a cell, it is frozen. The moment a user filters the sheet, that static total keeps showing the full population and disagrees with what is on screen, which reads as a data bug and gets escalated as one. The right approach is a live Excel `SUBTOTAL` function that ignores rows hidden by a filter and recalculates as the user filters. It moves with the filter, which is exactly what a subtotal is supposed to do.
+
+Second, the formula has to survive the render. BI Publisher rewrites formula cells during rendering, and there are two things to get right. The range has to respect the file format's limits, because a range set to the very last row of the format collapses when the engine inserts rows. And you have to confirm the formula actually survived, which means checking the rendered output at the binary level rather than trusting the value stored in the file. BI Publisher writes formulas with a cached value of zero, so the raw file looks as though every total is wrong. It is not. Excel recalculates on open. Verify the formula is present, not the cached number.
+
+## Keep a record of every lesson
+
+None of this stays in anyone's head. Every finding, every trap, every corrected decode goes into two places: a lessons document that travels with the product, and a metadata store that records confirmed table and column facts, both per client and as portable globals.
+
+The metadata store is the quiet hero of this work. Before writing any query against a table, we check the store for what we already know about its columns and how it behaved on past instances. If it is a miss, we run a diagnostic, use the result, and write it back. Over time the store becomes a map of Fusion's data model as we have actually observed it, not as the documentation describes it. When we corrected the Third Party Control decode, the corrected mapping went straight into the store, so the next person to touch that column starts from the right answer instead of rediscovering the wrong one.
+
+This is the part that turns individual fixes into a compounding asset. A lesson learned once and written down is a lesson you never pay for twice.
+
+## The result
+
+Two reports that install into any Fusion instance and run correctly the first time. Proven across six pods spanning real estate, media, logistics, financial services, and manufacturing, from single-entity setups to eight-ledger multi-country groups to two-chart-of-accounts manufacturers.
+
+The methodology is the product as much as the SQL is:
+
+- Find things by function, not by name.
+- Validate on a real pod before locking anything.
+- Dump the raw data when a decode looks wrong, and let the data settle it.
+- Solve the flat-to-hierarchy problem in a preprocessing layer, and put conditional logic there rather than in template cells.
+- Group by composite keys where names collide across charts.
+- Filter every dataset, because parameters do not propagate.
+- Build totals that move with the filter and survive the render.
+- Recognize caching before you blame the query.
+- Write down every lesson so it is never learned twice.
+
+That is what separates a report that works here from a report that works anywhere.
+
+## Work with me on your Fusion reporting
+
+If you want reports built to this standard for your own Oracle Fusion instance, [book a call](/services) to talk it through, or [reach me on WhatsApp](https://wa.me/923332597950?text=Hi%20Arshad%2C%20I%20am%20interested%20in%20the%20Oracle%20Fusion%20reporting%20pack.).
