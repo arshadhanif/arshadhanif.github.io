@@ -20,7 +20,7 @@ export const IMG = {
     path ? `https://image.tmdb.org/t/p/${size}${path}` : null,
 }
 
-async function tmdb(path, params = {}) {
+async function tmdb(path, params = {}, attempt = 0) {
   if (!TOKEN || TOKEN.startsWith('PASTE_')) {
     throw new Error(
       'TMDB token missing. Add VITE_TMDB_TOKEN to reelbook/.env (your v4 Read Access Token).'
@@ -33,6 +33,15 @@ async function tmdb(path, params = {}) {
       Accept: 'application/json',
     },
   })
+  // Rate limits (429) and transient server errors (5xx) are temporary. Retry
+  // with backoff instead of throwing, so a bulk pass (e.g. an import matching
+  // hundreds of titles) doesn't drop rows that would otherwise resolve fine.
+  if ((res.status === 429 || res.status >= 500) && attempt < 4) {
+    const retryAfter = Number(res.headers.get('retry-after'))
+    const wait = retryAfter > 0 ? retryAfter * 1000 : Math.min(2000, 300 * 2 ** attempt)
+    await new Promise((r) => setTimeout(r, wait))
+    return tmdb(path, params, attempt + 1)
+  }
   if (!res.ok) {
     throw new Error(`TMDB ${res.status}: ${res.statusText}`)
   }

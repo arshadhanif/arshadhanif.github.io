@@ -426,9 +426,13 @@ export default function Import() {
           const tid = map.get(keyOf(m.seed)); if (!tid || seen.has(tid)) continue; seen.add(tid)
           const s = m.it.score ? Math.max(1, Math.min(10, Math.round(Number(m.it.score)))) : null
           if (snap.watches.has(tid)) {
-            // already logged - but did the rating change?
+            // Already logged. Still attach the imported score if this title has
+            // no rating yet, or update it if the score changed. This is what
+            // lets an IMDb ratings import backfill scores onto titles you'd
+            // already logged elsewhere (e.g. TV Time) without a rating.
             const prev = snap.ratings.get(tid)
-            if (profileId && s != null && prev && prev.score !== s) ratingUpdates.push({ watchId: prev.watchId, score: s })
+            const wid = prev ? prev.watchId : snap.watchIds.get(tid)
+            if (profileId && s != null && wid && (!prev || prev.score !== s)) ratingUpdates.push({ watchId: wid, score: s })
             else alreadyWatches++
             continue
           }

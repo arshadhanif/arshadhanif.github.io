@@ -197,6 +197,9 @@ export async function getGroupImportSnapshot(groupId, profileId = null) {
   }
   return {
     watches: new Set(w.map((r) => r.title_id)),
+    // title_id -> an existing watch id, so an import can attach a rating to a
+    // title you already logged (but never scored). Last watch per title wins.
+    watchIds: new Map(w.map((r) => [r.title_id, r.id])),
     episodes,
     watchlist: new Set(wl.map((r) => r.title_id)),
     ratings,
