@@ -142,6 +142,18 @@ The COA name needs two joins. `FND_ID_FLEX_STRUCTURES` (base table) carries the 
 - `BC_ENABLED = N` with a NULL `ASSET_BOOK_CODE` confirms a purely financial accounting ledger with no FA or BC configured.
 - `LEDGER_SHORT_NAME` in Fusion Cloud usually equals the numeric `LEDGER_ID`, a behaviour difference from EBS, where short names were meaningful codes.
 
+## A Deeper Cut: Budgetary Control at the Calendar Level
+
+The `BC_ENABLED` flag on the ledger tells you whether a ledger uses Budgetary Control. When you need to go one level deeper and flag which accounting calendars actually carry control budgets, you look at `XCC_CONTROL_BUDGETS`. There is a trap here that only real data reveals.
+
+The obvious approach is to exclude calendars linked to a project, since project control budgets generate their own calendars automatically. But Oracle does not use NULL to mean "no project" in that table. It uses -98 as a sentinel. So a naive filter like `project_id IS NOT NULL` treats that -98 value as a real project link and wrongly drops manually created budgetary control calendars from the result. The correct test is:
+
+```sql
+project_id IS NOT NULL AND project_id <> -98
+```
+
+This surfaced only by running the query on a live pod and noticing a known budgetary control calendar had gone missing. No amount of reading the documentation would have shown it. Sentinel values like -98 are scattered through Fusion's data model, and running your query against real data is the only reliable way to catch them.
+
 ## Column Reference
 
 | Column | Data Type | Purpose in Downstream Queries |
