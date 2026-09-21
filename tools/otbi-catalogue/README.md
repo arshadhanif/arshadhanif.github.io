@@ -18,9 +18,48 @@ column floor with no derived measures, so they are a cross-check, never the sour
 4. Save it as a `.txt` named after the subject area, and drop it in the Drive
    folder for that format ("OTBI Subject Area SQLs" or "OTBI Subject Area XMLs").
 
-Prefer the SQL capture. Every selected column is one anchored line carrying the
-subject area, the folder, the column and a projection ordinal, it needs no XML
-entity decoding, and it carries column kind signals the XML does not.
+**Capture the XML.** It is the complete record. See "Which format to capture"
+below for the evidence: the logical SQL silently omits presentation columns.
+
+## Which format to capture
+
+Capture the **XML**. Two subject areas were captured in both formats and banked
+from each, which settled it.
+
+| | Procurement Implemented Change Orders | Costing Cost Accounting Period Close |
+| --- | --- | --- |
+| XML columns | 413 | 475 |
+| SQL columns | 411 | 458 |
+| In XML only | 2 | 17 |
+| In SQL only | 0 | 0 |
+
+The SQL is a strict subset in both cases. Nothing appears in the SQL that the
+XML misses, and the SQL loses 0.5% and 3.6% of the columns respectively.
+
+Most of the loss has a clear mechanism. When a presentation column has a coded
+and display pair, the logical SQL emits only the display column as a plain
+projection and represents the code column as a `DESCRIPTOR_IDOF()` wrapper
+around it. The code column's own name never appears, so it cannot be recovered
+from the SQL. That accounts for 13 of the 19 missing columns, for example
+`Ledger Category Code` next to `Ledger Category Name`, and
+`Suspense Posting Allowed Flag` next to `Suspense Posting Allowed Flag Meaning`.
+The other 6 are simply absent from the SQL with no wrapper to hint at them.
+
+The loss is silent. The SQL parses cleanly with no unparsed lines and no
+warning, so a SQL-only catalogue looks complete while quietly missing columns.
+That is the deciding factor: a catalogue that is quietly wrong is worse than one
+that lacks a convenience field.
+
+What the XML costs: files are roughly twice the size (127 KB and 151 KB against
+88 KB and 59 KB), and it carries no `column_kind` signals, so that field stays
+null. Neither is a real obstacle. Banking time is driven by the column count,
+not the format, and both formats parse with zero failures.
+
+If kind flags are wanted for a given subject area later, capture its SQL as
+well and bank it on top. The upsert preserves existing kinds and never deletes,
+so the two captures compose without rework. That is exactly how the Procurement
+and Costing rows reached their present state: columns from the XML, kind flags
+from the SQL.
 
 ## Banking a capture
 
