@@ -154,6 +154,14 @@ export default function Discover() {
   const peopleResults = results.filter((r) => r.kind === 'person')
   const filtered = type === 'all' ? titleResults : titleResults.filter((r) => r.media_type === type)
 
+  // Split Continue watching by recency: shows you've touched in the last 3
+  // months stay on the main rail; anything dormant (last watched 3+ months ago)
+  // drops into its own auto-refreshing section, and returns to the main rail the
+  // moment you watch an episode again. "Stopped tracking" stays a manual choice.
+  const staleCutoff = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d.toISOString().slice(0, 10) })()
+  const activeShows = continueShows.filter((s) => !s.last || s.last >= staleCutoff)
+  const dormantShows = continueShows.filter((s) => s.last && s.last < staleCutoff)
+
   return (
     <div className="page">
       <div className="page-head">
@@ -215,8 +223,12 @@ export default function Discover() {
         )
       ) : (
         <>
-          {continueShows.length > 0 && (
-            <ContinueRail shows={continueShows} onDrop={dropContinue} onMove={moveShow} />
+          {activeShows.length > 0 && (
+            <ContinueRail shows={activeShows} onDrop={dropContinue} onMove={moveShow} />
+          )}
+          {dormantShows.length > 0 && (
+            <ContinueRail shows={dormantShows} onDrop={dropContinue} onMove={moveShow}
+              heading="💤 Not watched in 3+ months" collapsible defaultOpen={false} />
           )}
           {droppedShows.length > 0 && (
             <StoppedList shows={droppedShows} onResume={resumeDropped} />
@@ -298,9 +310,10 @@ function StoppedList({ shows, onResume }) {
   )
 }
 
-function ContinueRail({ shows, onDrop, onMove }) {
+function ContinueRail({ shows, onDrop, onMove, heading = '▶ Continue watching', collapsible = false, defaultOpen = true }) {
   const [gid, setGid] = useState(null)
   const [picker, setPicker] = useState(null) // the show whose "watching with" sheet is open
+  const [open, setOpen] = useState(defaultOpen)
   // Distinct groups present, so we only show the filter when it's useful.
   const groupsPresent = []
   const seen = new Set()
@@ -308,7 +321,15 @@ function ContinueRail({ shows, onDrop, onMove }) {
   const view = gid ? shows.filter((s) => s.groupId === gid) : shows
   return (
     <div style={{ marginBottom: 26 }}>
-      <div className="section-head"><h2>▶ Continue watching</h2></div>
+      {collapsible ? (
+        <button className="stopped-head" onClick={() => setOpen((v) => !v)}>
+          <span>{heading} ({shows.length})</span>
+          <span className="chev">{open ? '▲' : '▼'}</span>
+        </button>
+      ) : (
+        <div className="section-head"><h2>{heading}</h2></div>
+      )}
+      {open && (<>
       {groupsPresent.length > 1 && (
         <div className="scroll-x" style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
           <button className={`chip ${!gid ? 'active' : ''}`}
@@ -355,6 +376,7 @@ function ContinueRail({ shows, onDrop, onMove }) {
           )
         })}
       </ScrollRow>
+      </>)}
       {picker && (
         <WatchingWithSheet
           show={picker}
