@@ -136,3 +136,14 @@ columns. Most are the code half of a coded and display pair, which the SQL
 folds into a `DESCRIPTOR_IDOF()` wrapper so the name is unrecoverable.
 
 Capture the XML.
+
+## Banked outcome for Costing Cost Accounting Real Time
+
+Banked 2026-09-22 from the XML as the spine, with the SQL overlaid for kind
+flags. Verified at 1,497 columns across 135 folders, checksum
+`255db9ae68a1b960e586ae472c97820e`, and 297 kind flags (290 coded, 7 sort)
+matching the SQL parse exactly.
+
+This is the composition pattern in practice: the XML supplies the complete
+column list, the SQL supplies metadata the XML cannot express, and the two are
+loaded independently without either overwriting the other.
