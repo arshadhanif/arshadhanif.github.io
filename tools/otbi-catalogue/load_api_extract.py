@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Validate and load a MetadataService extract into otbi_meta.
 
+Supabase is the source of truth for the OTBI catalogue. This loads the extract
+into otbi_sources, otbi_subject_areas, otbi_folders and otbi_columns, deriving
+the subject area and folder rows from the column rows.
+
 The extractor (otbi-prod-extract.ps1) writes one CSV per window, optionally
 zipped. This reads them, checks them, and either reports on them or loads them.
 
@@ -30,9 +34,8 @@ from collections import Counter, defaultdict
 EXPECTED = ['environment','subject_area','folder','parent_folder','folder_hidden',
             'column','display_name','description','data_type','aggregatable','aggr_rule','hidden']
 
-TARGET_COLS = ['source_key','environment','subject_area','folder_name','parent_folder',
-               'folder_hidden','column_name','display_name','description','data_type',
-               'aggregatable','aggr_rule','hidden']
+COL_TARGET = ['environment','subject_area','folder_name','column_name','display_name',
+              'description','data_type','aggregatable','aggr_rule','hidden','ordinal','source_key']
 
 
 def unquote(s):
@@ -157,7 +160,9 @@ def report(stats, rows):
         print('     %-54s %3d folders %7s columns' % (sa[:53], f, format(c, ',')))
 
 
-def load(rows, stats, source_key, environment, captured_by, notes):
+def load(rows, stats, source_key, environment, captured_by, notes, pod_host=None,
+         carry_pillars_from=None):
+    """Load into the four tables, parents first so the foreign keys hold."""
     try:
         import psycopg2
     except ImportError:
@@ -166,46 +171,101 @@ def load(rows, stats, source_key, environment, captured_by, notes):
     if not dsn:
         raise SystemExit('SUPABASE_DB_URL is not set in the environment.')
 
-    conn = psycopg2.connect(dsn)
-    conn.autocommit = False
+    # derive the parent rows from the column rows
+    folders = {}
+    areas = {}
+    ordinals = defaultdict(int)
+    for d in rows:
+        fk = (d['environment'], d['subject_area'], d['folder_name'])
+        f = folders.setdefault(fk, {'parent_folder': d['parent_folder'],
+                                    'hidden': d['folder_hidden'], 'column_count': 0})
+        f['column_count'] += 1
+        ordinals[fk] += 1
+        d['ordinal'] = ordinals[fk]
+        a = areas.setdefault((d['environment'], d['subject_area']),
+                             {'folders': set(), 'cols': 0, 'hidden': 0, 'measures': 0})
+        a['folders'].add(d['folder_name'])
+        a['cols'] += 1
+        if d['hidden']: a['hidden'] += 1
+        if d['aggregatable']: a['measures'] += 1
+
+    conn = psycopg2.connect(dsn); conn.autocommit = False
     cur = conn.cursor()
 
     cur.execute("""
         insert into otbi_meta.otbi_sources
-          (source_key, source_type, environment, title, captured_by, captured_at,
+          (source_key, source_type, environment, pod_host, title, captured_by, captured_at,
            subject_area_count, folder_count, column_count, notes)
-        values (%s, 'metadata_api', %s, %s, %s, now(), %s, %s, %s, %s)
+        values (%s,'metadata_api',%s,%s,%s,%s,now(),%s,%s,%s,%s)
         on conflict (source_key) do update set
-          environment=excluded.environment, title=excluded.title,
+          environment=excluded.environment, pod_host=excluded.pod_host,
           captured_by=excluded.captured_by, captured_at=excluded.captured_at,
           subject_area_count=excluded.subject_area_count,
           folder_count=excluded.folder_count, column_count=excluded.column_count,
           notes=excluded.notes
-    """, (source_key, environment, 'OTBI MetadataService extract', captured_by,
-          len(stats['subject_areas']), len(stats['folders']), len(rows), notes))
+    """, (source_key, environment, pod_host, 'OTBI MetadataService extract', captured_by,
+          len(areas), len(folders), len(rows), notes))
 
-    # replace this source's rows rather than accumulating them
-    cur.execute('delete from otbi_meta.otbi_api_columns where source_key = %s', (source_key,))
+    # replace this environment's rows; the cascades clear folders and columns
+    cur.execute('delete from otbi_meta.otbi_subject_areas where environment = %s', (environment,))
 
-    buf = io.StringIO()
-    w = csv.writer(buf, quoting=csv.QUOTE_MINIMAL)
+    def copy_in(table, cols, it):
+        buf = io.StringIO(); w = csv.writer(buf, quoting=csv.QUOTE_MINIMAL)
+        for rec in it:
+            w.writerow(['\\N' if v is None else v for v in rec])
+        buf.seek(0)
+        cur.copy_expert("copy %s (%s) from stdin with (format csv, null '\\N')"
+                        % (table, ', '.join(cols)), buf)
+
+    copy_in('otbi_meta.otbi_subject_areas',
+            ['environment','subject_area','folder_count','column_count',
+             'visible_column_count','hidden_column_count','measure_count','source_key'],
+            ((env, sa, len(a['folders']), a['cols'], a['cols']-a['hidden'],
+              a['hidden'], a['measures'], source_key) for (env, sa), a in areas.items()))
+
+    copy_in('otbi_meta.otbi_folders',
+            ['environment','subject_area','folder_name','parent_folder','hidden',
+             'column_count','source_key'],
+            ((env, sa, fo, f['parent_folder'], f['hidden'], f['column_count'], source_key)
+             for (env, sa, fo), f in folders.items()))
+
     for d in rows:
-        w.writerow([source_key] + [d[c] if d[c] is not None else '\\N'
-                                   for c in TARGET_COLS[1:]])
-    buf.seek(0)
-    cur.copy_expert(
-        "copy otbi_meta.otbi_api_columns (%s) from stdin with (format csv, null '\\N')"
-        % ', '.join(TARGET_COLS), buf)
-    conn.commit()
+        d['source_key'] = source_key
+    copy_in('otbi_meta.otbi_columns', COL_TARGET,
+            ([d[c] for c in COL_TARGET] for d in rows))
 
-    cur.execute('select count(*) from otbi_meta.otbi_api_columns where source_key = %s', (source_key,))
-    banked = cur.fetchone()[0]
+    # the API does not return pillar or group; carry the curated values across
+    if carry_pillars_from:
+        cur.execute("""
+            update otbi_meta.otbi_subject_areas t
+               set pillar = a.pillar, group_name = a.group_name
+              from %s.otbi_subject_areas a
+             where a.subject_area = t.subject_area
+               and t.environment = %%s
+        """ % carry_pillars_from, (environment,))
+        carried = cur.rowcount
+    else:
+        carried = 0
+
+    conn.commit()
+    cur.execute("""select
+        (select count(*) from otbi_meta.otbi_subject_areas where environment=%s),
+        (select count(*) from otbi_meta.otbi_folders        where environment=%s),
+        (select count(*) from otbi_meta.otbi_columns        where environment=%s)""",
+        (environment, environment, environment))
+    sa_n, f_n, c_n = cur.fetchone()
     cur.close(); conn.close()
+
     print()
-    print('  loaded %s rows under source_key %s' % (format(banked, ','), source_key))
-    if banked != len(rows):
-        print('  WARNING: expected %s, the database holds %s' % (format(len(rows), ','), format(banked, ',')))
-    return banked
+    print('  loaded under source_key %s' % source_key)
+    print('     subject areas : %s' % format(sa_n, ','))
+    print('     folders       : %s' % format(f_n, ','))
+    print('     columns       : %s' % format(c_n, ','))
+    if carry_pillars_from:
+        print('     pillars carried over from %s: %s' % (carry_pillars_from, format(carried, ',')))
+    if c_n != len(rows):
+        print('  WARNING: expected %s columns, the database holds %s'
+              % (format(len(rows), ','), format(c_n, ',')))
 
 
 def main():
@@ -216,6 +276,9 @@ def main():
     ap.add_argument('--source-key', default=None)
     ap.add_argument('--captured-by', default='Arshad')
     ap.add_argument('--notes', default=None)
+    ap.add_argument('--pod-host', default=None)
+    ap.add_argument('--carry-pillars-from', default='otbi_archive_20260923',
+                    help='schema holding the pre-rebuild subject areas, for pillar and group')
     args = ap.parse_args()
 
     rows, stats = scan(args.files)
@@ -227,7 +290,8 @@ def main():
         envs = [e for e in stats['env'] if e]
         if len(envs) != 1:
             raise SystemExit('expected exactly one environment in the files, found %s' % envs)
-        load(rows, stats, args.source_key, envs[0], args.captured_by, args.notes)
+        load(rows, stats, args.source_key, envs[0], args.captured_by, args.notes,
+             args.pod_host, args.carry_pillars_from)
 
 
 if __name__ == '__main__':
