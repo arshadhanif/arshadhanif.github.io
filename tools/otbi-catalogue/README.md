@@ -207,3 +207,27 @@ banked columns, and those folders still land with a row and a slot count.
 `column_count`, `visible_column_count` and `hidden_column_count` therefore
 count banked columns only. A slot that is ever configured stops matching the
 placeholder shape and arrives as an ordinary column in the next extract.
+
+### Why the load goes over HTTPS rather than psql
+
+The session that runs the load reaches Supabase through a proxy that carries
+HTTPS on port 443 only. Its own documentation lists raw-TCP databases and
+non-443 ports among the things it does not support and that must not be worked
+around, so a Postgres connection on 5432 cannot succeed from there whatever
+the network policy allows. The `load.sql` that `prepare` writes is still the
+right tool anywhere with a normal network, but not from here.
+
+`push_over_https.py` does the same load through the Data API. Migration 003
+adds five `public.otbi_load_*` functions, security definer so they can write to
+`otbi_meta` without exposing that schema, with execute granted to
+`service_role` alone. The client posts the prepared files to them in batches,
+parents first.
+
+```
+export SUPABASE_URL=https://<ref>.supabase.co
+export SUPABASE_SERVICE_ROLE_KEY=<secret key>
+python3 push_over_https.py DIR --source-key KEY --environment HNLPROD
+```
+
+Re-running is safe: `otbi_load_begin` clears the environment first and every
+batch upserts, so a run that dies partway can simply be run again.
