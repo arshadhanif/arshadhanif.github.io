@@ -32,9 +32,23 @@ import argparse
 import csv
 import io
 import os
+import re
 import sys
 import zipfile
 from collections import Counter, defaultdict
+
+# Oracle ships every CRM object with a block of empty extension attribute
+# slots, named "Extension Attribute Character 001" and so on. In the HNLPROD
+# extract there are 1,124,239 of them, roughly 975 per folder, and not one is
+# configured: none appears as a visible column, and the only description any
+# of them carries is the raw internal token. They are counted per folder
+# rather than banked as rows. A slot that is ever configured stops matching
+# this shape and arrives as an ordinary column.
+PLACEHOLDER_RX = re.compile(r'^Extension Attribute\s+[A-Za-z]+\s+\d+$', re.IGNORECASE)
+
+
+def is_placeholder(d):
+    return bool(d['hidden']) and bool(PLACEHOLDER_RX.match(d['column_name']))
 
 EXPECTED = ['environment','subject_area','folder','parent_folder','folder_hidden',
             'column','display_name','description','data_type','aggregatable','aggr_rule','hidden']
@@ -43,10 +57,11 @@ COL_TARGET = ['environment','subject_area','folder_name','column_name','display_
               'description','data_type','aggregatable','aggr_rule','hidden','ordinal','source_key']
 
 SA_TARGET = ['environment','subject_area','folder_count','column_count',
-             'visible_column_count','hidden_column_count','measure_count','source_key']
+             'visible_column_count','hidden_column_count','measure_count',
+             'ext_attribute_slots','source_key']
 
 FOLDER_TARGET = ['environment','subject_area','folder_name','parent_folder','hidden',
-                 'column_count','source_key']
+                 'column_count','ext_attribute_slots','source_key']
 
 
 def unquote(s):
@@ -103,8 +118,10 @@ def scan(paths):
     """Read every file once, de-duplicate on the primary key, and collect stats."""
     seen = set()
     rows = []
+    slots = Counter()        # (environment, subject_area, folder) -> placeholders
+    folder_meta = {}         # every folder seen, even one that is all placeholders
     stats = {
-        'files': {}, 'dupes': 0, 'blank_key': 0,
+        'files': {}, 'dupes': 0, 'blank_key': 0, 'placeholders': 0,
         'env': Counter(), 'dtype': Counter(),
         'hidden': 0, 'measures': 0, 'described': 0,
         'folders': set(), 'subject_areas': set(),
@@ -129,6 +146,19 @@ def scan(paths):
                 stats['dupes'] += 1
                 continue
             seen.add(key)
+
+            fk = (d['environment'], d['subject_area'], d['folder_name'])
+            folder_meta.setdefault(fk, {'parent_folder': d['parent_folder'],
+                                        'hidden': d['folder_hidden']})
+            stats['folders'].add((d['subject_area'], d['folder_name']))
+            stats['sa_folders'][d['subject_area']].add(d['folder_name'])
+            stats['subject_areas'].add(d['subject_area'])
+
+            if is_placeholder(d):
+                slots[fk] += 1
+                stats['placeholders'] += 1
+                continue
+
             rows.append(d)
             n += 1
             stats['env'][d['environment']] += 1
@@ -136,14 +166,11 @@ def scan(paths):
             if d['hidden']: stats['hidden'] += 1
             if d['aggregatable']: stats['measures'] += 1
             if d['description']: stats['described'] += 1
-            stats['subject_areas'].add(d['subject_area'])
-            stats['folders'].add((d['subject_area'], d['folder_name']))
-            stats['sa_folders'][d['subject_area']].add(d['folder_name'])
             stats['per_sa'][d['subject_area']][1] += 1
         stats['files'][p] = n
     for sa, folders in stats['sa_folders'].items():
         stats['per_sa'][sa][0] = len(folders)
-    return rows, stats
+    return rows, slots, folder_meta, stats
 
 
 def report(stats, rows):
@@ -155,7 +182,9 @@ def report(stats, rows):
     print()
     print('  subject areas     : %s' % format(len(stats['subject_areas']), ','))
     print('  folders           : %s' % format(len(stats['folders']), ','))
-    print('  columns           : %s' % format(len(rows), ','))
+    print('  columns banked    : %s' % format(len(rows), ','))
+    print('  ext attr slots    : %s  (counted per folder, not banked as rows)'
+          % format(stats['placeholders'], ','))
     print('  hidden columns    : %s' % format(stats['hidden'], ','))
     print('  measures          : %s' % format(stats['measures'], ','))
     print('  with a description: %s' % format(stats['described'], ','))
@@ -171,25 +200,33 @@ def report(stats, rows):
         print('     %-54s %3d folders %7s columns' % (sa[:53], f, format(c, ',')))
 
 
-def derive(rows):
+def derive(rows, slots, folder_meta):
     """Build the subject area and folder rows from the column rows.
 
-    Also stamps each column with its ordinal inside its folder, so the order
-    Oracle returned the columns in survives into the table.
+    Folders come from folder_meta rather than from the column rows, so a folder
+    whose columns were all extension attribute slots still gets a row. Also
+    stamps each column with its ordinal inside its folder, so the order Oracle
+    returned the columns in survives into the table.
     """
     folders = {}
+    for fk, m in folder_meta.items():
+        folders[fk] = {'parent_folder': m['parent_folder'], 'hidden': m['hidden'],
+                       'column_count': 0, 'ext_attribute_slots': slots.get(fk, 0)}
+
     areas = {}
+    for (env, sa, _fo), f in folders.items():
+        a = areas.setdefault((env, sa), {'folders': set(), 'cols': 0, 'hidden': 0,
+                                         'measures': 0, 'slots': 0})
+        a['folders'].add(_fo)
+        a['slots'] += f['ext_attribute_slots']
+
     ordinals = defaultdict(int)
     for d in rows:
         fk = (d['environment'], d['subject_area'], d['folder_name'])
-        f = folders.setdefault(fk, {'parent_folder': d['parent_folder'],
-                                    'hidden': d['folder_hidden'], 'column_count': 0})
-        f['column_count'] += 1
+        folders[fk]['column_count'] += 1
         ordinals[fk] += 1
         d['ordinal'] = ordinals[fk]
-        a = areas.setdefault((d['environment'], d['subject_area']),
-                             {'folders': set(), 'cols': 0, 'hidden': 0, 'measures': 0})
-        a['folders'].add(d['folder_name'])
+        a = areas[(d['environment'], d['subject_area'])]
         a['cols'] += 1
         if d['hidden']: a['hidden'] += 1
         if d['aggregatable']: a['measures'] += 1
@@ -198,17 +235,18 @@ def derive(rows):
 
 def area_records(areas, source_key):
     return ((env, sa, len(a['folders']), a['cols'], a['cols'] - a['hidden'],
-             a['hidden'], a['measures'], source_key)
+             a['hidden'], a['measures'], a['slots'], source_key)
             for (env, sa), a in areas.items())
 
 
 def folder_records(folders, source_key):
-    return ((env, sa, fo, f['parent_folder'], f['hidden'], f['column_count'], source_key)
+    return ((env, sa, fo, f['parent_folder'], f['hidden'], f['column_count'],
+             f['ext_attribute_slots'], source_key)
             for (env, sa, fo), f in folders.items())
 
 
-def load(rows, stats, source_key, environment, captured_by, notes, pod_host=None,
-         carry_pillars_from=None):
+def load(rows, slots, folder_meta, stats, source_key, environment, captured_by, notes,
+         pod_host=None, carry_pillars_from=None):
     """Load into the four tables, parents first so the foreign keys hold."""
     try:
         import psycopg2
@@ -218,7 +256,7 @@ def load(rows, stats, source_key, environment, captured_by, notes, pod_host=None
     if not dsn:
         raise SystemExit('SUPABASE_DB_URL is not set in the environment.')
 
-    areas, folders = derive(rows)
+    areas, folders = derive(rows, slots, folder_meta)
 
     conn = psycopg2.connect(dsn); conn.autocommit = False
     cur = conn.cursor()
@@ -226,16 +264,17 @@ def load(rows, stats, source_key, environment, captured_by, notes, pod_host=None
     cur.execute("""
         insert into otbi_meta.otbi_sources
           (source_key, source_type, environment, pod_host, title, captured_by, captured_at,
-           subject_area_count, folder_count, column_count, notes)
-        values (%s,'metadata_api',%s,%s,%s,%s,now(),%s,%s,%s,%s)
+           subject_area_count, folder_count, column_count, ext_attribute_slot_count, notes)
+        values (%s,'metadata_api',%s,%s,%s,%s,now(),%s,%s,%s,%s,%s)
         on conflict (source_key) do update set
           environment=excluded.environment, pod_host=excluded.pod_host,
           captured_by=excluded.captured_by, captured_at=excluded.captured_at,
           subject_area_count=excluded.subject_area_count,
           folder_count=excluded.folder_count, column_count=excluded.column_count,
+          ext_attribute_slot_count=excluded.ext_attribute_slot_count,
           notes=excluded.notes
     """, (source_key, environment, pod_host, 'OTBI MetadataService extract', captured_by,
-          len(areas), len(folders), len(rows), notes))
+          len(areas), len(folders), len(rows), stats['placeholders'], notes))
 
     # replace this environment's rows; the cascades clear folders and columns
     cur.execute('delete from otbi_meta.otbi_subject_areas where environment = %s', (environment,))
@@ -284,6 +323,7 @@ def load(rows, stats, source_key, environment, captured_by, notes, pod_host=None
     print('     subject areas : %s' % format(sa_n, ','))
     print('     folders       : %s' % format(f_n, ','))
     print('     columns       : %s' % format(c_n, ','))
+    print('     ext attr slots: %s (counted, not banked)' % format(stats['placeholders'], ','))
     if carry_pillars_from:
         print('     pillars carried over from %s: %s' % (carry_pillars_from, format(carried, ',')))
     if c_n != len(rows):
@@ -291,8 +331,8 @@ def load(rows, stats, source_key, environment, captured_by, notes, pod_host=None
               % (format(len(rows), ','), format(c_n, ',')))
 
 
-def prepare(rows, source_key, environment, captured_by, notes, pod_host, outdir,
-            carry_pillars_from=None):
+def prepare(rows, slots, folder_meta, stats, source_key, environment, captured_by,
+            notes, pod_host, outdir, carry_pillars_from=None):
     """Write the three table files plus a psql script that loads them.
 
     This needs no database, so it can run wherever the extract lands. The
@@ -300,7 +340,7 @@ def prepare(rows, source_key, environment, captured_by, notes, pod_host, outdir,
     built, with no Python on the far side.
     """
     os.makedirs(outdir, exist_ok=True)
-    areas, folders = derive(rows)
+    areas, folders = derive(rows, slots, folder_meta)
     for d in rows:
         d['source_key'] = source_key
 
@@ -358,14 +398,15 @@ begin;
 
 insert into otbi_meta.otbi_sources
   (source_key, source_type, environment, pod_host, title, captured_by, captured_at,
-   subject_area_count, folder_count, column_count, notes)
+   subject_area_count, folder_count, column_count, ext_attribute_slot_count, notes)
 values ({key}, 'metadata_api', {env}, {pod}, 'OTBI MetadataService extract',
-        {by}, now(), {sa_n}, {f_n}, {c_n}, {notes})
+        {by}, now(), {sa_n}, {f_n}, {c_n}, {slot_n}, {notes})
 on conflict (source_key) do update set
   environment = excluded.environment, pod_host = excluded.pod_host,
   captured_by = excluded.captured_by, captured_at = excluded.captured_at,
   subject_area_count = excluded.subject_area_count,
   folder_count = excluded.folder_count, column_count = excluded.column_count,
+  ext_attribute_slot_count = excluded.ext_attribute_slot_count,
   notes = excluded.notes;
 
 -- replace this environment's rows; the cascades clear folders and columns
@@ -380,10 +421,12 @@ commit;
 select
   (select count(*) from otbi_meta.otbi_subject_areas where environment = {env}) as subject_areas,
   (select count(*) from otbi_meta.otbi_folders        where environment = {env}) as folders,
-  (select count(*) from otbi_meta.otbi_columns        where environment = {env}) as columns;
+  (select count(*) from otbi_meta.otbi_columns        where environment = {env}) as columns,
+  (select coalesce(sum(ext_attribute_slots), 0) from otbi_meta.otbi_folders
+    where environment = {env}) as ext_attribute_slots;
 """.format(key=lit(source_key), env=lit(environment), pod=lit(pod_host),
            by=lit(captured_by), notes=lit(notes),
-           sa_n=sa_n, f_n=f_n, c_n=c_n,
+           sa_n=sa_n, f_n=f_n, c_n=c_n, slot_n=stats['placeholders'],
            sa_cols=', '.join(SA_TARGET), f_cols=', '.join(FOLDER_TARGET),
            c_cols=', '.join(COL_TARGET), opts=copy_opts, carry=carry)
 
@@ -398,6 +441,8 @@ select
               % (os.path.basename(path), format(n, ','),
                  os.path.getsize(path) / 1024.0 / 1024.0))
     print('     load.sql')
+    print('     %-20s %10s slots counted, not banked'
+          % ('(extension attrs)', format(stats['placeholders'], ',')))
     print()
     print('  run it with:  cd %s && psql "$SUPABASE_DB_URL" -f load.sql' % outdir)
 
@@ -417,7 +462,7 @@ def main():
                     help='schema holding the pre-rebuild subject areas, for pillar and group')
     args = ap.parse_args()
 
-    rows, stats = scan(args.files)
+    rows, slots, folder_meta, stats = scan(args.files)
     report(stats, rows)
 
     if args.mode == 'summary':
@@ -432,11 +477,12 @@ def main():
     if args.mode == 'prepare':
         if not args.out:
             raise SystemExit('--out is required in prepare mode')
-        prepare(rows, args.source_key, envs[0], args.captured_by, args.notes,
-                args.pod_host, args.out, args.carry_pillars_from)
+        prepare(rows, slots, folder_meta, stats, args.source_key, envs[0],
+                args.captured_by, args.notes, args.pod_host, args.out,
+                args.carry_pillars_from)
     else:
-        load(rows, stats, args.source_key, envs[0], args.captured_by, args.notes,
-             args.pod_host, args.carry_pillars_from)
+        load(rows, slots, folder_meta, stats, args.source_key, envs[0],
+             args.captured_by, args.notes, args.pod_host, args.carry_pillars_from)
 
 
 if __name__ == '__main__':

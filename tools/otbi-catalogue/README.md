@@ -189,3 +189,21 @@ and columns, so re-running replaces rather than duplicates.
 The API does not return the pillar or the functional group, so the last step
 carries those across from the archived snapshot schema for any subject area
 whose name still matches.
+
+### Extension attribute slots are counted, not banked
+
+Oracle ships every CRM object with a block of empty extension attribute slots,
+named `Extension Attribute Character 001` and so on. The HNLPROD extract
+returns 1,124,239 of them, roughly 975 per folder across 1,176 folders, and
+none is configured: not one appears as a visible column, and the only
+description any carries is its own internal token.
+
+Banking them as rows would take `otbi_columns` from 449,491 rows to 1,573,730
+for no information a consultant can use, so the loader counts them per folder
+into `ext_attribute_slots` and banks the rest. 1,131 folders consist of nothing
+else, so folder rows are derived from every folder seen rather than from the
+banked columns, and those folders still land with a row and a slot count.
+
+`column_count`, `visible_column_count` and `hidden_column_count` therefore
+count banked columns only. A slot that is ever configured stops matching the
+placeholder shape and arrives as an ordinary column in the next extract.
