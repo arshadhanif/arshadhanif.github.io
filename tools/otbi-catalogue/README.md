@@ -157,3 +157,35 @@ backslashes are not in the file. `bank_capture.py` strips them when it sees
 them. To be certain of the raw bytes, download the file rather than reading its
 text representation. No OTBI folder or column name in the captures banked so far
 contains a backslash, a quote or a `~`.
+
+## Banking a MetadataService extract
+
+The manual capture route above is the fallback. The primary route is the
+PowerShell extractor, which reads the presentation layer straight out of the
+pod over the BI SOAP MetadataService and writes one CSV per window (zipped).
+
+`load_api_extract.py` takes those files and has three modes:
+
+```
+summary FILE...                          validate and report, no database needed
+prepare FILE... --source-key K --out DIR  write the table files plus load.sql
+load    FILE... --source-key K            stream straight into the tables
+```
+
+`prepare` is the one to reach for when the extract is large. It does the
+parsing, de-duplication and ordinal numbering once, then writes
+`subject_areas.csv`, `folders.csv`, `columns.csv` and a `load.sql`. The load
+itself is then three plain `COPY` statements, which `psql` can run from
+anywhere:
+
+```
+cd DIR && psql "$SUPABASE_DB_URL" -f load.sql
+```
+
+Both `prepare` and `load` are idempotent per environment: the script deletes
+that environment's subject areas first and lets the cascades clear the folders
+and columns, so re-running replaces rather than duplicates.
+
+The API does not return the pillar or the functional group, so the last step
+carries those across from the archived snapshot schema for any subject area
+whose name still matches.
