@@ -41,6 +41,15 @@ def typed(name, value):
     return value
 
 
+def count_rows(path):
+    """Number of data rows, counting CSV records rather than lines."""
+    csv.field_size_limit(10 ** 7)
+    with open(path, encoding='utf-8', newline='') as fh:
+        r = csv.reader(fh)
+        next(r, None)                       # header
+        return sum(1 for _ in r)
+
+
 def read_csv(path):
     csv.field_size_limit(10 ** 7)
     with open(path, encoding='utf-8', newline='') as fh:
@@ -125,7 +134,9 @@ def main():
         if not os.path.exists(p):
             raise SystemExit('%s not found. Run load_api_extract.py prepare first.' % p)
 
-    counts = {n: sum(1 for _ in open(p, encoding='utf-8')) - 1 for n, p in paths.items()}
+    # count CSV records, not physical lines: a description containing a line
+    # break spans several lines and would otherwise inflate the total
+    counts = {n: count_rows(p) for n, p in paths.items()}
     slots = args.ext_attribute_slot_count
     if slots is None:
         slots = sum(r['ext_attribute_slots'] or 0 for r in read_csv(paths['folders']))
