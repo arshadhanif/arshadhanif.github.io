@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { findByImdbId, findByTitle, findByTvdbId } from '../lib/tmdb'
 import {
-  ensureTitlesBulk, insertWatchesBulk, insertRatingsBulk, insertWatchlistBulk, markEpisodesBulk,
+  ensureTitlesBulk, insertWatchesBulk, insertRatingsBulk, insertWatchlistBulk, markEpisodesBulk, enrichTitlesDetail,
   createImportBatch, listImportBatches, revertImportBatch, dismissImportBatch, getGroupImportSnapshot,
   updateEpisodeRewatches, setRating, getExistingWatchKeys, restoreSeasonRatingsBulk,
   restoreFavouritesBulk, restoreSubscriptions, restoreCollections,
@@ -484,6 +484,17 @@ export default function Import() {
         loadBatches()
       }
       setStatus({ type: 'ok', text: `Imported ${watches} watched · ${episodes} episodes · ${watchlist} to watchlist${updated ? ` · ${updated} updated` : ''}.` })
+      // Enrich brand-new titles (genre/runtime/rating/ids) in the background so
+      // genre-based features are not left empty by the import. Only fetches
+      // titles still missing genre, so this is cheap on incremental imports.
+      const enrichIds = [
+        ...(plan.episodeRows || []).map((r) => r.titleId),
+        ...(plan.watchRows || []).map((r) => r.title_id),
+        ...(plan.watchlistRows || []).map((r) => r.title_id),
+      ]
+      enrichTitlesDetail(enrichIds)
+        .then((n) => { if (n) toast(`Filled in details for ${n} new title${n === 1 ? '' : 's'}`) })
+        .catch(() => {})
       setPlan(null); setItems([]); setTvFiles([])
     } catch (e) {
       console.error('apply', e)
