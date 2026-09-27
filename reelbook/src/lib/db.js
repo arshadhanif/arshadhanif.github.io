@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { getDetail } from './tmdb'
+import { getDetail, getTitleDetailLite } from './tmdb'
 
 // ---------- Profiles ----------
 
@@ -132,7 +132,42 @@ export async function ensureTitlesBulk(seeds) {
   return map
 }
 
-// Insert many watches; returns the new ids in input order (for attaching ratings).
+// Fill genre/runtime/rating/ids on titles that came in without them. Imports
+// create bare title rows from search seeds (no genre), so genre-based features
+// stay empty until a title's page is opened. Call this after a bulk import to
+// enrich the new titles up front. Only fetches titles still missing genre, runs
+// in small concurrent batches, and skips any title that fails so one bad TMDB
+// lookup never blocks an import. Returns how many titles it filled.
+export async function enrichTitlesDetail(titleIds) {
+  const ids = [...new Set((titleIds || []).filter(Boolean))]
+  if (!ids.length) return 0
+  const need = []
+  for (let i = 0; i < ids.length; i += 500) {
+    const { data } = await supabase.from('titles')
+      .select('id, tmdb_id, media_type, genre')
+      .in('id', ids.slice(i, i + 500))
+    for (const r of (data || [])) if (r.tmdb_id && (!r.genre || r.genre === '')) need.push(r)
+  }
+  let filled = 0
+  for (let i = 0; i < need.length; i += 8) {
+    await Promise.all(need.slice(i, i + 8).map(async (r) => {
+      try {
+        const d = await getTitleDetailLite(r.tmdb_id, r.media_type)
+        const fields = {}
+        if (d.genre) fields.genre = d.genre
+        if (d.runtime) fields.runtime = d.runtime
+        if (d.vote_average != null) fields.vote_average = d.vote_average
+        if (d.imdb_id) fields.imdb_id = d.imdb_id
+        if (d.backdrop_path) fields.backdrop_path = d.backdrop_path
+        if (Object.keys(fields).length) {
+          const { error } = await supabase.from('titles').update(fields).eq('id', r.id)
+          if (!error) filled++
+        }
+      } catch { /* skip a title that fails; never block the import */ }
+    }))
+  }
+  return filled
+}
 export async function insertWatchesBulk(rows) {
   const ids = []
   for (let i = 0; i < rows.length; i += 400) {

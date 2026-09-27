@@ -226,6 +226,28 @@ export async function getRecommendations(tmdbId, mediaType) {
 }
 
 // Rich detail for the title page: core fields + credits + external ids + providers + videos.
+// Lightweight detail fetch for bulk enrichment: just the fields cached on a
+// title (genre/runtime/rating/ids/backdrop), without the heavy credits, videos
+// and watch-provider payload getFullDetail pulls. Used to backfill imported
+// titles, which are created bare (no genre) from search seeds.
+export async function getTitleDetailLite(tmdbId, mediaType) {
+  const isMovie = mediaType === 'movie'
+  const data = await tmdb(`/${mediaType}/${tmdbId}`, { append_to_response: 'external_ids' })
+  const runtime = isMovie
+    ? data.runtime ?? null
+    : ((data.episode_run_time && data.episode_run_time[0])
+        ?? data.last_episode_to_air?.runtime
+        ?? data.next_episode_to_air?.runtime
+        ?? null)
+  return {
+    genre: (data.genres || []).map((g) => g.name).join(', ') || null,
+    runtime,
+    vote_average: data.vote_average ? Math.round(data.vote_average * 10) / 10 : null,
+    imdb_id: data.external_ids?.imdb_id || data.imdb_id || null,
+    backdrop_path: data.backdrop_path || null,
+  }
+}
+
 export async function getFullDetail(tmdbId, mediaType) {
   const isMovie = mediaType === 'movie'
   // TV `credits` only returns a small top-billed set; `aggregate_credits` spans
@@ -236,7 +258,12 @@ export async function getFullDetail(tmdbId, mediaType) {
   const data = await tmdb(`/${mediaType}/${tmdbId}`, { append_to_response: append })
   const runtime = isMovie
     ? data.runtime ?? null
-    : (data.episode_run_time && data.episode_run_time[0]) ?? null
+    // TMDB has largely deprecated episode_run_time (usually [] now); fall back to
+    // the last/next aired episode's runtime so TV shows still get a length.
+    : ((data.episode_run_time && data.episode_run_time[0])
+        ?? data.last_episode_to_air?.runtime
+        ?? data.next_episode_to_air?.runtime
+        ?? null)
 
   const castSource = isMovie
     ? (data.credits?.cast || [])
