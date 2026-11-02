@@ -160,7 +160,7 @@ export default function Watchlist() {
                 <div className="row" style={{ marginTop: 6, gap: 6 }}>
                   <button className="btn sm primary" style={{ flex: 1 }}
                     onClick={() => setWatchItem({
-                      titleId: t.id, title: t.title, media_type: t.media_type,
+                      titleId: t.id, tmdb_id: t.tmdb_id, title: t.title, media_type: t.media_type,
                       total_episodes: t.total_episodes, _entries: x.entries,
                     })}>
                     ✓ Watched
@@ -186,7 +186,7 @@ export default function Watchlist() {
         <Roulette
           pool={roulettePool}
           onClose={() => setRoulette(false)}
-          onWatched={(it) => { setRoulette(false); setWatchItem({ titleId: it.titles.id, title: it.titles.title, media_type: it.titles.media_type, total_episodes: it.titles.total_episodes, _entries: byTitle.get(it.titles.id)?.entries || [] }) }}
+          onWatched={(it) => { setRoulette(false); setWatchItem({ titleId: it.titles.id, tmdb_id: it.titles.tmdb_id, title: it.titles.title, media_type: it.titles.media_type, total_episodes: it.titles.total_episodes, _entries: byTitle.get(it.titles.id)?.entries || [] }) }}
         />
       )}
 
