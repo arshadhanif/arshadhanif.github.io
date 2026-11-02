@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { getDetail, getTitleDetailLite } from './tmdb'
+import { getDetail, getTitleDetailLite, getAiredEpisodeList } from './tmdb'
 
 // ---------- Profiles ----------
 
@@ -316,6 +316,30 @@ export async function listEpisodeWatches(titleId, groupId) {
   const { data, error } = await q
   if (error) throw error
   return data
+}
+
+// Tick the next N unwatched AIRED episodes for a show, in order. The
+// "Mark watched" modal only wrote a diary row with an episode count, which left
+// progress, Continue watching and the Completed state untouched (the app reads
+// per-episode ticks, not that number). This makes the count actually mark
+// episodes. Continues from where you are rather than restarting at S1E1, never
+// ticks an unaired episode, and never overwrites an existing episode's date.
+// Returns how many it ticked.
+export async function markNextEpisodes({ titleId, tmdbId, groupId, count, watchedOn, createdBy }) {
+  const n = Math.max(0, Math.floor(Number(count) || 0))
+  if (!n || !titleId || !tmdbId) return 0
+  let aired = []
+  try { aired = await getAiredEpisodeList(tmdbId) } catch { return 0 }
+  if (!aired.length) return 0
+  const seen = await listEpisodeWatches(titleId, groupId).catch(() => [])
+  const done = new Set((seen || []).map((r) => `${r.season_number}-${r.episode_number}`))
+  const next = aired.filter((e) => !done.has(`${e.season}-${e.episode}`)).slice(0, n)
+  if (!next.length) return 0
+  await markEpisodesBulk({
+    titleId, groupId, createdBy,
+    episodes: next.map((e) => ({ season: e.season, episode: e.episode, watchedOn: watchedOn || null })),
+  })
+  return next.length
 }
 
 // Rate a single episode (implies it's watched). Preserves an existing watched date.

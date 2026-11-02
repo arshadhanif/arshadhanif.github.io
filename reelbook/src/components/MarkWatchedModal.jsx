@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Modal, StarRating, TagInput, Combobox } from './ui'
-import { markWatched } from '../lib/db'
+import { markWatched, markNextEpisodes } from '../lib/db'
 import { useAuth } from '../context/AuthContext'
 import { getPref } from '../lib/prefs'
 import { todayLocal } from '../lib/dates'
@@ -46,13 +46,18 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
     setErr(null)
     try {
       const d = resolveDate()
+      // A show can't have more episodes watched than it has aired, so clamp:
+      // the "(of N)" label is a limit, not a hint.
+      const cap = Number(item.total_episodes) || 0
+      let epCount = isTv ? Math.max(0, Math.floor(Number(episodes) || 0)) : 0
+      if (cap > 0) epCount = Math.min(epCount, cap)
       await markWatched({
         seed: item.seed,
         titleId: item.titleId,
         groupId,
         ...d,
         note,
-        episodesWatched: isTv ? Number(episodes) || 0 : 0,
+        episodesWatched: epCount,
         createdBy: user.id,
         ratings,
         visibility,
@@ -61,6 +66,19 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
         tags,
         isRewatch,
       })
+      // Logging N episodes must actually mark them, otherwise progress,
+      // Continue watching and the Completed state never move. Needs a resolved
+      // titleId: markWatched returns the WATCH id, not the title id.
+      if (isTv && epCount > 0 && item.titleId) {
+        await markNextEpisodes({
+          titleId: item.titleId,
+          tmdbId: item.tmdb_id || item.seed?.tmdb_id || null,
+          groupId,
+          count: epCount,
+          watchedOn: d.noDate ? null : d.watchedOn,
+          createdBy: user.id,
+        }).catch(() => {})
+      }
       onSaved?.(groupId)
       onClose()
     } catch (e) {
@@ -113,7 +131,8 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
       {isTv && (
         <div className="field">
           <label>Episodes watched{item.total_episodes ? ` (of ${item.total_episodes})` : ''}</label>
-          <input type="number" min="0" value={episodes} onChange={(e) => setEpisodes(e.target.value)} />
+          <input type="number" min="0" max={item.total_episodes || undefined} value={episodes}
+            onChange={(e) => setEpisodes(e.target.value)} />
         </div>
       )}
 

@@ -369,6 +369,33 @@ export async function getTvStatus(tmdbId) {
   }
 }
 
+// The ordered list of AIRED episodes as {season, episode} pairs. Lets a bulk
+// "I watched N episodes" tick real episode numbers instead of only storing a
+// count, and never ticks an episode that has not aired yet.
+export async function getAiredEpisodeList(tmdbId) {
+  const data = await tmdb(`/tv/${tmdbId}`)
+  const last = data.last_episode_to_air
+  const seasons = (data.seasons || [])
+    .filter((s) => (s.season_number || 0) >= 1)
+    .sort((a, b) => a.season_number - b.season_number)
+  const out = []
+  for (const s of seasons) {
+    if (last && s.season_number > last.season_number) break
+    const cap = last && s.season_number === last.season_number
+      ? (last.episode_number || 0)
+      : (s.episode_count || 0)
+    for (let e = 1; e <= cap; e++) out.push({ season: s.season_number, episode: e })
+  }
+  // Nothing has aired yet: fall back to the announced run so a miniseries that
+  // TMDB has not dated still gets sensible episode numbers.
+  if (!out.length && !last) {
+    for (const s of seasons) {
+      for (let e = 1; e <= (s.episode_count || 0); e++) out.push({ season: s.season_number, episode: e })
+    }
+  }
+  return out
+}
+
 // A person (actor / director / crew) with their full filmography.
 export async function getPerson(id) {
   const d = await tmdb(`/person/${id}`, { append_to_response: 'combined_credits,external_ids' })

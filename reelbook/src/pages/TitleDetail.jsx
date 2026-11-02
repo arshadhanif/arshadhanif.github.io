@@ -293,11 +293,17 @@ export default function TitleDetail() {
 
       {watchModal && (
         <MarkWatchedModal
-          item={{ titleId, title: full.title, media_type: full.media_type, total_episodes: full.total_episodes, rewatchSuggested: watches.length > 0 }}
+          item={{ titleId, tmdb_id: full.tmdb_id, title: full.title, media_type: full.media_type, total_episodes: full.total_episodes, rewatchSuggested: watches.length > 0 }}
           groups={groups}
           profiles={profiles}
           onClose={() => setWatchModal(false)}
-          onSaved={() => { loadWatches(titleId); toast('Saved to your diary') }}
+          onSaved={() => {
+            loadWatches(titleId)
+            // The episode ticks the modal just wrote drive the progress chip and
+            // the Mark-watched button's own label, so refresh them too.
+            if (full.media_type === 'tv') getEpisodeWatchSpan(titleId).then(setEpSpan).catch(() => {})
+            toast('Saved to your diary')
+          }}
         />
       )}
 
