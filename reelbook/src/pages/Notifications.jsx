@@ -5,6 +5,12 @@ import { initBaselines, buildNotifications, dismiss, markAllRead, syncNotifState
 import { Poster, Spinner, Empty, TitleLink } from '../components/ui'
 import { fmtDate } from '../lib/dates'
 
+// How many shows get a live TMDB lookup, and how many at a time. tracked_shows()
+// returns shows most recently watched first, so these are the ones where an
+// "airing next" date is actually useful.
+const LIVE_LIMIT = 40
+const LIVE_BATCH = 6
+
 // Reject if a promise takes too long, so one hung TMDB request can't stall the
 // whole background refresh (the underlying fetch is left to resolve on its own).
 function withTimeout(promise, ms) {
@@ -16,7 +22,7 @@ function withTimeout(promise, ms) {
 
 export default function Notifications() {
   const [shows, setShows] = useState([])
-  const [notif, setNotif] = useState({ newItems: [], comingItems: [], catchItems: [], unread: 0 })
+  const [notif, setNotif] = useState({ newItems: [], comingItems: [], catchItems: [], catchTotal: 0, unread: 0 })
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('new')
 
@@ -25,8 +31,12 @@ export default function Notifications() {
     ;(async () => {
       try {
         await syncNotifState().catch(() => {})
+        // Every tracked show, not an arbitrary sample. The cached pass below is
+        // free (one RPC row per show) and the nightly push job now keeps
+        // total_episodes fresh, so a show no longer has to win a 60-row lottery
+        // to have its new episodes noticed.
         let tracked = []
-        try { tracked = (await listTrackedShows()).slice(0, 60) } catch { tracked = [] }
+        try { tracked = await listTrackedShows() } catch { tracked = [] }
         // Render immediately from cached episode counts. The page must never
         // block on TMDB: a single hung request would otherwise freeze it.
         const base = tracked.map((s) => ({
@@ -41,15 +51,25 @@ export default function Notifications() {
           setTab(n.newItems.length ? 'new' : n.comingItems.length ? 'coming' : 'catch')
           setLoading(false)
         }
-        // Enrich with live TMDB status (aired counts + next episode) in the
-        // background, each with a timeout, keeping the cached row on failure.
-        const out = await Promise.allSettled(base.map(async (s) => {
-          const st = await withTimeout(getTvStatus(s.tmdb_id), 8000)
-          const aired = st.aired_episodes ?? st.number_of_episodes ?? s.aired
-          if (aired && aired !== s.aired) setTitleTotalEpisodes(s.id, aired).catch(() => {})
-          return { ...s, aired, next: st.next_episode }
-        }))
-        const objs = out.map((r, i) => (r.status === 'fulfilled' ? r.value : base[i]))
+        // Enrich with live TMDB status (aired counts + next episode). Only the
+        // most recently watched shows get a live call ("Coming up" needs the
+        // next air date, which nothing caches), and they go in small batches
+        // rather than all at once: firing 60 parallel requests was what got us
+        // rate-limited, which is how live counts went missing in the first
+        // place. Cached rows are kept for everything else and on failure.
+        const live = base.slice(0, LIVE_LIMIT)
+        const objs = base.slice()
+        for (let i = 0; i < live.length; i += LIVE_BATCH) {
+          if (!alive) return
+          const chunk = live.slice(i, i + LIVE_BATCH)
+          const out = await Promise.allSettled(chunk.map(async (s) => {
+            const st = await withTimeout(getTvStatus(s.tmdb_id), 8000)
+            const aired = st.aired_episodes ?? st.number_of_episodes ?? s.aired
+            if (aired && aired !== s.aired) setTitleTotalEpisodes(s.id, aired).catch(() => {})
+            return { ...s, aired, next: st.next_episode }
+          }))
+          out.forEach((r, j) => { if (r.status === 'fulfilled') objs[i + j] = r.value })
+        }
         if (!alive) return
         setShows(objs)
         initBaselines(objs)
@@ -70,8 +90,9 @@ export default function Notifications() {
   const TABS = [
     ['new', 'New', notif.newItems.length],
     ['coming', 'Coming up', notif.comingItems.length],
-    ['catch', 'Catch up', notif.catchItems.length],
+    ['catch', 'Catch up', notif.catchTotal ?? notif.catchItems.length],
   ]
+  const catchHidden = Math.max(0, (notif.catchTotal ?? 0) - notif.catchItems.length)
   const list = tab === 'new' ? notif.newItems : tab === 'coming' ? notif.comingItems : notif.catchItems
 
   return (
@@ -116,6 +137,11 @@ export default function Notifications() {
               )}
             </div>
           ))}
+          {tab === 'catch' && catchHidden > 0 && (
+            <div className="faint" style={{ textAlign: 'center', padding: '6px 0' }}>
+              + {catchHidden} more show{catchHidden > 1 ? 's' : ''} with episodes left, biggest backlogs first.
+            </div>
+          )}
         </div>
       )}
     </div>
