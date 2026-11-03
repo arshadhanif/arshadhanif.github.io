@@ -5,8 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { getPref } from '../lib/prefs'
 import { todayLocal } from '../lib/dates'
 
-const WHERE_OPTIONS = ['Cinema / Theatre', 'TV', 'Laptop', 'Computer', 'Mobile', 'Tablet', 'Projector', 'Other']
-const SERVICE_OPTIONS = ['Netflix', 'OSN', 'Prime Video', 'Disney+', 'Apple TV+', 'Shahid', 'StarzPlay', 'Max', 'Hulu', 'YouTube', 'Cinema', 'Other']
+import { WHERE_OPTIONS, SERVICE_OPTIONS, lastWatchContext, rememberWatchContext } from '../lib/watchContext'
 
 // item: { seed?, titleId?, title, media_type, total_episodes? }
 export default function MarkWatchedModal({ item, groups, profiles, onClose, onSaved }) {
@@ -26,8 +25,11 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
   const [episodes, setEpisodes] = useState(0)
   const [ratings, setRatings] = useState({}) // {profileId: score}
   const [visibility, setVisibility] = useState('private')
-  const [whereWatched, setWhereWatched] = useState('')
-  const [service, setService] = useState('')
+  // Default to whatever you picked last, rather than making you re-pick it on
+  // every single log.
+  const lastCtx = lastWatchContext()
+  const [whereWatched, setWhereWatched] = useState(lastCtx.whereWatched)
+  const [service, setService] = useState(lastCtx.service)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState(null)
 
@@ -51,6 +53,9 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
       const cap = Number(item.total_episodes) || 0
       let epCount = isTv ? Math.max(0, Math.floor(Number(episodes) || 0)) : 0
       if (cap > 0) epCount = Math.min(epCount, cap)
+      const where = whereWatched || null
+      const svc = service.trim() || null
+      rememberWatchContext({ whereWatched: where, service: svc })
       await markWatched({
         seed: item.seed,
         titleId: item.titleId,
@@ -61,8 +66,8 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
         createdBy: user.id,
         ratings,
         visibility,
-        whereWatched: whereWatched || null,
-        service: service.trim() || null,
+        whereWatched: where,
+        service: svc,
         tags,
         isRewatch,
       })
@@ -77,6 +82,10 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
           count: epCount,
           watchedOn: d.noDate ? null : d.watchedOn,
           createdBy: user.id,
+          // The episodes carry the same where/service as the diary row, so a
+          // TV log is counted on the right platform episode by episode.
+          whereWatched: where,
+          service: svc,
         }).catch(() => {})
       }
       onSaved?.(groupId)

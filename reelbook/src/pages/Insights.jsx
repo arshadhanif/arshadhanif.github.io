@@ -236,6 +236,38 @@ export default function Insights() {
                   onPick={({ entries }) => setEpDrill({ title: entries[0]?.titles?.title || 'Show', eps: entries })} /></div>
               </Section>
 
+              <Section title="Episodes by service">
+                <div className="card">
+                  {es.epServices.length > 0 ? (
+                    <>
+                      <Bars items={es.epServices} accent="var(--accent-2)"
+                        onPick={({ title, entries }) => setEpDrill({ title, eps: entries })} />
+                      <div className="faint" style={{ marginTop: 8, fontSize: 12 }}>
+                        {es.epServices.map((b) => `${b.label}: ${b.hours}h`).join(' · ')}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="faint">
+                      No episodes tagged with a service yet. Pick one under “Watching this on” on a
+                      show's page and the episodes you tick get labelled from then on.
+                    </div>
+                  )}
+                  {es.total > 0 && (
+                    <div className="faint" style={{ marginTop: 8, fontSize: 12 }}>
+                      {es.labelled} of {es.total} episodes labelled
+                      {es.labelled < es.total ? ' · the rest predate per-episode tagging' : ''}
+                    </div>
+                  )}
+                </div>
+              </Section>
+
+              {es.epWheres.length > 0 && (
+                <Section title="Episodes by device">
+                  <div className="card"><Bars items={es.epWheres} accent="var(--purple)"
+                    onPick={({ title, entries }) => setEpDrill({ title, eps: entries })} /></div>
+                </Section>
+              )}
+
               <YearHeatmap days={es.heatmap} year={es.hmYear} onPick={(day, list) => list.length && setEpDrill({ title: `Episodes on ${fmtDate(day)}`, eps: list })} />
             </Section>
           )}
@@ -281,8 +313,8 @@ export default function Insights() {
 
           <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(280px,1fr))' }}>
             {s.genres.length > 0 && <Section title="Top genres"><div className="card"><Bars items={s.genres} onPick={setDrill} /></div></Section>}
-            {s.services.length > 0 && <Section title="By streaming service"><div className="card"><Bars items={s.services} accent="var(--accent-2)" onPick={setDrill} /></div></Section>}
-            {s.wheres.length > 0 && <Section title="Where you watch"><div className="card"><Bars items={s.wheres} accent="var(--purple)" onPick={setDrill} /></div></Section>}
+            {s.services.length > 0 && <Section title="By service (titles logged)"><div className="card"><Bars items={s.services} accent="var(--accent-2)" onPick={setDrill} /></div></Section>}
+            {s.wheres.length > 0 && <Section title="Where you watch (titles logged)"><div className="card"><Bars items={s.wheres} accent="var(--purple)" onPick={setDrill} /></div></Section>}
             {s.decadesBars.length > 0 && <Section title="By decade"><div className="card"><Bars items={s.decadesBars} accent="var(--green)" onPick={setDrill} /></div></Section>}
             {!groupId && s.byGroup.length > 1 && <Section title="By group"><div className="card"><Bars items={s.byGroup} onPick={setDrill} /></div></Section>}
           </div>
@@ -528,10 +560,27 @@ function computeEpisodes(eps) {
   const topShows = [...byShow.values()].map((list) => ({ label: list[0]?.titles?.title || 'N/A', value: list.length, entries: list }))
     .sort((a, b) => b.value - a.value).slice(0, 8)
 
+  // Where/on what service the episodes were actually watched. Counted per
+  // episode, not per show: the diary-row version of this card weighted a
+  // 60-episode series the same as a single film.
+  const epBucket = (keyFn) => {
+    const m = new Map()
+    for (const e of eps) { const k = keyFn(e); if (!k) continue; if (!m.has(k)) m.set(k, []); m.get(k).push(e) }
+    return [...m.entries()]
+      .map(([label, list]) => ({
+        label, value: list.length, entries: list,
+        hours: Math.round(list.reduce((a, e) => a + (e.titles?.runtime || 40), 0) / 60),
+      }))
+      .sort((a, b) => b.value - a.value).slice(0, 10)
+  }
+  const epServices = epBucket((e) => e.service)
+  const epWheres = epBucket((e) => e.where_watched)
+  const labelled = eps.filter((e) => e.service || e.where_watched).length
+
   let busiest = null
   for (const [day, list] of byDay) if (!busiest || list.length > busiest.count) busiest = { day, count: list.length }
 
-  return { total: eps.length, hours, showCount: byShow.size, months, monthMax, topShows, heatmap: byDay, hmYear: now.getFullYear(), busiest }
+  return { total: eps.length, hours, showCount: byShow.size, months, monthMax, topShows, heatmap: byDay, hmYear: now.getFullYear(), busiest, epServices, epWheres, labelled }
 }
 
 function avgOfEntry(e) {
