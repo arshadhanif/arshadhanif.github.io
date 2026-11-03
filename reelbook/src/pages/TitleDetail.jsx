@@ -4,6 +4,7 @@ import { getFullDetail, getSeason, getRecommendations, getEpisodeExternalIds, IM
 import {
   ensureTitleFromFull, getWatchesForTitle, getTitleListMembership, setTitleList,
   listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, markEpisodesBulk, unmarkAllEpisodes, setEpisodeRating, setEpisodeWatchedDate,
+  setEpisodeContext, setEpisodesContext,
   getTitleServices, setTitleServices, getStreamingAvailability, getEpisodeWatchSpan,
   getImdbRating, getImdbSeasonRatings, getSeasonRatings, setSeasonRating,
   getTitleTrivia, getTitleQuotes, getSimilarByTaste,
@@ -15,6 +16,7 @@ import { Poster, Spinner, DualScore, Modal, TitleLink, StarRating, ScrollRow } f
 import MarkWatchedModal from '../components/MarkWatchedModal'
 import AddToCollectionModal from '../components/AddToCollectionModal'
 import { getPref, DEFAULT_REGION } from '../lib/prefs'
+import { WHERE_OPTIONS, SERVICE_OPTIONS, lastWatchContext, rememberWatchContext } from '../lib/watchContext'
 import { formatWatched, fmtDate, todayLocal } from '../lib/dates'
 
 export default function TitleDetail() {
@@ -586,6 +588,11 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
   const [epRatings, setEpRatings] = useState({})       // "s-e" -> rating
   const [epDates, setEpDates] = useState({})           // "s-e" -> watched_on
   const [epRewatch, setEpRewatch] = useState({})       // "s-e" -> rewatch_count
+  const [epCtx, setEpCtx] = useState({})               // "s-e" -> { where, service }
+  // The where/service applied to episodes you tick from here. Seeded from this
+  // show's own episodes on load, falling back to whatever you picked last.
+  const [ctx, setCtx] = useState(() => lastWatchContext())
+  const [ctxBusy, setCtxBusy] = useState(false)
   const [seasonRatings, setSeasonRatings] = useState({}) // season -> { profileId: score }
   const [openSeason, setOpenSeason] = useState(seasons[0]?.season_number ?? null)
   const [episodesBySeason, setEpisodesBySeason] = useState({})
@@ -620,7 +627,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
   }
 
   const reload = useCallback(async () => {
-    if (!trackGroupId) { setWatched(new Set()); setEpRatings({}); setEpDates({}); setEpRewatch({}); setSeasonRatings({}); return }
+    if (!trackGroupId) { setWatched(new Set()); setEpRatings({}); setEpDates({}); setEpRewatch({}); setEpCtx({}); setSeasonRatings({}); return }
     const rows = await listEpisodeWatches(titleId, trackGroupId)
     const watchedSet = new Set(rows.map((r) => `${r.season_number}-${r.episode_number}`))
     setWatched(watchedSet)
@@ -628,6 +635,15 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
     setEpRatings(Object.fromEntries(rows.filter((r) => r.rating != null).map((r) => [`${r.season_number}-${r.episode_number}`, r.rating])))
     setEpDates(Object.fromEntries(rows.filter((r) => r.watched_on).map((r) => [`${r.season_number}-${r.episode_number}`, r.watched_on])))
     setEpRewatch(Object.fromEntries(rows.filter((r) => r.rewatch_count > 0).map((r) => [`${r.season_number}-${r.episode_number}`, r.rewatch_count])))
+    setEpCtx(Object.fromEntries(rows
+      .filter((r) => r.where_watched || r.service)
+      .map((r) => [`${r.season_number}-${r.episode_number}`, { where: r.where_watched || '', service: r.service || '' }])))
+    // Seed the picker from this show's latest labelled episode, so continuing a
+    // series keeps its platform instead of whatever you watched last elsewhere.
+    const labelled = rows
+      .filter((r) => r.where_watched || r.service)
+      .sort((a, b) => String(b.watched_on || '').localeCompare(String(a.watched_on || '')) || b.season_number - a.season_number || b.episode_number - a.episode_number)[0]
+    if (labelled) setCtx({ whereWatched: labelled.where_watched || '', service: labelled.service || '' })
     try {
       const sr = await getSeasonRatings(titleId, trackGroupId)
       const map = {}
@@ -674,11 +690,20 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
     if (next.has(key)) {
       next.delete(key); setWatched(next)
       setEpDates((m) => { const n = { ...m }; delete n[key]; return n })
+      setEpCtx((m) => { const n = { ...m }; delete n[key]; return n })
       await unmarkEpisode({ titleId, groupId: trackGroupId, season, episode: ep }).catch(reload)
     } else {
       next.add(key); setWatched(next)
       setEpDates((m) => ({ ...m, [key]: today }))   // default to today, editable below
-      await markEpisode({ titleId, groupId: trackGroupId, season, episode: ep, watchedOn: today, createdBy: userId }).catch(reload)
+      // Stamp the episode with where/on what you're watching this show, so
+      // platform totals are built from real per-episode data.
+      if (ctx.whereWatched || ctx.service) {
+        setEpCtx((m) => ({ ...m, [key]: { where: ctx.whereWatched, service: ctx.service } }))
+      }
+      await markEpisode({
+        titleId, groupId: trackGroupId, season, episode: ep, watchedOn: today, createdBy: userId,
+        whereWatched: ctx.whereWatched || null, service: ctx.service || null,
+      }).catch(reload)
     }
   }
   async function rate(season, ep, score) {
@@ -697,8 +722,52 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
     if (date) setWatched((w) => new Set(w).add(key))
     await setEpisodeWatchedDate({ titleId, groupId: trackGroupId, season, episode: ep, watchedOn: date || null, createdBy: userId }).catch(reload)
   }
+  // Change the where/service that new ticks get stamped with. Remembered as
+  // your last choice so the next show starts from it too.
+  function pickCtx(patch) {
+    const next = { ...ctx, ...patch }
+    setCtx(next)
+    rememberWatchContext(next)
+  }
+  // Label the episodes of this show you've already ticked. "Fill the blanks"
+  // keeps any episode you labelled differently; the other mode overwrites.
+  async function applyCtxToShow(onlyEmpty) {
+    if (!trackGroupId || (!ctx.whereWatched && !ctx.service)) return
+    const label = [ctx.service, ctx.whereWatched].filter(Boolean).join(' · ')
+    if (!onlyEmpty && !confirm(`Set every watched episode of this show to ${label}? This replaces labels already on them.`)) return
+    setCtxBusy(true)
+    try {
+      const n = await setEpisodesContext({
+        titleId, groupId: trackGroupId,
+        whereWatched: ctx.whereWatched || undefined,
+        service: ctx.service || undefined,
+        onlyEmpty, createdBy: userId,
+      })
+      await reload()
+      toast(n > 0 ? `Labelled ${n} episode${n === 1 ? '' : 's'} as ${label}` : 'Nothing to label')
+    } catch (e) { toast(e.message || 'Could not label episodes', 'err') } finally { setCtxBusy(false) }
+  }
+  // Override one episode, for when a single episode was watched elsewhere.
+  async function setEpContext(season, ep, patch) {
+    if (!trackGroupId) return
+    const key = `${season}-${ep}`
+    const cur = epCtx[key] || { where: '', service: '' }
+    const next = { ...cur, ...patch }
+    setEpCtx((m) => ({ ...m, [key]: next }))
+    setWatched((w) => new Set(w).add(key))
+    await setEpisodeContext({
+      titleId, groupId: trackGroupId, season, episode: ep, createdBy: userId,
+      whereWatched: next.where, service: next.service,
+      ...(epDates[key] ? {} : { watchedOn: today }),
+    }).catch(reload)
+  }
+
   async function markWholeSeason(season, eps) {
-    await markSeason({ titleId, groupId: trackGroupId, season, episodes: eps.map((e) => e.episode_number), watchedOn: today, createdBy: userId })
+    await markSeason({
+      titleId, groupId: trackGroupId, season, episodes: eps.map((e) => e.episode_number),
+      watchedOn: today, createdBy: userId,
+      whereWatched: ctx.whereWatched || null, service: ctx.service || null,
+    })
     reload(); toast(`Marked ${eps.length} episodes watched`)
   }
   async function markEntireSeries() {
@@ -709,7 +778,10 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
       // single bulk upsert instead of one round-trip per season (much faster).
       const lists = await Promise.all(seasons.map(async (s) => episodesBySeason[s.season_number] || (await getSeason(tmdbId, s.season_number))))
       const all = []
-      seasons.forEach((s, i) => (lists[i] || []).forEach((e) => all.push({ season: s.season_number, episode: e.episode_number, watchedOn: today })))
+      seasons.forEach((s, i) => (lists[i] || []).forEach((e) => all.push({
+        season: s.season_number, episode: e.episode_number, watchedOn: today,
+        whereWatched: ctx.whereWatched || null, service: ctx.service || null,
+      })))
       if (all.length) await markEpisodesBulk({ titleId, groupId: trackGroupId, episodes: all, createdBy: userId })
       await reload(); toast(`Marked ${all.length} episodes watched`)
     } catch { toast('Could not mark all', 'err') } finally { setBulkBusy(false) }
@@ -737,10 +809,43 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
       </div>
 
       {trackGroupId && (
-        <div className="row" style={{ gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-          <button className="btn sm primary" disabled={bulkBusy} onClick={markEntireSeries}>✓ Mark entire series watched</button>
-          <button className="btn sm" disabled={bulkBusy} onClick={clearSeries}>Clear all</button>
-        </div>
+        <>
+          <div className="card" style={{ marginBottom: 12 }}>
+            <div className="faint" style={{ marginBottom: 8 }}>
+              Watching this on {(ctx.whereWatched || ctx.service) ? '' : '(not set)'}
+            </div>
+            <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <select value={ctx.service} style={{ width: 'auto' }}
+                onChange={(e) => pickCtx({ service: e.target.value })}>
+                <option value="">Service…</option>
+                {SERVICE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+              <select value={ctx.whereWatched} style={{ width: 'auto' }}
+                onChange={(e) => pickCtx({ whereWatched: e.target.value })}>
+                <option value="">Where…</option>
+                {WHERE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div className="faint" style={{ margin: '8px 0 0', fontSize: 12 }}>
+              Episodes you tick from here get stamped with this. Change it mid-series and only
+              later episodes follow.
+            </div>
+            {(ctx.whereWatched || ctx.service) && watched.size > 0 && (
+              <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                <button className="btn sm" disabled={ctxBusy} onClick={() => applyCtxToShow(true)}>
+                  Label unlabelled episodes
+                </button>
+                <button className="btn sm ghost" disabled={ctxBusy} onClick={() => applyCtxToShow(false)}>
+                  Relabel all {watched.size}
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="row" style={{ gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+            <button className="btn sm primary" disabled={bulkBusy} onClick={markEntireSeries}>✓ Mark entire series watched</button>
+            <button className="btn sm" disabled={bulkBusy} onClick={clearSeries}>Clear all</button>
+          </div>
+        </>
       )}
 
       <EpisodeRatingGraph epRatings={epRatings} />
@@ -834,6 +939,8 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
                                 <div className="ep2-watched">
                                   ✓ Watched {epDates[key] ? fmtDate(epDates[key]) : '(date not set)'}
                                   {trackGroup && <> · <span style={{ color: trackGroup.color }}>{trackGroup.name}</span></>}
+                                  {epCtx[key]?.service ? ` · ${epCtx[key].service}` : ''}
+                                  {epCtx[key]?.where ? ` · ${epCtx[key].where}` : ''}
                                 </div>
                               )}
                               {isExp && e.overview && <p className="ep2-ov">{e.overview}</p>}
@@ -853,6 +960,20 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
                                     <div><dt>List / watched by</dt><dd>
                                       <select className="ep2-date" value={trackGroupId} onChange={(ev) => setTrackGroupId(ev.target.value)}>
                                         {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                                      </select>
+                                    </dd></div>
+                                    <div><dt>Service</dt><dd>
+                                      <select className="ep2-date" value={epCtx[key]?.service || ''} disabled={!trackGroupId}
+                                        onChange={(ev) => setEpContext(s.season_number, e.episode_number, { service: ev.target.value })}>
+                                        <option value="">Not set</option>
+                                        {SERVICE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                                      </select>
+                                    </dd></div>
+                                    <div><dt>Where</dt><dd>
+                                      <select className="ep2-date" value={epCtx[key]?.where || ''} disabled={!trackGroupId}
+                                        onChange={(ev) => setEpContext(s.season_number, e.episode_number, { where: ev.target.value })}>
+                                        <option value="">Not set</option>
+                                        {WHERE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
                                       </select>
                                     </dd></div>
                                   </dl>

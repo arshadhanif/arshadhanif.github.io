@@ -310,7 +310,7 @@ export async function getWatchesForTitle(titleId) {
 export async function listEpisodeWatches(titleId, groupId) {
   let q = supabase
     .from('episode_watches')
-    .select('id, season_number, episode_number, watched_on, rating, rewatch_count')
+    .select('id, season_number, episode_number, watched_on, rating, rewatch_count, where_watched, service')
     .eq('title_id', titleId)
   q = groupId ? q.eq('group_id', groupId) : q.is('group_id', null)
   const { data, error } = await q
@@ -325,7 +325,7 @@ export async function listEpisodeWatches(titleId, groupId) {
 // episodes. Continues from where you are rather than restarting at S1E1, never
 // ticks an unaired episode, and never overwrites an existing episode's date.
 // Returns how many it ticked.
-export async function markNextEpisodes({ titleId, tmdbId, groupId, count, watchedOn, createdBy }) {
+export async function markNextEpisodes({ titleId, tmdbId, groupId, count, watchedOn, createdBy, whereWatched, service }) {
   const n = Math.max(0, Math.floor(Number(count) || 0))
   if (!n || !titleId || !tmdbId) return 0
   let aired = []
@@ -337,9 +337,70 @@ export async function markNextEpisodes({ titleId, tmdbId, groupId, count, watche
   if (!next.length) return 0
   await markEpisodesBulk({
     titleId, groupId, createdBy,
-    episodes: next.map((e) => ({ season: e.season, episode: e.episode, watchedOn: watchedOn || null })),
+    episodes: next.map((e) => ({
+      season: e.season, episode: e.episode, watchedOn: watchedOn || null,
+      whereWatched: whereWatched || null, service: service || null,
+    })),
   })
   return next.length
+}
+
+// Set where/on what service one episode was watched. Upserts, so it works
+// whether the episode is already ticked or is being ticked now. Passing an
+// empty string clears that field; passing undefined leaves it alone.
+export async function setEpisodeContext({ titleId, groupId, season, episode, whereWatched, service, watchedOn, createdBy }) {
+  const row = {
+    title_id: titleId, group_id: groupId,
+    season_number: season, episode_number: episode,
+    created_by: createdBy,
+  }
+  if (watchedOn !== undefined) row.watched_on = watchedOn || null
+  if (whereWatched !== undefined) row.where_watched = whereWatched || null
+  if (service !== undefined) row.service = service || null
+  const { error } = await supabase.from('episode_watches').upsert(row, {
+    onConflict: 'title_id,group_id,season_number,episode_number',
+  })
+  if (error) throw error
+}
+
+// Stamp where/service onto the episodes of a show you've already watched, so a
+// backlog of ticks can be labelled in one go instead of episode by episode.
+// Only touches episodes that are already ticked; pass a season to limit it.
+// Returns how many rows were updated.
+export async function setEpisodesContext({ titleId, groupId, season = null, whereWatched, service, onlyEmpty = false, createdBy }) {
+  // The RLS policy's WITH CHECK requires the resulting row to be attributed to
+  // the caller, so editing someone else's tick has to re-attribute it. Without
+  // this the update is not an error, it just matches zero rows, which would
+  // look like the button doing nothing.
+  const attrib = createdBy ? { created_by: createdBy } : {}
+  const base = (builder) => {
+    let q = builder.eq('title_id', titleId)
+    q = groupId ? q.eq('group_id', groupId) : q.is('group_id', null)
+    if (season != null) q = q.eq('season_number', season)
+    return q
+  }
+  const touched = new Set()
+  const run = async (patch, emptyCol) => {
+    let q = base(supabase.from('episode_watches').update({ ...patch, ...attrib }))
+    // "Only fill the blanks" mode is per field, so an episode that already has
+    // a service but no device still gets its device filled in, and neither
+    // field overwrites one you set deliberately.
+    if (emptyCol) q = q.is(emptyCol, null)
+    const { data, error } = await q.select('id')
+    if (error) throw error
+    for (const r of data || []) touched.add(r.id)
+  }
+  if (onlyEmpty) {
+    if (service !== undefined) await run({ service: service || null }, 'service')
+    if (whereWatched !== undefined) await run({ where_watched: whereWatched || null }, 'where_watched')
+  } else {
+    const patch = {}
+    if (whereWatched !== undefined) patch.where_watched = whereWatched || null
+    if (service !== undefined) patch.service = service || null
+    if (!Object.keys(patch).length) return 0
+    await run(patch, null)
+  }
+  return touched.size
 }
 
 // Rate a single episode (implies it's watched). Preserves an existing watched date.
@@ -392,12 +453,14 @@ export async function listAllSeasonRatings() {
     { limit: 100000, order: (q) => q.order('id', { ascending: true }) })
 }
 
-export async function markEpisode({ titleId, groupId, season, episode, watchedOn, createdBy }) {
+export async function markEpisode({ titleId, groupId, season, episode, watchedOn, createdBy, whereWatched, service }) {
   const { error } = await supabase.from('episode_watches').upsert(
     {
       title_id: titleId, group_id: groupId,
       season_number: season, episode_number: episode,
       watched_on: watchedOn || undefined, created_by: createdBy,
+      ...(whereWatched !== undefined ? { where_watched: whereWatched || null } : {}),
+      ...(service !== undefined ? { service: service || null } : {}),
     },
     { onConflict: 'title_id,group_id,season_number,episode_number' }
   )
@@ -450,6 +513,8 @@ export async function markEpisodesBulk({ titleId, groupId, episodes, createdBy, 
     watched_on: e.watchedOn || null, created_by: createdBy, import_batch: importBatch,
     rewatch_count: e.rewatchCount || 0,
     ...(e.rating != null ? { rating: e.rating } : {}),
+    ...(e.whereWatched ? { where_watched: e.whereWatched } : {}),
+    ...(e.service ? { service: e.service } : {}),
   }))
   for (let i = 0; i < rows.length; i += 500) {
     const { error } = await supabase
@@ -461,10 +526,12 @@ export async function markEpisodesBulk({ titleId, groupId, episodes, createdBy, 
   }
 }
 
-export async function markSeason({ titleId, groupId, season, episodes, watchedOn, createdBy }) {
+export async function markSeason({ titleId, groupId, season, episodes, watchedOn, createdBy, whereWatched, service }) {
   const rows = episodes.map((ep) => ({
     title_id: titleId, group_id: groupId, season_number: season,
     episode_number: ep, watched_on: watchedOn || undefined, created_by: createdBy,
+    ...(whereWatched ? { where_watched: whereWatched } : {}),
+    ...(service ? { service } : {}),
   }))
   if (!rows.length) return
   const { error } = await supabase
@@ -912,6 +979,7 @@ async function pagedSelect(table, cols, { groupId = null, limit = 1000, order })
 // Episode-level diary: individual episode watches, newest first, with title + group.
 export async function listEpisodeDiary({ groupId = null, limit = 400 } = {}) {
   const cols = 'id, season_number, episode_number, watched_on, rating, rewatch_count, created_at, created_by, group_id, ' +
+    'where_watched, service, ' +
     'titles(id, tmdb_id, title, media_type, poster_path, year, runtime), groups(id, name, color)'
   return pagedSelect('episode_watches', cols, {
     groupId, limit,
