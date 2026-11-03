@@ -5,7 +5,11 @@
 // The public API stays synchronous (it reads/writes the local cache so the UI
 // is instant); every mutation also writes through to the server in the
 // background, and `syncNotifState()` hydrates the cache from the server on load.
-import { loadNotifState, saveNotifState, saveNotifBaselines } from './db'
+import { loadNotifState, saveNotifState, saveNotifBaselines, saveNotifStates } from './db'
+
+// "Catch up" is a nudge, not an archive: every show you ever logged an episode
+// of has unwatched episodes, so show the biggest backlogs and stop there.
+const CATCH_MAX = 50
 
 const K_BASE = 'reelbook.notif.baseline'     // titleId -> aired count you've acknowledged
 const K_DISM = 'reelbook.notif.dismissed'    // notification key -> 1
@@ -71,9 +75,10 @@ export function buildNotifications(shows) {
     if (unwatched > 0) catchItems.push({ ...s, unwatched })
   }
   catchItems.sort((a, b2) => b2.unwatched - a.unwatched)
+  const catchTotal = catchItems.length
   const unread = newItems.length + comingItems.length
   wr(K_UNREAD, unread)
-  return { newItems, comingItems, catchItems, unread }
+  return { newItems, comingItems, catchItems: catchItems.slice(0, CATCH_MAX), catchTotal, unread }
 }
 
 export function getUnread() { return Number(localStorage.getItem(K_UNREAD) || 0) }
@@ -90,13 +95,15 @@ export function markAllRead(shows) {
   for (const s of shows) if (s.aired != null) { b[s.id] = s.aired; baselineUpdates[s.id] = s.aired }
   for (const s of shows) if (s.next) d[nextKey(s)] = 1
   wr(K_BASE, b); wr(K_DISM, d); wr(K_UNREAD, 0)
-  // Write-through: one upsert per touched title carrying its new baseline + dismissals.
+  // Write-through in one batched upsert rather than a request per title.
+  const rows = []
   for (const s of shows) {
     if (s.aired == null && !s.next) continue
-    saveNotifState({
+    rows.push({
       titleId: s.id,
       baselineAired: s.aired != null ? s.aired : undefined,
       dismissed: dismissedForTitle(s.id),
-    }).catch(() => {})
+    })
   }
+  saveNotifStates(rows).catch(() => {})
 }

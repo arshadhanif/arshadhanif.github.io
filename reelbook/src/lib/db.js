@@ -1005,6 +1005,28 @@ export async function saveNotifBaselines(map) {
   if (error) throw error
 }
 
+// Bulk upsert several titles' notification state in one request. "Mark all read"
+// used to fire one request per show, which was fine while the page only looked
+// at 60 shows and is not now that it looks at all of them.
+export async function saveNotifStates(items) {
+  const list = (items || []).filter((r) => r && r.titleId)
+  if (!list.length) return
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  const now = new Date().toISOString()
+  const rows = list.map((r) => {
+    const row = { user_id: user.id, title_id: r.titleId, updated_at: now }
+    if (r.baselineAired != null) row.baseline_aired = r.baselineAired
+    if (r.dismissed != null) row.dismissed = r.dismissed
+    return row
+  })
+  for (let i = 0; i < rows.length; i += 500) {
+    const { error } = await supabase.from('notif_state')
+      .upsert(rows.slice(i, i + 500), { onConflict: 'user_id,title_id', ignoreDuplicates: false })
+    if (error) throw error
+  }
+}
+
 // Set of TMDB ids the household has logged (watched or watchlisted) - used to
 // badge titles you've seen on person / discovery pages.
 export async function getLoggedTmdbIds() {
