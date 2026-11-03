@@ -65,7 +65,13 @@ export function buildNotifications(shows) {
   const newItems = [], comingItems = [], catchItems = []
   for (const s of shows) {
     const base = b[s.id] ?? s.aired ?? 0
-    const newCount = s.aired != null ? Math.max(0, s.aired - base) : 0
+    // Count from whichever is further along: what you've acknowledged on this
+    // page, or what you've actually watched. Watching an episode is an
+    // acknowledgement too, so an episode logged straight from the show page
+    // shouldn't keep sitting here as "new", and the count of a later airing
+    // shouldn't include it either.
+    const from = Math.max(base, s.watched || 0)
+    const newCount = s.aired != null ? Math.max(0, s.aired - from) : 0
     if (newCount > 0 && !d[`new:${s.id}`]) newItems.push({ ...s, count: newCount, key: `new:${s.id}` })
     if (s.next?.air_date) {
       const t = new Date(s.next.air_date + 'T00:00:00').getTime()
