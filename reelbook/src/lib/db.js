@@ -404,7 +404,7 @@ export async function setEpisodesContext({ titleId, groupId, season = null, wher
 }
 
 // Rate a single episode (implies it's watched). Preserves an existing watched date.
-export async function setEpisodeRating({ titleId, groupId, season, episode, rating, watchedOn, createdBy }) {
+export async function setEpisodeRating({ titleId, groupId, season, episode, rating, watchedOn, createdBy, whereWatched, service }) {
   let sel = supabase.from('episode_watches').select('id')
     .eq('title_id', titleId).eq('season_number', season).eq('episode_number', episode)
   sel = groupId ? sel.eq('group_id', groupId) : sel.is('group_id', null)
@@ -414,9 +414,12 @@ export async function setEpisodeRating({ titleId, groupId, season, episode, rati
     if (error) throw error
     return
   }
+  // Rating an unticked episode creates the row, so it carries the same stamp.
   const { error } = await supabase.from('episode_watches').insert({
     title_id: titleId, group_id: groupId, season_number: season, episode_number: episode,
     rating, watched_on: watchedOn || undefined, created_by: createdBy,
+    ...(whereWatched ? { where_watched: whereWatched } : {}),
+    ...(service ? { service } : {}),
   })
   if (error) throw error
 }
@@ -474,12 +477,17 @@ export async function markEpisode({ titleId, groupId, season, episode, watchedOn
 // Set (or clear) the watched date on an episode. Upserts so it works whether
 // the episode was already marked or is being marked for the first time; passing
 // an empty date keeps it watched but with no date.
-export async function setEpisodeWatchedDate({ titleId, groupId, season, episode, watchedOn, createdBy }) {
+export async function setEpisodeWatchedDate({ titleId, groupId, season, episode, watchedOn, createdBy, whereWatched, service }) {
   const { error } = await supabase.from('episode_watches').upsert(
     {
       title_id: titleId, group_id: groupId,
       season_number: season, episode_number: episode,
       watched_on: watchedOn || null, created_by: createdBy,
+      // Setting a date on an untracked episode creates the row, so it needs the
+      // same where/service stamp a plain tick gets. Only sent when there is one
+      // to send, so this never clears a label on an existing row.
+      ...(whereWatched ? { where_watched: whereWatched } : {}),
+      ...(service ? { service } : {}),
     },
     { onConflict: 'title_id,group_id,season_number,episode_number' }
   )

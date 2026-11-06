@@ -653,6 +653,9 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
   }, [titleId, trackGroupId])
 
   const trackGroup = groups.find((g) => g.id === trackGroupId)
+  // Watched episodes in this group with no platform on them. Surfaced so a run
+  // of unlabelled ticks is visible instead of silently accumulating.
+  const unlabelled = [...watched].filter((k) => !epCtx[k]?.service && !epCtx[k]?.where).length
 
   async function rateSeason(season, profileId, score) {
     if (!trackGroupId) return
@@ -711,7 +714,10 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
     setEpRatings((r) => ({ ...r, [key]: score }))
     setWatched((w) => new Set(w).add(key))
     setEpDates((m) => (m[key] ? m : { ...m, [key]: today }))
-    await setEpisodeRating({ titleId, groupId: trackGroupId, season, episode: ep, rating: score, watchedOn: today, createdBy: userId }).catch(reload)
+    await setEpisodeRating({
+      titleId, groupId: trackGroupId, season, episode: ep, rating: score, watchedOn: today, createdBy: userId,
+      whereWatched: ctx.whereWatched || null, service: ctx.service || null,
+    }).catch(reload)
   }
   // Set or correct an episode's watched date. Picking a date also marks it
   // watched; clearing keeps it watched but with no date.
@@ -720,7 +726,10 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
     const key = `${season}-${ep}`
     setEpDates((m) => { const n = { ...m }; if (date) n[key] = date; else delete n[key]; return n })
     if (date) setWatched((w) => new Set(w).add(key))
-    await setEpisodeWatchedDate({ titleId, groupId: trackGroupId, season, episode: ep, watchedOn: date || null, createdBy: userId }).catch(reload)
+    await setEpisodeWatchedDate({
+      titleId, groupId: trackGroupId, season, episode: ep, watchedOn: date || null, createdBy: userId,
+      whereWatched: ctx.whereWatched || null, service: ctx.service || null,
+    }).catch(reload)
   }
   // Change the where/service that new ticks get stamped with. Remembered as
   // your last choice so the next show starts from it too.
@@ -755,6 +764,13 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
     const next = { ...cur, ...patch }
     setEpCtx((m) => ({ ...m, [key]: next }))
     setWatched((w) => new Set(w).add(key))
+    // Labelling one episode is also a statement about the show: adopt it as the
+    // default for the episodes you tick next. Without this, labelling an
+    // episode by hand left the picker empty and every following tick went in
+    // unlabelled, which is exactly how The Office ended up half labelled.
+    if (next.where || next.service) {
+      pickCtx({ whereWatched: next.where || '', service: next.service || '' })
+    }
     await setEpisodeContext({
       titleId, groupId: trackGroupId, season, episode: ep, createdBy: userId,
       whereWatched: next.where, service: next.service,
@@ -827,13 +843,20 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
               </select>
             </div>
             <div className="faint" style={{ margin: '8px 0 0', fontSize: 12 }}>
-              Episodes you tick from here get stamped with this. Change it mid-series and only
-              later episodes follow.
+              {(ctx.whereWatched || ctx.service)
+                ? 'Episodes you tick from here get stamped with this. Change it mid-series and only later episodes follow.'
+                : 'Pick these before ticking, or the episodes are saved with no platform.'}
             </div>
+            {unlabelled > 0 && (
+              <div className="faint" style={{ marginTop: 8, fontSize: 12, color: 'var(--accent-2)' }}>
+                ⚠ {unlabelled} of {watched.size} watched episode{watched.size === 1 ? '' : 's'} here
+                {unlabelled === 1 ? ' has' : ' have'} no platform recorded.
+              </div>
+            )}
             {(ctx.whereWatched || ctx.service) && watched.size > 0 && (
               <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                <button className="btn sm" disabled={ctxBusy} onClick={() => applyCtxToShow(true)}>
-                  Label unlabelled episodes
+                <button className="btn sm" disabled={ctxBusy || unlabelled === 0} onClick={() => applyCtxToShow(true)}>
+                  {unlabelled > 0 ? `Label the ${unlabelled} unlabelled` : 'All episodes labelled'}
                 </button>
                 <button className="btn sm ghost" disabled={ctxBusy} onClick={() => applyCtxToShow(false)}>
                   Relabel all {watched.size}
