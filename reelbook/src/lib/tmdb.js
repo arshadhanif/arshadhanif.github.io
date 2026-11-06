@@ -71,42 +71,125 @@ export function normalizeResult(r) {
   }
 }
 
-// Combined movie+TV search for the Discover screen.
-export async function searchMulti(query, page = 1) {
-  if (!query?.trim()) return []
-  const data = await tmdb('/search/multi', {
-    query,
-    page,
-    include_adult: 'false',
-  })
-  return (data.results || [])
-    .map(normalizeResult)
-    .filter(Boolean)
-    .filter((r) => r.title)
+// Compare names the way people type them, with case, accents, punctuation and
+// spacing stripped. TMDB stores "WALL·E" with an interpunct, so "Wall-E" and
+// "wall e" only look like the same thing once reduced to a key like this.
+export const titleKey = (s) => (s || '')
+  .toLowerCase()
+  .normalize('NFKD')
+  .replace(/[̀-ͯ]/g, '')
+  .replace(/[^a-z0-9]+/g, '')
+
+// TMDB's search does not treat "-", " " and "·" as interchangeable, so no
+// amount of ranking makes "Wall-E" find "WALL·E". These are the same query
+// written with the other separators it might be stored under.
+function queryVariants(q) {
+  const parts = q.split(/[\s._\-·•:]+/).filter(Boolean)
+  if (parts.length < 2) return []
+  const out = []
+  for (const sep of ['·', '']) {
+    const v = parts.join(sep)
+    if (v && v !== q && !out.includes(v)) out.push(v)
+  }
+  return out
 }
 
-// Like searchMulti but also returns PEOPLE (actors / directors), so you can
-// search by a person's name and jump to their profile. Each result carries a
-// `kind`: 'title' (movie/tv) or 'person'. Kept separate from searchMulti so the
-// title-only callers (quick add, favourites) are unaffected.
-export async function searchAll(query, page = 1) {
-  if (!query?.trim()) return []
-  const data = await tmdb('/search/multi', { query, page, include_adult: 'false' })
-  return (data.results || []).map((r) => {
-    if (r.media_type === 'person') {
-      return {
-        kind: 'person',
-        id: r.id,
-        name: r.name,
-        profile_path: r.profile_path || null,
-        department: r.known_for_department || null,
-        known_for: (r.known_for || []).map((k) => k.title || k.name).filter(Boolean).slice(0, 3).join(', '),
-        popularity: r.popularity || 0,
-      }
-    }
+// One page of movie + TV results. The dedicated endpoints are used rather than
+// /search/multi because multi mixes people in and ranks them first: a query
+// that is also a surname ("Wall", "Hunt", "Ford") filled the entire first page
+// with obscure actors and left no titles at all.
+async function searchTitlePage(query, page) {
+  const [mv, tv] = await Promise.all([
+    tmdb('/search/movie', { query, page, include_adult: 'false' }).catch(() => ({ results: [] })),
+    tmdb('/search/tv', { query, page, include_adult: 'false' }).catch(() => ({ results: [] })),
+  ])
+  // These endpoints don't set media_type; normalizeResult needs it.
+  return [
+    ...(mv.results || []).map((r) => ({ ...r, media_type: 'movie' })),
+    ...(tv.results || []).map((r) => ({ ...r, media_type: 'tv' })),
+  ]
+}
+
+// How well a name answers the query: exact beats prefix beats contains. Used
+// for titles and people alike so one sorted list can hold both.
+function matchRank(name, qk) {
+  const k = titleKey(name)
+  if (!k || !qk) return 0
+  if (k === qk) return 3
+  if (qk.length >= 2 && k.startsWith(qk)) return 2
+  if (qk.length >= 3 && k.includes(qk)) return 1
+  return 0
+}
+
+function rankTitles(rows, query) {
+  const qk = titleKey(query)
+  const seen = new Set()
+  const out = []
+  for (const r of rows) {
     const n = normalizeResult(r)
-    return n && n.title ? { kind: 'title', ...n, popularity: r.popularity || 0 } : null
-  }).filter(Boolean)
+    if (!n || !n.title) continue
+    const id = `${n.media_type}:${n.tmdb_id}`
+    if (seen.has(id)) continue
+    seen.add(id)
+    out.push({ ...n, popularity: r.popularity || 0, rank: matchRank(n.title, qk) })
+  }
+  // TMDB's own relevance buried WALL·E below 130 films merely containing
+  // "Wall", so rank the match ourselves and break ties on popularity.
+  out.sort((a, b) => b.rank - a.rank || b.popularity - a.popularity)
+  return out
+}
+
+// Combined movie+TV search, best match first.
+export async function searchTitles(query, page = 1) {
+  const q = (query || '').trim()
+  if (!q) return []
+  const rows = await searchTitlePage(q, page)
+  let ranked = rankTitles(rows, q)
+  // Only pay for the separator variants when the plain query found nothing
+  // that really matches, so ordinary searches still cost one round trip.
+  if (page === 1 && !ranked.some((r) => r.rank >= 2)) {
+    const variants = queryVariants(q)
+    if (variants.length) {
+      const extra = await Promise.all(variants.map((v) => searchTitlePage(v, 1).catch(() => [])))
+      ranked = rankTitles([...rows, ...extra.flat()], q)
+    }
+  }
+  return ranked
+}
+
+// Kept as the name the title-only callers (quick add, favourites) already use.
+export async function searchMulti(query, page = 1) {
+  return searchTitles(query, page)
+}
+
+// Titles AND people, so you can search an actor and jump to their profile.
+// Each result carries a `kind`: 'title' (movie/tv) or 'person'. People come
+// from /search/person rather than multi, so they compete with titles on how
+// well they match instead of automatically outranking them.
+export async function searchAll(query, page = 1) {
+  const q = (query || '').trim()
+  if (!q) return []
+  const qk = titleKey(q)
+  const [titles, people] = await Promise.all([
+    searchTitles(q, page),
+    tmdb('/search/person', { query: q, page, include_adult: 'false' }).catch(() => ({ results: [] })),
+  ])
+  const peopleRows = (people.results || []).map((r) => ({
+    kind: 'person',
+    id: r.id,
+    name: r.name,
+    profile_path: r.profile_path || null,
+    department: r.known_for_department || null,
+    known_for: (r.known_for || []).map((k) => k.title || k.name).filter(Boolean).slice(0, 3).join(', '),
+    popularity: r.popularity || 0,
+    rank: matchRank(r.name, qk),
+  }))
+  const titleRows = titles.map((t) => ({ kind: 'title', ...t }))
+  // Equal rank favours titles: this is a watch diary, and a person's
+  // popularity is on a different scale from a film's anyway.
+  return [...titleRows, ...peopleRows].sort((a, b) =>
+    b.rank - a.rank ||
+    (a.kind === b.kind ? b.popularity - a.popularity : a.kind === 'title' ? -1 : 1))
 }
 
 // Look up a TMDB title from an IMDb id (tt0123456) - used by the IMDb importer.
