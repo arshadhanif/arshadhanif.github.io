@@ -145,9 +145,11 @@ export async function searchTitles(query, page = 1) {
   if (!q) return []
   const rows = await searchTitlePage(q, page)
   let ranked = rankTitles(rows, q)
-  // Only pay for the separator variants when the plain query found nothing
-  // that really matches, so ordinary searches still cost one round trip.
-  if (page === 1 && !ranked.some((r) => r.rank >= 2)) {
+  // Retry unless something matched the query EXACTLY. A prefix match is not
+  // proof we found it: searching "Wall-E" turned up a 1968 short called "Wall
+  // Engravings", whose key starts with "walle", and that was enough to skip
+  // the retry that actually reaches "WALL·E".
+  if (page === 1 && !ranked.some((r) => r.rank === 3)) {
     const variants = queryVariants(q)
     if (variants.length) {
       const extra = await Promise.all(variants.map((v) => searchTitlePage(v, 1).catch(() => [])))

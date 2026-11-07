@@ -153,6 +153,11 @@ export default function Discover() {
   const titleResults = results.filter((r) => r.kind !== 'person')
   const peopleResults = results.filter((r) => r.kind === 'person')
   const filtered = type === 'all' ? titleResults : titleResults.filter((r) => r.media_type === type)
+  // People used to be rendered above the titles whatever they were. Searching
+  // "Wall-E" then opened with a row of ten strangers surnamed Wall. Put them
+  // first only when a person actually matches the query better than any title.
+  const bestRank = (xs) => xs.reduce((m, r) => Math.max(m, r.rank || 0), 0)
+  const peopleFirst = bestRank(peopleResults) > bestRank(filtered)
 
   // Split Continue watching by recency: shows you've touched in the last 3
   // months stay on the main rail; anything dormant (last watched 3+ months ago)
@@ -161,6 +166,25 @@ export default function Discover() {
   const staleCutoff = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d.toISOString().slice(0, 10) })()
   const activeShows = continueShows.filter((s) => !s.last || s.last >= staleCutoff)
   const dormantShows = continueShows.filter((s) => s.last && s.last < staleCutoff)
+
+  const peopleRail = (
+              <div style={{ marginBottom: 22 }}>
+                <div className="section-head"><h2>People</h2></div>
+                <ScrollRow className="rail">
+                  {peopleResults.map((p) => (
+                    <Link className="rail-item tile" key={`person-${p.id}`} to={`/person/${p.id}`}>
+                      <div className="poster" style={{ borderRadius: '50%', overflow: 'hidden' }}>
+                        {IMG.profile(p.profile_path, 'w185')
+                          ? <img src={IMG.profile(p.profile_path, 'w185')} alt={p.name} loading="lazy" />
+                          : <div className="ph">{p.name?.[0]}</div>}
+                      </div>
+                      <div className="tile-title">{p.name}</div>
+                      <div className="tile-sub">{p.department || 'Person'}</div>
+                    </Link>
+                  ))}
+                </ScrollRow>
+              </div>
+              )
 
   return (
     <div className="page">
@@ -192,24 +216,7 @@ export default function Discover() {
           <Empty icon="🔍">No {type !== 'all' ? (type === 'tv' ? 'TV' : 'movie') + ' ' : ''}results for “{q}”.</Empty>
         ) : (
           <>
-            {type === 'all' && peopleResults.length > 0 && (
-              <div style={{ marginBottom: 22 }}>
-                <div className="section-head"><h2>People</h2></div>
-                <ScrollRow className="rail">
-                  {peopleResults.map((p) => (
-                    <Link className="rail-item tile" key={`person-${p.id}`} to={`/person/${p.id}`}>
-                      <div className="poster" style={{ borderRadius: '50%', overflow: 'hidden' }}>
-                        {IMG.profile(p.profile_path, 'w185')
-                          ? <img src={IMG.profile(p.profile_path, 'w185')} alt={p.name} loading="lazy" />
-                          : <div className="ph">{p.name?.[0]}</div>}
-                      </div>
-                      <div className="tile-title">{p.name}</div>
-                      <div className="tile-sub">{p.department || 'Person'}</div>
-                    </Link>
-                  ))}
-                </ScrollRow>
-              </div>
-            )}
+            {type === 'all' && peopleResults.length > 0 && peopleFirst && peopleRail}
             <div className="grid">
               {filtered.map((r) => (
                 <TitleLink className="tile" key={`${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
@@ -219,6 +226,7 @@ export default function Discover() {
                 </TitleLink>
               ))}
             </div>
+            {type === 'all' && peopleResults.length > 0 && !peopleFirst && peopleRail}
           </>
         )
       ) : (
