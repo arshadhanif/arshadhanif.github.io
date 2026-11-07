@@ -153,4 +153,19 @@
   .prose-article strong {
     @apply font-semibold text-foreground;
   }
+  .prose-article hr {
+    @apply my-10 border-0 border-t border-border;
+  }
+  .prose-article table {
+    @apply my-6 w-full border-collapse text-sm;
+  }
+  .prose-article thead {
+    @apply bg-surface-alt;
+  }
+  .prose-article th {
+    @apply border border-border px-3 py-2 text-left font-semibold text-foreground;
+  }
+  .prose-article td {
+    @apply border border-border px-3 py-2 align-top text-foreground/90;
+  }
 }

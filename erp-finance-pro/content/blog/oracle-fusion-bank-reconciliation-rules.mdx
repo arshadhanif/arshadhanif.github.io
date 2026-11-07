@@ -1,0 +1,412 @@
+---
+title: 'How to Set Up Bank Reconciliation Rules in Oracle Fusion Cloud'
+date: '2026-11-07'
+category: 'Oracle Fusion'
+excerpt: 'Most bank reconciliation setups in Oracle Fusion do not fail, they quietly underperform. A field guide to the whole build: the seven objects, the order to create them, the parse rule that decides your match rate, and the traps that cost real time.'
+readTime: '20 min read'
+published: true
+---
+
+A field guide for implementation consultants
+
+Most bank reconciliation implementations in Oracle Fusion do not fail. They just quietly underperform. The statements load, the job runs, nobody raises a ticket, and the finance team carries on matching half the lines by hand because that is what they have always done. Six months later someone asks why the automation is not automating, and the answer is almost always the same thing, in the same place.
+
+This guide walks through the whole setup in the order you should build it, explains what each object actually does, and points out the traps that cost real time. It assumes you are working with SWIFT MT940 files, though the same shape applies to BAI2 and ISO 20022 CAMT formats. Only the field names change.
+
+---
+
+## The one thing that decides whether this works
+
+Automatic reconciliation compares a value on the bank statement line against a value on the system transaction. That value is the **Reconciliation Reference**.
+
+Here is the problem. When a bank statement loads, Reconciliation Reference is empty. The bank's reference is sitting in the raw statement line, in a field called Customer Reference, and nothing moves it across on its own. You have to tell Fusion to copy it. That is what a parse rule does, and it is the single highest leverage object in the entire setup.
+
+On one implementation I worked on, a bank account with a parse rule populating Reconciliation Reference was matching above 95 percent automatically. A comparable account on the same instance, same rules, same engine, with no parse rule, was matching around 25 percent. Nothing else was different.
+
+So if you take one thing from this article, take this. **Build the parse rule before you load a single statement.** A parse rule does not apply to statements that are already loaded. If you get the order wrong, the fix is to delete every statement and reload them, which on a live account means an awkward conversation with your client.
+
+---
+
+## The seven objects, and what each one really does
+
+People get lost here because the task names in Functional Setup Manager do not describe the jobs very well. Here is the plain version.
+
+**Bank statement transaction codes** tell Fusion what the bank's codes mean. Your bank writes a short code on every line to say what kind of transaction it was. If a code appears in the file and you have not defined it, the file will not load.
+
+**Parse rule set** copies the bank's reference out of the raw statement field and into Reconciliation Reference. One rule per transaction code.
+
+**Reconciliation matching rules** define the logic. Match on reference and amount, one to one, against Payables, Receivables, General Ledger and External transactions.
+
+**Reconciliation rule set** is a container. It groups matching rules in priority order and gets attached to a bank account.
+
+**Tolerance rules** allow small differences in amount or date. Optional, and often correctly left out.
+
+**Transaction creation rules** handle lines that have nothing to match against, such as bank charges and duties. The rule creates the transaction and accounts for it.
+
+**Bank account assignment** is where all of this actually becomes live. Until the parse rule set and the rule set are attached to the bank account, none of it does anything.
+
+That last point deserves emphasis. On one instance I inventoried, thirteen transaction creation rules had been built months earlier and attached to zero bank accounts. They had never run once. Nobody noticed, because a rule that is attached to nothing looks exactly like a rule that is working, unless you go and check.
+
+---
+
+## Order of work
+
+Build in this order. Every object references the one above it, and a setup import of a later object fails if the earlier one does not exist yet.
+
+1. Bank statement transaction codes
+2. Parse rule set
+3. Reconciliation matching rules
+4. Reconciliation rule set
+5. Tolerance rules, if you need them
+6. Transaction creation rules, if you need them
+7. Bank account assignment
+8. Load statements
+9. Run autoreconcile
+
+You can shuffle steps 5 and 6. You cannot move step 8 any earlier.
+
+---
+
+## Before you configure anything
+
+This is the phase consultants skip, and it is the phase that saves the project.
+
+### Read the bank files with a script, not with your eyes
+
+Ask the client for a full month of statement files and parse them offline before you touch the instance. You are looking for six things.
+
+The account number in the `:25:` field, compared against the bank account number in Fusion. Not roughly, exactly.
+
+The control totals. Opening balance in `:60F:`, plus every line amount, should equal the closing balance in `:62F:`. Check every file. A file that does not balance will still load, but the statement will not.
+
+The statement numbers in `:28C:`, and which ones are missing from the month. Gaps usually mean the bank did not send every day, or somebody in the finance team did not forward them all.
+
+Every transaction code that appears anywhere in the files. This is your list for step 1, and it has to be complete. One undefined code in one file stops that file.
+
+What the bank actually puts in subfield 7 of the `:61:` line. This becomes your Reconciliation Reference, so its quality decides your match rate. More on this below, because it is the part that sets client expectations.
+
+Whether the files end with the block 4 terminator. Some banks omit it. In my experience this does not matter, so do not spend an afternoon on it.
+
+### The account number check will save or sink you
+
+The `:25:` field has to match the Fusion bank account number character for character.
+
+This is the single most common hard failure, and it produces a clear error, `CE_INVALID_BANK_ACCOUNT_NUM`. I have seen a bank write the account with a branch prefix and a separator in front of it, where Fusion held only the base number. Same account, different string, instant failure.
+
+So check every bank account in scope on day one, and sequence the work so the clean accounts go first. It turns a blocked project into a partly delivered one, and it gives you something to show while the client goes back to the bank about the others.
+
+### Inventory what is already there
+
+If the account is already live with some other process, do not start building. Export the Cash Management setup to CSV and read it first. You want to know which transaction codes exist, which parse rule sets exist and who uses them, which matching rules exist, and crucially which transaction creation rules exist and which bank accounts they are attached to.
+
+That last one is worth doing properly, because dormant setup is common and invisible. The object that reveals it sits in the Manage Bank Accounts task, not the creation rules task.
+
+---
+
+## Transaction codes
+
+Define a code for every code that appears in the files. The code has to match the bank's exactly.
+
+You will see the standard SWIFT codes on most MT940 files. Cheques, transfers, charges, miscellaneous items and documentary items each have their own code. The code also carries a type, such as cheque or miscellaneous, which is informational unless one of your matching rules matches on transaction type. Most do not, so do not lose sleep over whether a cheque code is typed as a cheque or as miscellaneous.
+
+Define the codes first, before anything else, and check that the names you use in the system line up with the names the business uses. This sounds obvious. It is the step people rush.
+
+---
+
+## Parse rule sets, the object that matters most
+
+The parse rule set copies a value from one field on the statement line to another. In practice you are copying the bank's reference into Reconciliation Reference.
+
+### The rule itself
+
+The rule expression you want is `(X~)`. It copies the whole source field across untouched. You do not need a regular expression unless the bank embeds the reference inside a longer string, which is rare on MT940.
+
+Build one rule per transaction code. Five codes means five rows, sequenced one to five. Set the source field to the customer reference code and the target field to the reconciliation reference code.
+
+### Get the field codes from the lookup, not from a table
+
+This cost me two failed imports, so learn it from my mistake instead of your own.
+
+The valid values for source and target fields come from a Cash Management lookup. You can see it in the UI under Manage Cash Management Lookups. The lookup type is `CE_PARSE_SOURCE_FIELD`.
+
+I did not look. I inferred the code from the column names on the bank statement interface table, which seemed reasonable, because one of the codes genuinely does match its interface column name. That made the inference look confirmed. It was coincidence. The import rejected my value with `FND_CMN_INVALID_ATTRB_API_SERV`, telling me the attribute was not valid. I guessed a second time and got rejected again.
+
+The real code was sitting in the lookup the whole time. **Setup imports validate against the lookup codes, not against table column names.** Read the lookup. Never guess twice.
+
+---
+
+## Matching rules, and why you should only ever build one
+
+This is the most useful piece of advice in this article, and I did not come up with it. A client-side lead corrected me on it and he was right.
+
+A one to one rule that matches on Reconciliation Reference and Amount is bank agnostic. Think about what it actually says: if the reference matches and the amount matches, reconcile it. There is nothing in that sentence about any particular bank. Every bank in the world wants exactly this.
+
+So name your matching rule generically from the start, something like "Recon Ref and Amount", and point every bank's rule set at the same rule. Do not build a matching rule per bank. I started to, and it was pure waste.
+
+The rule you want looks like this:
+
+| Attribute | Setting |
+|---|---|
+| Match type | One to one |
+| Amount | Yes |
+| Reconciliation Reference | Yes |
+| Date | No |
+| Transaction Type | No |
+| Sources | Payables, Receivables, General Ledger, External |
+
+### One Oracle rule that catches people
+
+Date, transaction type and reconciliation reference can only be used as matching criteria **after** you select them as grouping attributes. If you tick a criterion without the matching grouping attribute, it will not do what you think. Check any inherited rule against this before you assume a criterion is live.
+
+Oracle's documentation on this is at docs.oracle.com, under Reconciliation Matching Rules in the Financials Implementation guide.
+
+### Should you enable the External source?
+
+You will find advice warning that External transactions can self match and create noise. The honest answer is that it depends on the data, so check rather than carrying someone else's conclusion.
+
+The check is quick. Look at the external transactions on the account, count how many are unreconciled, and look at whether they carry a Reconciliation Reference at all. On one account I checked, every unreconciled external transaction had a null reference and came from bank account transfers rather than from statements. The precondition for the trap did not exist, so leaving External enabled cost nothing.
+
+Run that check per client. It takes ten minutes and it turns an assumption into a decision.
+
+### Do you need a many to one rule?
+
+Only if one statement line settles several system transactions, or the other way round. Before you build one, check whether the bank's references are actually unique.
+
+On one implementation every cheque number in the month was distinct, and every reference that appeared twice turned out to be junk rather than a genuine group. No many to one rule was needed at all, and building one would have added risk for no benefit.
+
+---
+
+## Rule sets
+
+The rule set is the per bank object, so name it per bank account. It holds your matching rules in priority order, plus any tolerance rules.
+
+If the setup import complains about ordering, check that the next rule order value is one higher than your last item.
+
+---
+
+## Tolerance rules
+
+Optional. Often correctly absent.
+
+Tolerance only applies when the matching rule is a one to one type, and only where the rule matches on date, amount or both. A tolerance attached to a rule matching on reference and amount will not loosen the reference comparison. References are compared exactly, always.
+
+Leave tolerance off unless the client has a specific stated need, such as bank charges being netted off receipts.
+
+---
+
+## Transaction creation rules
+
+Some lines on a bank statement have nothing to match against, because no transaction exists in the application. Bank charges, duties, interest and fees are the usual ones. There is no invoice, no payment, no receipt. Somebody has to create the transaction, and a creation rule does it automatically and accounts for it.
+
+On a typical month this might be five percent of your lines. Small in count, but they are the lines that stop a statement reaching fully reconciled, so the finance team notices them.
+
+### Three things that will catch you out
+
+**The transaction type field is the output, not the input.** There is a field on the creation rule that holds a code such as bank fee. I read it as a filter on the statement line and proposed clearing it, because the statement lines in question were typed as miscellaneous and I thought the rule would never fire. I was wrong, and I was overruled, correctly. After importing an exact copy of an existing rule, the UI showed the line identification criteria empty and the transaction details type set to Fee. That field describes the transaction the rule creates. Strip it and you get a rule that matches perfectly and creates nothing.
+
+**The search is case sensitive.** A rule searching for "Federal excise" will not fire on a bank writing "Federal Excise Duty". This is not documented anywhere obvious and it will cost you a test cycle if you assume otherwise.
+
+**Match the search field to where the text actually lives.** The rule searches one named field. Before you write the search string, confirm which field on this bank's statements holds that text. On one file the descriptive narrative sat in the addenda text while the customer reference field held a charge voucher number, so a rule searching the customer reference for the narrative would have found nothing no matter how the case was written.
+
+If the bank gives a dedicated transaction code for a charge type, consider keying the rule on the transaction code instead of a search string. It sidesteps the case problem and the field problem at once. Weigh that against the chance that the bank later reuses the code for something else.
+
+### Defining a rule does nothing
+
+A creation rule only runs once it is attached to a bank account, and the attachment is a separate object in the Manage Bank Accounts task. Until then the rule's Bank Account Usage panel reads "No data to display".
+
+That is exactly how a whole set of rules can sit dormant for months without anyone noticing.
+
+---
+
+## Attaching everything to the bank account
+
+Three things come together here, and all three live in the Manage Bank Accounts task.
+
+The parse rule set name and the reconciliation rule set name are columns on the bank account itself. The transaction creation rules are rows in a separate child object, one row per rule, each with a sequence number.
+
+If you are doing this by CSV import rather than by hand, three rules apply.
+
+Ship all eight sibling objects that come out of the Manage Bank Accounts export. Shipping a subset might work. Do not find out on a client instance.
+
+You do not need to ship every bank account. A single row for the account you are changing is enough, and it imports cleanly.
+
+**Never ship an older export over your own changes.** This one nearly bit me. I had an export taken in the morning, before I assigned the parse rule set and the reconciliation rule set. Shipping that file verbatim later in the day would have silently reverted both assignments, with a successful import message and no warning at all. Always build your next bundle on the edited copy you previously imported, and open the zip and check before you send it.
+
+---
+
+## Loading statements
+
+Run the SWIFT MT940 import job and give it your files.
+
+A few practical notes. You can zip many files together and submit them in one go. The job spawns a child process per file, and they all run. There is no need to load day by day.
+
+There is a separate job for loading multiple interface files that looks like it should help here. It will not. It reads from content management only and cannot take a file from your laptop.
+
+If a run fails, look at what was actually attached to the request before you start debugging the configuration. I once watched a run fail because the wrong zip had been submitted, a setup bundle instead of statement files. The attachment list showed it in seconds. That one was partly my fault for sending several zips in quick succession without labelling which went where, so label them.
+
+---
+
+## Verifying the load
+
+Use the Bank Statement Lines subject area in OTBI. Pull statement number, line number, line date, transaction code, line amount, customer reference, reconciliation reference and recon status.
+
+Then check the extract against the numbers you computed from the raw files back in the discovery phase. Statement count, line count per statement, and the count of lines per transaction code should all tie exactly. If they do not, something did not load.
+
+Then check the one that actually matters. **Is Reconciliation Reference populated?** It should equal the customer reference on every line. If it is empty, the parse rule did not fire, and the statements have to be deleted and reloaded once you have fixed it. Better to find that out now than after the client has seen a reconciliation run.
+
+Two things that look like problems and are not. A statement status of Incomplete does not block reconciliation, and I have watched hundreds of lines reconcile happily on Incomplete statements. And a file containing no transaction lines will not show up in a line level report, which is correct rather than a gap.
+
+One thing to watch. If the account has been live for a while, your new statements are a small island in a large sea of history. Filter your report to the statements you just loaded, or your totals will be meaningless.
+
+---
+
+## Setting an honest expectation before you run anything
+
+This is the step that separates a demo that lands from one that embarrasses you.
+
+Not every statement line can reconcile. Go through the loaded lines by transaction code and count how many carry a reference that is unique within the batch and is not a junk token. That number, not the total line count, is your realistic ceiling. Tell the client that number before the run, not after.
+
+Cheque lines are usually the prize. Cheque numbers are unique by nature, and they appear on both sides of the match, so these are the lines that will reconcile.
+
+Transfer lines are frequently the disappointment. Subfield 7 is a mandatory sixteen character field, so when the originating bank has nothing useful to put in it, it puts something anyway. I have seen it filled with the client's own bank identifier, with the client's own account number, and with a bare payment scheme tag carrying no transaction number at all. None of those can ever match anything. That is a characteristic of the bank's file, not a defect in your configuration, and you should say so plainly and early.
+
+Charge lines have nothing to match against at all. That is what creation rules are for.
+
+Also look out for the literal string that banks use when the originator supplied no reference. It will appear many times, on lines going in both directions, and it will look like a duplicate reference problem when it is really a nothing-was-supplied problem.
+
+One more pattern worth recognising. A bounced cheque appears twice, once as a deposit under the cheque code and once as a return under a miscellaneous code, carrying the same reference. A one to one rule leaves both unmatched, which is the correct outcome. If you see reference duplicates and cannot explain them, check for returns before you assume the data is broken.
+
+---
+
+## Prove the match before you promise the demo
+
+The configuration can be perfect and the run can still match nothing, because matching needs something on the other side.
+
+I learned this the useful way. A setup was built and verified correctly on a test instance, and would have matched almost nothing if demonstrated there, because the test instance held no payables or receivables activity on that bank account for the month the statements covered. The newest payment on the account predated the statements by seven months. Running the demo there would have produced an empty result that looked exactly like a configuration failure.
+
+So before you promise anyone a live demonstration, check the application side directly in whichever instance you plan to demonstrate on. Take the cheque numbers off the statement lines and look for them in Payables payment document numbers and in Receivables receipt numbers.
+
+Match on reference **and** amount, because that is precisely what the rule compares. When I ran this, every issued cheque on the statements existed in Payables with the amount agreeing to the fils, and the large majority of received cheques existed in Receivables the same way. Not one reference that matched had a disagreeing amount. That is a sentence you can put in front of a client with confidence, and it is far stronger than a test run on a sandbox.
+
+### Leading zeros will quietly cost you matches
+
+Here is a small thing with real consequences. If the bank prints a cheque number as `4821` and somebody keyed the receipt as `00004821`, those two will never match. Reconciliation reference matching is an exact string comparison, and there is no normalisation anywhere in the chain. Not in the parse rule, not in the matching rule.
+
+The only place this can be fixed is at data entry. Make it a standing instruction that receipt numbers are keyed exactly as the instrument shows them, with no padding. Raise it as a data entry convention rather than a system defect, because that is what it is.
+
+---
+
+## Running autoreconcile
+
+Run the job scoped to one statement first. Never let the first run loose on the whole batch.
+
+Then verify the matched pairs rather than trusting the headline count. If no reconciliation start date is set on the bank account, the engine considers open transactions of any date at all. A high match count can hide an old transaction matched to a new line. Open the statement, read what each line matched to, and look at the date on the other side.
+
+Once one statement is clean and you understand every match it made, widen out.
+
+---
+
+## Moving it to production
+
+Export each task to CSV and import in the same order you built them. Transaction codes first, then parse rule sets, then reconciliation rule sets, then transaction creation rules, then bank accounts.
+
+Bank accounts must go last, because it references everything above it.
+
+After the last import, open the bank account, go to the Controls tab, and confirm the parse rule set, the reconciliation rule set and every transaction creation rule are present. If one is missing, stop and work out why rather than importing again on top.
+
+If the client wants to test on a fresh production clone, remember the clone arrives with none of this on it. You will import the same bundles into the clone first.
+
+### Building setup import bundles that work first time
+
+A bundle is a flat zip holding a metadata XML file plus one CSV per business object. No folders.
+
+Never write the metadata XML yourself. Export the same task from the instance, take Oracle's own file, and change only the process name and description. That file carries the object short names, the attribute lists and the XML node paths, and getting any of them wrong fails the import with a message that will not help you.
+
+For the CSVs, keep Oracle's exact column order, quote every field, and use UTF-8. You can leave the audit columns such as created by and creation date blank, and Fusion stamps them for you. For objects where you are adding rows, ship only the new rows and leave the rest alone.
+
+Watch out for fields that contain line breaks inside them, such as accounting segment lists. Copy those byte for byte from a working row rather than trying to rebuild them.
+
+Then check the finished zip, not the source you built it from. Open it, read the CSVs back, and compare them field by field against the original export. When you are republishing a bundle you have changed before, hash every file inside and confirm only the one you meant to change is different. That check is what caught my near miss with the stale bank account export.
+
+---
+
+## The do's
+
+**Do parse the bank files offline before you touch the instance.** Everything you need to plan the work is in those files.
+
+**Do check the account number character for character**, for every account in scope, on day one.
+
+**Do build the parse rule before loading anything.** It cannot be applied retrospectively.
+
+**Do build one generic matching rule and reuse it across every bank.** Reference plus amount is universal.
+
+**Do read the lookup** when you need a field code. The valid codes are in the Cash Management lookups, visible in the UI.
+
+**Do classify your expected match rate by transaction code** and give the client that number up front.
+
+**Do prove the references exist in Payables and Receivables** before you promise a demonstration, in the instance you will demonstrate on.
+
+**Do run autoreconcile on one statement first** and read the matched pairs.
+
+**Do verify the zip you are about to import**, not the file you built it from.
+
+## The don'ts
+
+**Do not load statements before the parse rule exists.** The cleanup is painful and public.
+
+**Do not infer a code from a table column name.** Setup imports validate against lookup codes.
+
+**Do not build a matching rule per bank.** You will maintain the same logic in five places for no reason.
+
+**Do not assume a field is a filter because it sits near other filters.** Read what the UI shows after an import before you decide what a field does.
+
+**Do not strip a field you have not understood** when copying an existing rule. Change the one thing you meant to change, and raise anything else with the owner.
+
+**Do not treat a pattern as a constraint.** I once decided a text field was capped at fifteen characters because ten existing rules all stopped at fifteen. It holds far more. That was one person's habit, not a system limit, and the instance would have told me in ten seconds if I had asked it.
+
+**Do not claim a capability from the wrong evidence.** I once concluded that multi file imports worked based on child processes that had come from a completely different job. Check that your evidence is evidence of the thing you are claiming.
+
+**Do not say something cannot be done when you mean you have not tried it.** Those are different sentences, and your client can tell the difference.
+
+**Do not trust an empty query result.** On Oracle's REST APIs, an empty result can mean no access rather than no data, and the two look identical. Run a positive control on a value you know exists before you report a zero.
+
+---
+
+## The checklist
+
+Print this, or keep it open while you work.
+
+1. Collect sample statement files for every bank account in scope
+2. Parse them offline and record codes, control totals, statement numbers and subfield 7 content
+3. Compare each statement account number to the Fusion bank account number character for character
+4. Sequence the work so clean accounts go first
+5. Export the existing Cash Management setup and inventory it, including what is attached to nothing
+6. Decide whether an existing generic matching rule can be reused
+7. Define every transaction code that appears in the files
+8. Build the parse rule set, one rule per code, copying customer reference into reconciliation reference
+9. Build or reuse the matching rule, one to one, reference and amount
+10. Build the rule set and name it per bank account
+11. Add transaction creation rules for charges, if the client wants them automated
+12. Attach the parse rule set, the rule set and the creation rules to the bank account
+13. Confirm all three appear on the account's Controls tab
+14. Classify the expected match rate by transaction code and tell the client the ceiling
+15. Confirm the application side holds matching transactions for the statement period
+16. Load the statements
+17. Verify line counts and code counts against your offline parse
+18. Verify Reconciliation Reference is populated on every line
+19. Run autoreconcile on one statement and read every matched pair
+20. Widen out, then migrate to production in build order
+
+---
+
+## A closing thought
+
+Bank reconciliation is one of the few areas in a Fusion implementation where you can measure your own success precisely. Either the lines match or they do not, and the number is right there on the screen.
+
+That makes it unusually honest work. It also means the gap between a setup that was configured and a setup that was configured well shows up immediately, in a number the client can read without your help.
+
+Spend the extra day on discovery. Read the files, check the account numbers, inventory what is already there, and tell the client the realistic ceiling before you build. The configuration itself is the easy part.
+
+## Need help with your reconciliation setup
+
+If you want this built properly on your own Oracle Fusion instance, or a second pair of eyes on a setup that is quietly underperforming, [book a call](/services) or [message me on WhatsApp](https://wa.me/923332597950?text=Hi%20Arshad%2C%20I%20need%20help%20with%20bank%20reconciliation%20setup%20in%20Oracle%20Fusion.).

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { MDXRemote } from 'next-mdx-remote/rsc';
+import remarkGfm from 'remark-gfm';
 import { getAllPostSlugs, getPostBySlug } from '@/lib/posts';
 import CategoryBadge from '@/components/CategoryBadge';
 import AuthorBio from '@/components/AuthorBio';
@@ -97,7 +98,11 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
       </header>
 
       <div className="prose-article mt-10">
-        <MDXRemote source={post.content} components={mdxComponents} />
+        <MDXRemote
+          source={post.content}
+          components={mdxComponents}
+          options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
+        />
       </div>
 
       <hr className="my-10 border-border" />
