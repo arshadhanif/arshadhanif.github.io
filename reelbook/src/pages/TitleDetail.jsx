@@ -163,7 +163,9 @@ export default function TitleDetail() {
                 title={markBtn.title}>
                 {markBtn.label}
               </button>
-              <AddWatchlist titleId={titleId} groups={groups} userId={user.id} />
+              {/* Watchlist retired at Arshad's request: he keeps his watchlist on IMDb.
+                  The AddWatchlist component and all the data are still here, so putting
+                  the button back is a one-line change. */}
               <button className="btn" onClick={() => setListModal(true)}>📚 Add to a list</button>
               {full.trailer_key && (
                 <button className="btn" onClick={() => setShowTrailer(true)}>▶ Trailer</button>
