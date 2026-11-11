@@ -1157,13 +1157,29 @@ export async function getLoggedTmdbIds() {
   return set
 }
 
+// Page an RPC that returns a set. PostgREST caps any single response at 1000
+// rows, and both library RPCs are past that, so a plain call silently returns
+// the first 1000 and the rest of the library reads as unwatched. Both functions
+// order their output, which is what makes .range() paging line up.
+async function rpcPaged(fn) {
+  const PAGE = 1000
+  const out = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase.rpc(fn).range(from, from + PAGE - 1)
+    if (error) throw error
+    if (!data || data.length === 0) break
+    out.push(...data)
+    if (data.length < PAGE) break
+  }
+  return out
+}
+
 // Library TMDB ids split into watched vs watchlisted (aggregated in the DB), so
 // a person page can flag which of their credits you've seen.
 export async function getLibraryTmdbIds() {
-  const { data, error } = await supabase.rpc('library_tmdb_ids')
-  if (error) throw error
+  const rows = await rpcPaged('library_tmdb_ids')
   const watched = new Set(), watchlist = new Set()
-  for (const r of data || []) { if (r.watched) watched.add(r.tmdb_id); if (r.watchlisted) watchlist.add(r.tmdb_id) }
+  for (const r of rows) { if (r.watched) watched.add(r.tmdb_id); if (r.watchlisted) watchlist.add(r.tmdb_id) }
   return { watched, watchlist }
 }
 
@@ -1171,10 +1187,8 @@ export async function getLibraryTmdbIds() {
 // progress it is (yours alone, yours together, anyone's) instead of just
 // "somebody in the household saw this".
 export async function getLibraryGroupMap() {
-  const { data, error } = await supabase.rpc('library_tmdb_groups')
-  if (error) throw error
   const m = new Map()
-  for (const r of data || []) {
+  for (const r of await rpcPaged('library_tmdb_groups')) {
     if (r.tmdb_id == null || !r.group_id) continue
     let s = m.get(r.tmdb_id)
     if (!s) { s = new Set(); m.set(r.tmdb_id, s) }
