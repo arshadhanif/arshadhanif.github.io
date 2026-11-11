@@ -4,6 +4,29 @@ import { getCollection, updateCollection, deleteCollection, removeFromCollection
 import { useToast } from '../context/Toast'
 import { useAppData } from '../context/AppData'
 import { Spinner, Empty, Poster, TitleLink, Modal } from '../components/ui'
+import { IMG } from '../lib/tmdb'
+
+// A franchise list repeats the same words on every title ("Pirates of the
+// Caribbean: ..."), which fills both lines of every label and makes the whole
+// shelf read the same. Strip a prefix the entire list shares, but only at a
+// colon or dash and only when it is long enough to be worth losing.
+function sharedPrefix(names) {
+  if (names.length < 3) return ''
+  let p = names[0] || ''
+  for (const n of names.slice(1)) {
+    let i = 0
+    while (i < p.length && i < n.length && p[i] === n[i]) i++
+    p = p.slice(0, i)
+    if (!p) return ''
+  }
+  const cut = Math.max(p.lastIndexOf(': '), p.lastIndexOf(' - '))
+  if (cut < 0) return ''
+  const pre = p.slice(0, cut + 2)
+  if (pre.length < 12) return ''
+  // Never leave a title stub too short to recognise.
+  if (names.some((n) => n.slice(pre.length).trim().length < 3)) return ''
+  return pre
+}
 
 export default function CollectionDetail() {
   const { id } = useParams()
@@ -24,9 +47,14 @@ export default function CollectionDetail() {
   const [byGroup, setByGroup] = useState(new Map())
   const [who, setWho] = useState('any')       // 'any' | group id
   const [onlyLeft, setOnlyLeft] = useState(false)
+  // Grid is the nice view; reorder needs rows with arrows, which do not
+  // belong on a poster shelf and do not work by hover on a phone.
+  const [reorderMode, setReorderMode] = useState(false)
   useEffect(() => {
-    getLibraryTmdbIds().then(setLib).catch(() => {})
-    getLibraryGroupMap().then(setByGroup).catch(() => {})
+    // Logged rather than swallowed: a silent failure here renders every list
+    // as 0 watched, which looks like real data and hides the fault.
+    getLibraryTmdbIds().then(setLib).catch((e) => console.error('library ids', e))
+    getLibraryGroupMap().then(setByGroup).catch((e) => console.error('library groups', e))
   }, [])
 
   async function load() {
@@ -81,6 +109,10 @@ export default function CollectionDetail() {
   const view = onlyLeft ? inType.filter((it) => !seenBy(it.titles, who)) : inType
   // Reordering writes positions by index, so it only makes sense on the full list.
   const canReorder = typeF === 'all' && !onlyLeft
+  // The first item with artwork gives the page its backdrop.
+  const heroArt = inType.find((it) => it.titles?.backdrop_path)?.titles?.backdrop_path
+  const prefix = sharedPrefix(inType.map((it) => it.titles?.title || '').filter(Boolean))
+  const shortName = (n) => (prefix && n?.startsWith(prefix) ? n.slice(prefix.length) : n)
 
   if (loading) return <div className="page"><Spinner /></div>
   if (!col) return <div className="page"><Empty icon="📚">List not found.</Empty></div>
@@ -88,37 +120,41 @@ export default function CollectionDetail() {
   return (
     <div className="page">
       <button className="btn sm ghost" onClick={() => navigate('/lists')} style={{ marginBottom: 12 }}>← All lists</button>
-      <div className="page-head">
-        <h1 style={{ margin: 0 }}>{col.emoji || '📚'} {col.name}</h1>
-        <div className="row" style={{ gap: 8 }}>
-          <button className="btn sm" onClick={() => setEditing(true)}>Edit</button>
-          <button className="btn sm danger" onClick={onDeleteList}>Delete</button>
+
+      <div className={`list-hero ${heroArt ? '' : 'plain'}`}>
+        {heroArt && <div className="list-hero-bg" style={{ backgroundImage: `url(${IMG.backdrop(heroArt, 'w1280')})` }} />}
+        <div className="list-hero-in">
+          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+            <h1><span className="em">{col.emoji || '📚'}</span>{col.name}</h1>
+            <div className="row" style={{ gap: 8, flexShrink: 0 }}>
+              <button className="btn sm" onClick={() => setEditing(true)}>Edit</button>
+              <button className="btn sm danger" onClick={onDeleteList}>Delete</button>
+            </div>
+          </div>
+          {col.description && <p className="sub">{col.description}</p>}
+          <div className="hero-count">
+            {inType.length} title{inType.length === 1 ? '' : 's'}
+            {col.ranked ? ' · ranked' : ''}{reordering ? ' · saving order…' : ''}
+          </div>
         </div>
-      </div>
-      {col.description && <p className="sub">{col.description}</p>}
-      <div className="faint" style={{ marginBottom: 10 }}>
-        {inType.length} title{inType.length === 1 ? '' : 's'}
-        {col.ranked ? ' · ranked' : ''}{reordering ? ' · saving order…' : ''}
       </div>
 
       {inType.length > 0 && (
         <div className="card" style={{ marginBottom: 16 }}>
-          <div className="row" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <strong style={{ fontSize: 15 }}>
-              {seen} of {inType.length} watched
-            </strong>
+          <div className="lp-head">
+            <span className="lp-big">{seen} of {inType.length} watched</span>
             {complete
-              ? <span className="watched-chip" style={{ background: 'var(--green)', color: '#0b0d12', fontWeight: 800, fontSize: 12.5, padding: '2px 9px', borderRadius: 6 }}>✓ Completed</span>
+              ? <span className="lp-badge">✓ Completed</span>
               : <span className="faint">{left} to go</span>}
-            <span className="faint" style={{ marginLeft: 'auto' }}>{pct}%</span>
+            <span className="lp-pct">{pct}%</span>
           </div>
-          <div className="progress-track">
-            <div className="progress-fill" style={{ width: `${pct}%`, background: complete ? 'var(--green)' : 'var(--accent)' }} />
+          <div className="lp-track">
+            <div className={`lp-fill ${complete ? 'done' : ''}`} style={{ width: `${pct}%` }} />
           </div>
 
-          {/* One row per group, so "did I finish it alone" and "did we finish it
-              together" are both answered without switching anything. */}
-          <div className="scroll-x" style={{ marginTop: 12 }}>
+          {/* One chip per group, so "did I finish it alone" and "did we finish
+              it together" are both answered without switching anything. */}
+          <div className="scroll-x" style={{ marginTop: 14 }}>
             {[{ id: 'any', name: 'Anyone' }, ...groups].map((g) => {
               const n = tally(g.id)
               const full = inType.length > 0 && n === inType.length
@@ -133,7 +169,7 @@ export default function CollectionDetail() {
           </div>
 
           {left > 0 && (
-            <label className="row" style={{ gap: 8, cursor: 'pointer', marginTop: 12 }}>
+            <label className="row" style={{ gap: 8, cursor: 'pointer', marginTop: 14 }}>
               <input type="checkbox" style={{ width: 18, height: 18 }} checked={onlyLeft} onChange={(e) => setOnlyLeft(e.target.checked)} />
               <span>Show only what's left ({left})</span>
             </label>
@@ -141,42 +177,67 @@ export default function CollectionDetail() {
         </div>
       )}
 
-      {counts.movie > 0 && counts.tv > 0 && (
-        <div className="seg" style={{ marginBottom: 16 }}>
-          {[['all', `All (${counts.all})`], ['movie', `Movies (${counts.movie})`], ['tv', `TV (${counts.tv})`]].map(([v, l]) => (
-            <button key={v} className={typeF === v ? 'on' : ''} onClick={() => setTypeF(v)}>{l}</button>
-          ))}
-        </div>
-      )}
+      <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
+        {counts.movie > 0 && counts.tv > 0 && (
+          <div className="seg">
+            {[['all', `All (${counts.all})`], ['movie', `Movies (${counts.movie})`], ['tv', `TV (${counts.tv})`]].map(([v, l]) => (
+              <button key={v} className={typeF === v ? 'on' : ''} onClick={() => setTypeF(v)}>{l}</button>
+            ))}
+          </div>
+        )}
+        {items.length > 1 && (
+          <button className={`btn sm ${reorderMode ? 'primary' : 'ghost'}`} style={{ marginLeft: 'auto' }}
+            onClick={() => setReorderMode((v) => !v)}
+            title={canReorder ? 'Reorder or remove titles' : 'Clear the filters to reorder'}>
+            {reorderMode ? 'Done' : '☰ Edit order'}
+          </button>
+        )}
+      </div>
 
       {items.length === 0 ? (
         <Empty icon="➕">This list is empty. Open any movie or show and choose “Add to list”.</Empty>
       ) : view.length === 0 ? (
         <Empty icon="🎉">Nothing left here. That's the whole list watched.</Empty>
-      ) : (
+      ) : reorderMode ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {view.map((it, i) => {
+            const t = it.titles
+            return (
+              <div className="card row" key={it.id} style={{ gap: 12, alignItems: 'center' }}>
+                {col.ranked && <div className="rank-num">{i + 1}</div>}
+                <div style={{ width: 40, flexShrink: 0 }}>
+                  <Poster title={t?.title} mediaType={t?.media_type} posterPath={t?.poster_path} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <strong>{t?.title}</strong>{' '}
+                  <span className="faint">{t?.year || ''} · {t?.media_type === 'tv' ? 'TV' : 'Movie'}</span>
+                </div>
+                <div className="row" style={{ gap: 4, flexShrink: 0 }}>
+                  <button className="btn sm ghost" disabled={!canReorder || i === 0} onClick={() => move(i, -1)}
+                    title={canReorder ? 'Move up' : 'Clear the filters to reorder'}>↑</button>
+                  <button className="btn sm ghost" disabled={!canReorder || i === items.length - 1} onClick={() => move(i, 1)}
+                    title={canReorder ? 'Move down' : 'Clear the filters to reorder'}>↓</button>
+                  <button className="btn sm ghost" onClick={() => remove(it.id)} title="Remove">✕</button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="lg-grid">
           {view.map((it, i) => {
             const t = it.titles
             const watched = seenBy(t, who)
             return (
-              <div className="card row" key={it.id} style={{ gap: 12, alignItems: 'center' }}>
-                {col.ranked && <div className="rank-num">{i + 1}</div>}
-                <TitleLink className="tile" tmdbId={t?.tmdb_id} media={t?.media_type} style={{ width: 46, flexShrink: 0, position: 'relative' }}>
-                  <Poster title={t?.title} mediaType={t?.media_type} posterPath={t?.poster_path} />
-                  {watched && <span className="ep-badge" style={{ background: 'var(--green)', color: '#0b0d12', top: 3, right: 3, padding: '1px 5px' }} title="Watched">✓</span>}
-                </TitleLink>
-                <TitleLink className="" tmdbId={t?.tmdb_id} media={t?.media_type} style={{ flex: 1, minWidth: 0 }}>
-                  <strong>{t?.title}</strong> <span className="faint">{t?.year || ''} · {t?.media_type === 'tv' ? 'TV' : 'Movie'}</span>
-                  {it.note && <div className="muted" style={{ fontSize: 13, marginTop: 3 }}>{it.note}</div>}
-                </TitleLink>
-                <div className="row" style={{ gap: 4, flexShrink: 0 }}>
-                  <button className="btn sm ghost" disabled={!canReorder || i === 0} onClick={() => move(i, -1)}
-                    title={canReorder ? 'Move up' : 'Show the whole list to reorder'}>↑</button>
-                  <button className="btn sm ghost" disabled={!canReorder || i === items.length - 1} onClick={() => move(i, 1)}
-                    title={canReorder ? 'Move down' : 'Show the whole list to reorder'}>↓</button>
-                  <button className="btn sm ghost" onClick={() => remove(it.id)} title="Remove">✕</button>
-                </div>
-              </div>
+              <TitleLink className={`lg-item tile ${watched ? 'seen' : ''}`} key={it.id}
+                tmdbId={t?.tmdb_id} media={t?.media_type}>
+                {col.ranked && <span className="lg-rank">{i + 1}</span>}
+                {watched && <span className="lg-tick" title="Watched">✓</span>}
+                <Poster title={t?.title} mediaType={t?.media_type} posterPath={t?.poster_path} />
+                <div className="lg-name" title={t?.title}>{shortName(t?.title)}</div>
+                <div className="lg-sub">{t?.year || ''}{t?.media_type === 'tv' ? ' · TV' : ''}</div>
+                {it.note && <div className="lg-note">{it.note}</div>}
+              </TitleLink>
             )
           })}
         </div>

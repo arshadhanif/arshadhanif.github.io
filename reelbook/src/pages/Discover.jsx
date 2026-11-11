@@ -165,7 +165,7 @@ export default function Discover() {
   const hideSet = hideSeen ? lib.watched : null
   useEffect(() => {
     let alive = true
-    getLibraryTmdbIds().then((x) => alive && setLib(x)).catch(() => {})
+    getLibraryTmdbIds().then((x) => alive && setLib(x)).catch((e) => console.error('library ids', e))
     return () => { alive = false }
   }, [])
 
