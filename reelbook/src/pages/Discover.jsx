@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { searchAll, getTrending, getPopular, getTopRated, getTvStatus, getAnime, listWatchProviders, discoverByProviders, IMG } from '../lib/tmdb'
-import { listInProgressShows, setTitleTotalEpisodes, listSubscriptions, dropShow, listDroppedShows, restoreShow, setShowHome } from '../lib/db'
+import { listInProgressShows, setTitleTotalEpisodes, listSubscriptions, dropShow, listDroppedShows, restoreShow, setShowHome, getLibraryTmdbIds,
+} from '../lib/db'
 import { regionFromSubs, matchProviderIds } from '../lib/providers'
 import { Poster, Empty, SkeletonGrid, TitleLink, ScrollRow, Modal } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
@@ -149,6 +150,16 @@ export default function Discover() {
     catch (e) { toast(e.message || 'Could not update', 'err') }
   }
 
+  // Which of these you've already logged. Nothing in search used to say, so
+  // there was no way to tell a film you watched years ago from one you never
+  // got round to, short of opening its page one by one.
+  const [lib, setLib] = useState({ watched: new Set(), watchlist: new Set() })
+  useEffect(() => {
+    let alive = true
+    getLibraryTmdbIds().then((x) => alive && setLib(x)).catch(() => {})
+    return () => { alive = false }
+  }, [])
+
   const searching = !!q.trim()
   const titleResults = results.filter((r) => r.kind !== 'person')
   const peopleResults = results.filter((r) => r.kind === 'person')
@@ -220,7 +231,14 @@ export default function Discover() {
             <div className="grid">
               {filtered.map((r) => (
                 <TitleLink className="tile" key={`${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
-                  <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
+                  <div style={{ position: 'relative' }}>
+                    <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
+                    {lib.watched.has(r.tmdb_id)
+                      ? <span className="ep-badge" style={{ background: 'var(--green)', color: '#0b0d12' }} title="You've logged this as watched">✓</span>
+                      : lib.watchlist.has(r.tmdb_id)
+                        ? <span className="ep-badge" title="On your watchlist">🔖</span>
+                        : null}
+                  </div>
                   <div className="tile-title">{r.title}</div>
                   <div className="tile-sub">{r.year || 'N/A'} · {r.media_type === 'tv' ? 'TV' : 'Movie'}</div>
                 </TitleLink>
