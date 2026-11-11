@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getCollection, updateCollection, deleteCollection, removeFromCollection, reorderCollection, getLibraryTmdbIds } from '../lib/db'
+import { getCollection, updateCollection, deleteCollection, removeFromCollection, reorderCollection, getLibraryTmdbIds, getLibraryGroupMap } from '../lib/db'
 import { useToast } from '../context/Toast'
+import { useAppData } from '../context/AppData'
 import { Spinner, Empty, Poster, TitleLink, Modal } from '../components/ui'
 
 export default function CollectionDetail() {
@@ -14,10 +15,19 @@ export default function CollectionDetail() {
   const [editing, setEditing] = useState(false)
   const [reordering, setReordering] = useState(false)
   const [typeF, setTypeF] = useState('all')   // all | movie | tv
+  const { groups } = useAppData()
   // Which of these you've already seen, so a franchise list doubles as a
   // progress check rather than just a pile of posters.
   const [lib, setLib] = useState({ watched: new Set(), watchlist: new Set() })
-  useEffect(() => { getLibraryTmdbIds().then(setLib).catch(() => {}) }, [])
+  // ...and who saw them, so "have I finished this on my own" and "have we
+  // finished it together" are different questions with different answers.
+  const [byGroup, setByGroup] = useState(new Map())
+  const [who, setWho] = useState('any')       // 'any' | group id
+  const [onlyLeft, setOnlyLeft] = useState(false)
+  useEffect(() => {
+    getLibraryTmdbIds().then(setLib).catch(() => {})
+    getLibraryGroupMap().then(setByGroup).catch(() => {})
+  }, [])
 
   async function load() {
     setLoading(true)
@@ -53,8 +63,24 @@ export default function CollectionDetail() {
     movie: items.filter((it) => it.titles?.media_type === 'movie').length,
     tv: items.filter((it) => it.titles?.media_type === 'tv').length,
   }
-  const view = typeF === 'all' ? items : items.filter((it) => it.titles?.media_type === typeF)
-  const seen = view.filter((it) => lib.watched.has(it.titles?.tmdb_id)).length
+  const inType = typeF === 'all' ? items : items.filter((it) => it.titles?.media_type === typeF)
+
+  // "Watched" depends on who you are asking about: anyone in the household, or
+  // one specific group. The type filter applies to both, so switching to Movies
+  // asks "have we finished the films" rather than the whole franchise.
+  const seenBy = (t, g) => {
+    const id = t?.tmdb_id
+    if (id == null) return false
+    return g === 'any' ? lib.watched.has(id) : !!byGroup.get(id)?.has(g)
+  }
+  const tally = (g) => inType.filter((it) => seenBy(it.titles, g)).length
+  const seen = tally(who)
+  const left = inType.length - seen
+  const pct = inType.length ? Math.round((seen / inType.length) * 100) : 0
+  const complete = inType.length > 0 && left === 0
+  const view = onlyLeft ? inType.filter((it) => !seenBy(it.titles, who)) : inType
+  // Reordering writes positions by index, so it only makes sense on the full list.
+  const canReorder = typeF === 'all' && !onlyLeft
 
   if (loading) return <div className="page"><Spinner /></div>
   if (!col) return <div className="page"><Empty icon="📚">List not found.</Empty></div>
@@ -71,9 +97,49 @@ export default function CollectionDetail() {
       </div>
       {col.description && <p className="sub">{col.description}</p>}
       <div className="faint" style={{ marginBottom: 10 }}>
-        {view.length} title{view.length === 1 ? '' : 's'} · {seen} watched
+        {inType.length} title{inType.length === 1 ? '' : 's'}
         {col.ranked ? ' · ranked' : ''}{reordering ? ' · saving order…' : ''}
       </div>
+
+      {inType.length > 0 && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="row" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <strong style={{ fontSize: 15 }}>
+              {seen} of {inType.length} watched
+            </strong>
+            {complete
+              ? <span className="watched-chip" style={{ background: 'var(--green)', color: '#0b0d12', fontWeight: 800, fontSize: 12.5, padding: '2px 9px', borderRadius: 6 }}>✓ Completed</span>
+              : <span className="faint">{left} to go</span>}
+            <span className="faint" style={{ marginLeft: 'auto' }}>{pct}%</span>
+          </div>
+          <div className="progress-track">
+            <div className="progress-fill" style={{ width: `${pct}%`, background: complete ? 'var(--green)' : 'var(--accent)' }} />
+          </div>
+
+          {/* One row per group, so "did I finish it alone" and "did we finish it
+              together" are both answered without switching anything. */}
+          <div className="scroll-x" style={{ marginTop: 12 }}>
+            {[{ id: 'any', name: 'Anyone' }, ...groups].map((g) => {
+              const n = tally(g.id)
+              const full = inType.length > 0 && n === inType.length
+              return (
+                <button key={g.id} className={`chip ${who === g.id ? 'active' : ''}`}
+                  style={who === g.id ? { background: 'var(--text)', borderColor: 'var(--text)', color: 'var(--bg)' } : undefined}
+                  onClick={() => setWho(g.id)}>
+                  {full ? '✓ ' : ''}{g.name} {n}/{inType.length}
+                </button>
+              )
+            })}
+          </div>
+
+          {left > 0 && (
+            <label className="row" style={{ gap: 8, cursor: 'pointer', marginTop: 12 }}>
+              <input type="checkbox" style={{ width: 18, height: 18 }} checked={onlyLeft} onChange={(e) => setOnlyLeft(e.target.checked)} />
+              <span>Show only what's left ({left})</span>
+            </label>
+          )}
+        </div>
+      )}
 
       {counts.movie > 0 && counts.tv > 0 && (
         <div className="seg" style={{ marginBottom: 16 }}>
@@ -85,11 +151,13 @@ export default function CollectionDetail() {
 
       {items.length === 0 ? (
         <Empty icon="➕">This list is empty. Open any movie or show and choose “Add to list”.</Empty>
+      ) : view.length === 0 ? (
+        <Empty icon="🎉">Nothing left here. That's the whole list watched.</Empty>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {view.map((it, i) => {
             const t = it.titles
-            const watched = lib.watched.has(t?.tmdb_id)
+            const watched = seenBy(t, who)
             return (
               <div className="card row" key={it.id} style={{ gap: 12, alignItems: 'center' }}>
                 {col.ranked && <div className="rank-num">{i + 1}</div>}
@@ -102,10 +170,10 @@ export default function CollectionDetail() {
                   {it.note && <div className="muted" style={{ fontSize: 13, marginTop: 3 }}>{it.note}</div>}
                 </TitleLink>
                 <div className="row" style={{ gap: 4, flexShrink: 0 }}>
-                  <button className="btn sm ghost" disabled={typeF !== 'all' || i === 0} onClick={() => move(i, -1)}
-                    title={typeF === 'all' ? 'Move up' : 'Show All to reorder'}>↑</button>
-                  <button className="btn sm ghost" disabled={typeF !== 'all' || i === items.length - 1} onClick={() => move(i, 1)}
-                    title={typeF === 'all' ? 'Move down' : 'Show All to reorder'}>↓</button>
+                  <button className="btn sm ghost" disabled={!canReorder || i === 0} onClick={() => move(i, -1)}
+                    title={canReorder ? 'Move up' : 'Show the whole list to reorder'}>↑</button>
+                  <button className="btn sm ghost" disabled={!canReorder || i === items.length - 1} onClick={() => move(i, 1)}
+                    title={canReorder ? 'Move down' : 'Show the whole list to reorder'}>↓</button>
                   <button className="btn sm ghost" onClick={() => remove(it.id)} title="Remove">✕</button>
                 </div>
               </div>

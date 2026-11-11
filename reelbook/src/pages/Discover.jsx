@@ -86,7 +86,7 @@ export default function Discover() {
         discoverByProviders('movie', movieIds, region).catch(() => []),
         discoverByProviders('tv', tvIds, region).catch(() => []),
       ])
-      const items = interleave(m, t).slice(0, 20)
+      const items = interleave(m, t).slice(0, 40)
       if (items.length) setOnServices({ items })
     }).catch(() => {})
   }, [])
@@ -157,6 +157,12 @@ export default function Discover() {
   // there was no way to tell a film you watched years ago from one you never
   // got round to, short of opening its page one by one.
   const [lib, setLib] = useState({ watched: new Set(), watchlist: new Set() })
+  // Suggestion rails hide what the household has already watched. On by
+  // default; the toggle sticks so it doesn't need re-setting every visit.
+  const [hideSeen, setHideSeen] = useState(() => {
+    try { return localStorage.getItem('reelbook.hideSeenRails') !== '0' } catch { return true }
+  })
+  const hideSet = hideSeen ? lib.watched : null
   useEffect(() => {
     let alive = true
     getLibraryTmdbIds().then((x) => alive && setLib(x)).catch(() => {})
@@ -263,13 +269,21 @@ export default function Discover() {
           {droppedShows.length > 0 && (
             <StoppedList shows={droppedShows} onResume={resumeDropped} />
           )}
-          {onServices && <Rail title="📺 On your services" items={onServices.items} />}
-          <Rail title="🔥 Trending this week" items={rails.trending} />
-          <Rail title="Popular movies" items={rails.popMovies} />
-          <Rail title="Popular TV" items={rails.popTv} />
-          <Rail title="🍙 Popular anime" items={rails.anime} />
-          <Rail title="Top rated movies" items={rails.topMovies} />
-          <Rail title="🎴 Anime movies" items={rails.animeMovies} />
+          <label className="row" style={{ gap: 8, cursor: 'pointer', marginBottom: 16 }}>
+            <input type="checkbox" style={{ width: 18, height: 18 }} checked={hideSeen}
+              onChange={(e) => {
+                setHideSeen(e.target.checked)
+                try { localStorage.setItem('reelbook.hideSeenRails', e.target.checked ? '1' : '0') } catch {}
+              }} />
+            <span className="faint">Hide what we've already watched</span>
+          </label>
+          {onServices && <Rail title="📺 On your services" items={onServices.items} hide={hideSet} />}
+          <Rail title="🔥 Trending this week" items={rails.trending} hide={hideSet} />
+          <Rail title="Popular movies" items={rails.popMovies} hide={hideSet} />
+          <Rail title="Popular TV" items={rails.popTv} hide={hideSet} />
+          <Rail title="🍙 Popular anime" items={rails.anime} hide={hideSet} />
+          <Rail title="Top rated movies" items={rails.topMovies} hide={hideSet} />
+          <Rail title="🎴 Anime movies" items={rails.animeMovies} hide={hideSet} />
           {!rails.trending && <SkeletonGrid count={6} />}
         </>
       )}
@@ -287,7 +301,11 @@ function interleave(a, b) {
   return out
 }
 
-function Rail({ title, items }) {
+function Rail({ title, items, hide }) {
+  // These rails exist to suggest something new, so anything already in the
+  // diary is noise. Filtered here rather than at fetch time so flipping the
+  // toggle is instant and costs no extra TMDB calls.
+  if (hide) items = (items || []).filter((r) => !hide.has(r.tmdb_id))
   if (!items || items.length === 0) return null
   return (
     <div style={{ marginBottom: 26 }}>
