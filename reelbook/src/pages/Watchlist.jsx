@@ -141,7 +141,7 @@ export default function Watchlist() {
             const onIds = new Set(x.entries.map((e) => e.groupId))
             const canAdd = groups.filter((g) => !onIds.has(g.id))
             return (
-              <div key={t.id}>
+              <div key={t.id} className="wl-card">
                 <TitleLink className="tile" tmdbId={t.tmdb_id} media={t.media_type}>
                   <Poster title={t.title} mediaType={t.media_type} posterPath={t.poster_path} />
                   <div className="tile-title">{t.title}</div>
@@ -157,8 +157,8 @@ export default function Watchlist() {
                   ))}
                 </div>
 
-                <div className="row" style={{ marginTop: 6, gap: 6 }}>
-                  <button className="btn sm primary" style={{ flex: 1 }}
+                <div className="wl-actions">
+                  <button className="btn sm primary"
                     onClick={() => setWatchItem({
                       titleId: t.id, tmdb_id: t.tmdb_id, title: t.title, media_type: t.media_type,
                       total_episodes: t.total_episodes, _entries: x.entries,

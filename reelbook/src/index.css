@@ -322,7 +322,23 @@ input:focus, select:focus, textarea:focus {
   background: rgba(0,0,0,0.28); color: #fff; font-size: 10px; text-shadow: none;
 }
 .wl-badge button:hover { background: rgba(0,0,0,0.5); }
-.wl-copy { width: auto; flex: 0 0 auto; font-size: 12px; padding: 6px 8px; }
+/* Watchlist cards.
+   The actions used to sit in a .row next to each other, with the select set to
+   flex: 0 0 auto. A grid column here is ~124-180px wide, while the select's
+   intrinsic width comes from its longest option ("Arshad & Muneeza"), so the
+   pair could not fit and spilled out of the card over its neighbour. Cards also
+   started their actions at different heights, because titles run to one or
+   three lines and the list badges wrap to one or two.
+   So: stack the actions, let them shrink, and pin them to the bottom of a
+   full-height card so every card in a row lines up. */
+.wl-card { display: flex; flex-direction: column; height: 100%; min-width: 0; }
+.wl-card > * { min-width: 0; }
+.wl-actions {
+  margin-top: auto; padding-top: 7px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.wl-actions .btn { width: 100%; }
+.wl-copy { width: 100%; min-width: 0; font-size: 12px; padding: 6px 8px; }
 
 /* dual rating */
 .dual { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
