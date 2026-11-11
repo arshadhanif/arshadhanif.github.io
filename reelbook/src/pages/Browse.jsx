@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getGenres, discoverTitles } from '../lib/tmdb'
-import { addToWatchlist, markWatched } from '../lib/db'
+import { markWatched } from '../lib/db'
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/Toast'
@@ -164,13 +164,10 @@ export default function Browse() {
           <div className="container selbar-inner">
             <span><strong>{selectedList.length}</strong> selected</span>
             <div className="row" style={{ gap: 8 }}>
-              <button className="btn sm" onClick={() => setPanel(panel === 'lists' ? null : 'lists')}>🔖 Add to lists</button>
               <button className="btn sm primary" onClick={() => setPanel(panel === 'watch' ? null : 'watch')}>✓ Mark watched</button>
               <button className="btn sm ghost" onClick={() => { setSelected(new Map()); setPanel(null) }}>Clear</button>
             </div>
           </div>
-          {panel === 'lists' && <BulkLists groups={groups} items={selectedList} userId={user.id} toast={toast}
-            onDone={() => { setPanel(null); setSelected(new Map()) }} />}
           {panel === 'watch' && <BulkWatch groups={groups} items={selectedList} userId={user.id} toast={toast}
             onDone={() => { setPanel(null); setSelected(new Map()) }} />}
         </div>
@@ -179,41 +176,8 @@ export default function Browse() {
   )
 }
 
-function BulkLists({ groups, items, userId, onDone, toast }) {
-  const [picked, setPicked] = useState([])
-  const [busy, setBusy] = useState(false)
-  async function go() {
-    if (!picked.length) return
-    setBusy(true)
-    let ok = 0
-    for (const it of items) {
-      for (const gid of picked) {
-        try { await addToWatchlist({ seed: it, groupId: gid, addedBy: userId }); ok++ } catch {}
-      }
-    }
-    toast(`Added to ${picked.length} list${picked.length > 1 ? 's' : ''} (${ok} entries)`)
-    onDone()
-  }
-  return (
-    <div className="container selbar-panel">
-      <div className="faint" style={{ marginBottom: 8 }}>Add the {items.length} selected titles to these lists/groups:</div>
-      <div className="scroll-x" style={{ flexWrap: 'wrap', display: 'flex', marginBottom: 10 }}>
-        {groups.map((g) => {
-          const on = picked.includes(g.id)
-          return (
-            <button key={g.id} className={`chip ${on ? 'active' : ''}`}
-              style={on ? { background: g.color, borderColor: g.color, color: '#0b0d12' } : undefined}
-              onClick={() => setPicked((p) => on ? p.filter((x) => x !== g.id) : [...p, g.id])}>{g.name}</button>
-          )
-        })}
-      </div>
-      <button className="btn primary block" disabled={busy || !picked.length} onClick={go}>
-        {busy ? 'Adding…' : `Add to ${picked.length || 0} list(s)`}
-      </button>
-    </div>
-  )
-}
-
+// BulkLists removed: it wrote only to the retired watchlist, so nothing it
+// saved appeared anywhere in the app.
 function BulkWatch({ groups, items, userId, onDone, toast }) {
   const today = todayLocal()
   const [groupId, setGroupId] = useState(groups[0]?.id || '')
