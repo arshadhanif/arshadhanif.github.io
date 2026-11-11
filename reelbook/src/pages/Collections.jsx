@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { listCollections, createCollection } from '../lib/db'
+import { listCollections, createCollection, getLibraryTmdbIds } from '../lib/db'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/Toast'
 import { RowsSkeleton, Empty, Modal } from '../components/ui'
@@ -14,12 +14,15 @@ export default function Collections() {
   const [lists, setLists] = useState([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
+  // Watched ids, so every card can say how far through the list you are.
+  const [watched, setWatched] = useState(new Set())
 
   async function load() {
     setLoading(true)
     try { setLists(await listCollections()) } finally { setLoading(false) }
   }
   useEffect(() => { load() }, [])
+  useEffect(() => { getLibraryTmdbIds().then((l) => setWatched(l.watched)).catch(() => {}) }, [])
 
   return (
     <div className="page">
@@ -33,18 +36,30 @@ export default function Collections() {
         <Empty icon="📚">No lists yet. Create one, then add titles from any movie or show page.</Empty>
       ) : (
         <div className="grid-cards">
-          {lists.map((c) => (
-            <button key={c.id} className="card collection-card" onClick={() => navigate(`/lists/${c.id}`)}>
-              <div className="collection-emoji">{c.emoji || '📚'}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <strong>{c.name}</strong>
-                <div className="faint" style={{ marginTop: 2 }}>
-                  {c.item_count} title{c.item_count === 1 ? '' : 's'}{c.ranked ? ' · ranked' : ''}
+          {lists.map((c) => {
+            const total = c.item_count
+            const seen = (c.tmdb_ids || []).filter((id) => watched.has(id)).length
+            const pct = total ? Math.round((seen / total) * 100) : 0
+            const done = total > 0 && seen === total
+            return (
+              <button key={c.id} className="card collection-card" onClick={() => navigate(`/lists/${c.id}`)}>
+                <div className="collection-emoji">{c.emoji || '📚'}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <strong>{c.name}{done ? ' ✓' : ''}</strong>
+                  <div className="faint" style={{ marginTop: 2 }}>
+                    {total} title{total === 1 ? '' : 's'}{c.ranked ? ' · ranked' : ''}
+                    {total > 0 && ` · ${seen} watched${done ? '' : `, ${total - seen} to go`}`}
+                  </div>
+                  {total > 0 && (
+                    <div className="progress-track">
+                      <div className="progress-fill" style={{ width: `${pct}%`, background: done ? 'var(--green)' : 'var(--accent)' }} />
+                    </div>
+                  )}
+                  {c.description && <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>{c.description}</div>}
                 </div>
-                {c.description && <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>{c.description}</div>}
-              </div>
-            </button>
-          ))}
+              </button>
+            )
+          })}
         </div>
       )}
 
