@@ -6,7 +6,7 @@ import { useAppData } from '../context/AppData'
 import { useToast } from '../context/Toast'
 import { getPref, setPref, REGIONS, regionName, DEFAULT_REGION } from '../lib/prefs'
 import { ACCENTS, THEMES, setTheme, setAccent } from '../lib/theme'
-import { isPushSupported, getPushState, enablePush, disablePush, sendTestPush } from '../lib/push'
+import { isPushSupported, getPushState, enablePush, disablePush, sendTestPush, pushBlockedReason } from '../lib/push'
 import { downloadJsonBackup, downloadDiaryCsv, downloadEpisodesCsv } from '../lib/backup'
 import { listFavorites, getMyShare, setShareEnabled } from '../lib/db'
 import { FavoritesEditor, FavoritesStrip } from '../components/Favorites'
@@ -203,16 +203,43 @@ export default function Settings() {
           when ReelBook is closed. Read-state stays in sync across your devices.
         </p>
         {push === 'unsupported' ? (
-          <div className="muted">This browser doesn’t support push notifications. On iPhone, add ReelBook to your Home Screen first.</div>
+          pushBlockedReason() === 'ios-not-installed' ? (
+            // The usual reason there is no subscription on an iPhone. Safari
+            // tabs cannot receive push at all, so spell out the install steps
+            // instead of calling the whole device unsupported.
+            <div className="banner" style={{ textAlign: 'left' }}>
+              <strong>Add ReelBook to your Home Screen first</strong>
+              <div className="faint" style={{ marginTop: 6 }}>
+                iPhone only delivers notifications to apps installed on the Home Screen, never to a
+                Safari tab. In Safari:
+              </div>
+              <ol className="faint" style={{ margin: '8px 0 0 18px', padding: 0, lineHeight: 1.7 }}>
+                <li>Tap the Share button (the square with an arrow).</li>
+                <li>Choose “Add to Home Screen”, then Add.</li>
+                <li>Close Safari and open ReelBook from the Home Screen icon.</li>
+                <li>Come back to Settings here and turn notifications on.</li>
+              </ol>
+            </div>
+          ) : (
+            <div className="muted">This browser doesn’t support push notifications.</div>
+          )
         ) : push === 'denied' ? (
           <div className="muted">Notifications are blocked in your browser settings. Re-enable them for this site, then reload.</div>
         ) : (
-          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-            <button className={`btn ${push === 'on' ? '' : 'primary'}`} disabled={pushBusy} onClick={togglePush}>
-              {push === 'on' ? '🔕 Turn off on this device' : '🔔 Turn on for this device'}
-            </button>
-            {push === 'on' && <button className="btn" disabled={pushBusy} onClick={testPush}>Send a test</button>}
-          </div>
+          <>
+            {push !== 'on' && (
+              <div className="faint" style={{ marginBottom: 10, color: 'var(--accent-2)' }}>
+                ⚠ Off on this device. Nothing will reach your phone until you turn it on here,
+                on the device you want notified.
+              </div>
+            )}
+            <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+              <button className={`btn ${push === 'on' ? '' : 'primary'}`} disabled={pushBusy} onClick={togglePush}>
+                {push === 'on' ? '🔕 Turn off on this device' : '🔔 Turn on for this device'}
+              </button>
+              {push === 'on' && <button className="btn" disabled={pushBusy} onClick={testPush}>Send a test</button>}
+            </div>
+          </>
         )}
       </div>
 

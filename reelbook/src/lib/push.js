@@ -11,6 +11,31 @@ export function isPushSupported() {
     'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
 }
 
+// iPhone and iPad only expose Web Push to a PWA launched from the Home Screen.
+// In a Safari tab PushManager simply does not exist, so the app reports
+// "unsupported" and the real instruction (install it first) stays hidden.
+export function isIOS() {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent || ''
+  return /iPad|iPhone|iPod/.test(ua) ||
+    // iPadOS 13+ reports itself as a Mac, so check for the touch screen too.
+    (/Macintosh/.test(ua) && typeof document !== 'undefined' && 'ontouchend' in document)
+}
+
+export function isStandalone() {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia?.('(display-mode: standalone)')?.matches === true ||
+    window.navigator?.standalone === true
+}
+
+// Why push cannot be switched on here, when it cannot.
+// 'ios-not-installed' is the common one and is fixable by the user.
+export function pushBlockedReason() {
+  if (isPushSupported()) return null
+  if (isIOS() && !isStandalone()) return 'ios-not-installed'
+  return 'unsupported'
+}
+
 function urlBase64ToUint8Array(base64) {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4)
   const b64 = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/')
