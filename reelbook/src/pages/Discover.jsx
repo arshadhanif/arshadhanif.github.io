@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { searchAll, getTrending, getPopular, getTopRated, getTvStatus, getAnime, listWatchProviders, discoverByProviders, IMG } from '../lib/tmdb'
-import { listInProgressShows, setTitleTotalEpisodes, listSubscriptions, dropShow, listDroppedShows, restoreShow, setShowHome, getLibraryTmdbIds,
+import { listInProgressShows, setTitleTotalEpisodes, listSubscriptions, dropShow, listDroppedShows, restoreShow, setShowHome, getLibraryTmdbIds, listOngoingShows,
 } from '../lib/db'
 import { regionFromSubs, matchProviderIds } from '../lib/providers'
+import { fmtDate } from '../lib/dates'
 import { Poster, Empty, SkeletonGrid, TitleLink, ScrollRow, Modal } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/Toast'
@@ -19,6 +20,7 @@ export default function Discover() {
   const [rails, setRails] = useState({})
   const [continueShows, setContinueShows] = useState([])
   const [droppedShows, setDroppedShows] = useState([])
+  const [ongoingShows, setOngoingShows] = useState([])
   const [onServices, setOnServices] = useState(null) // { items, services } | null
   const debounce = useRef()
 
@@ -66,6 +68,7 @@ export default function Discover() {
     }).catch(() => {})
 
     listDroppedShows().then(setDroppedShows).catch(() => {})
+    listOngoingShows().then(setOngoingShows).catch(() => {})
 
     // "On your services": what's popular on the streaming services you pay for.
     listSubscriptions().then(async (subs) => {
@@ -256,6 +259,7 @@ export default function Discover() {
             <ContinueRail shows={dormantShows} onDrop={dropContinue} onMove={moveShow}
               heading="💤 Not watched in 3+ months" collapsible defaultOpen={false} />
           )}
+          {ongoingShows.length > 0 && <OngoingList shows={ongoingShows} />}
           {droppedShows.length > 0 && (
             <StoppedList shows={droppedShows} onResume={resumeDropped} />
           )}
@@ -303,6 +307,39 @@ function Rail({ title, items }) {
 
 // Shows you've stopped tracking. Collapsed by default so it stays out of the
 // way, with a one-tap Resume that drops each back into Continue watching.
+function OngoingList({ shows }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ marginBottom: 26 }}>
+      <button className="stopped-head" onClick={() => setOpen((v) => !v)}>
+        <span>🔁 Ongoing ({shows.length})</span>
+        <span className="chev">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <>
+          <div className="faint" style={{ fontSize: 12, margin: '8px 0 10px' }}>
+            Shows you dip in and out of. No backlog is counted for these and they never
+            notify you. Turn it off from a show's page to put it back in Continue watching.
+          </div>
+          <ScrollRow className="rail">
+            {shows.map((s) => (
+              <div className="rail-item tile" key={s.title.id}>
+                <TitleLink tmdbId={s.title.tmdb_id} media="tv" style={{ display: 'block' }}>
+                  <Poster title={s.title.title} mediaType="tv" posterPath={s.title.poster_path} />
+                  <div className="tile-title">{s.title.title}</div>
+                  <div className="tile-sub">
+                    {s.watched} watched{s.last ? ` · last ${fmtDate(s.last)}` : ''}
+                  </div>
+                </TitleLink>
+              </div>
+            ))}
+          </ScrollRow>
+        </>
+      )}
+    </div>
+  )
+}
+
 function StoppedList({ shows, onResume }) {
   const [open, setOpen] = useState(false)
   return (
