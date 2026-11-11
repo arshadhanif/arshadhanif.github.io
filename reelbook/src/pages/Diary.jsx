@@ -37,19 +37,42 @@ export default function Diary() {
       return (b.watched_on || '').localeCompare(a.watched_on || '')
     })
 
+  // Episodes are only shown under the Episodes tab, but the page used to fetch
+  // every one of them on every visit: 11k+ rows with their titles and groups
+  // joined, paged 1000 at a time, before anything could render. That was the
+  // whole reason this page crawled. Load the diary now, episodes on demand.
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [d, e] = await Promise.all([listDiary({ groupId, limit: 10000 }), listEpisodeDiary({ groupId, limit: 20000 })])
-      setEntries(d); setEpEntries(e)
+      setEntries(await listDiary({ groupId, limit: 10000 }))
     } finally { setLoading(false) }
   }, [groupId])
 
-  const epView = epEntries
+  const [epLoading, setEpLoading] = useState(false)
+  const [epLoaded, setEpLoaded] = useState(false)
+  useEffect(() => { setEpEntries([]); setEpLoaded(false) }, [groupId])
+  useEffect(() => {
+    if (typeF !== 'episodes' || epLoaded || epLoading) return
+    let alive = true
+    setEpLoading(true)
+    listEpisodeDiary({ groupId, limit: 20000 })
+      .then((e) => { if (alive) { setEpEntries(e); setEpLoaded(true) } })
+      .catch(() => {})
+      .finally(() => alive && setEpLoading(false))
+    return () => { alive = false }
+  }, [typeF, groupId, epLoaded, epLoading])
+
+  // Rendering all 11k episode cards at once locks the page up even once the
+  // data is in. Show a page at a time.
+  const EP_PAGE = 200
+  const [epShown, setEpShown] = useState(EP_PAGE)
+  useEffect(() => { setEpShown(EP_PAGE) }, [q, sort, groupId])
+  const epAll = epEntries
     .filter((e) => !q.trim() || (e.titles?.title || '').toLowerCase().includes(q.trim().toLowerCase()))
     .sort((a, b) => sort === 'oldest'
       ? (a.watched_on || '').localeCompare(b.watched_on || '')
       : (b.watched_on || '').localeCompare(a.watched_on || ''))
+  const epView = epAll.slice(0, epShown)
 
   useEffect(() => { load() }, [load])
 
@@ -88,6 +111,7 @@ export default function Diary() {
       )}
 
       {loading ? <Spinner /> : typeF === 'episodes' ? (
+        epLoading ? <Spinner label="Loading episode history…" /> :
         epView.length === 0 ? (
           <Empty icon="📺">No episodes ticked off yet. Open a show and mark episodes from its <strong>Episodes</strong> list.</Empty>
         ) : (
@@ -110,6 +134,11 @@ export default function Diary() {
                 </div>
               )
             })}
+            {epAll.length > epView.length && (
+              <button className="btn block" onClick={() => setEpShown((n) => n + EP_PAGE)}>
+                Show more ({epView.length} of {epAll.length})
+              </button>
+            )}
           </div>
         )
       ) : entries.length === 0 ? (

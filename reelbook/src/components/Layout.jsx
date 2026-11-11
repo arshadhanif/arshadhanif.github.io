@@ -17,7 +17,9 @@ import {
 const TABS = [
   { to: '/', label: 'Discover', Icon: Compass, end: true },
   { to: '/foryou', label: 'For You', Icon: Sparkles },
-  { to: '/watchlist', label: 'Watchlist', Icon: Bookmark },
+  // Watchlist removed from the nav at Arshad's request: he keeps his watchlist
+  // on IMDb. The route and the data are both still there, so Settings can still
+  // export it and putting the tab back is a one-line change.
   { to: '/diary', label: 'Diary', Icon: BookOpen },
   { to: '/lists', label: 'Lists', Icon: Library },
   { to: '/insights', label: 'Insights', Icon: BarChart3 },
