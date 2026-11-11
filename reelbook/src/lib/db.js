@@ -1157,42 +1157,34 @@ export async function getLoggedTmdbIds() {
   return set
 }
 
-// Page an RPC that returns a set. PostgREST caps any single response at 1000
-// rows, and both library RPCs are past that, so a plain call silently returns
-// the first 1000 and the rest of the library reads as unwatched. Both functions
-// order their output, which is what makes .range() paging line up.
-async function rpcPaged(fn) {
-  const PAGE = 1000
-  const out = []
-  for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabase.rpc(fn).range(from, from + PAGE - 1)
-    if (error) throw error
-    if (!data || data.length === 0) break
-    out.push(...data)
-    if (data.length < PAGE) break
-  }
-  return out
+// The whole library in one JSON row: watched ids, watchlisted ids, and which
+// groups watched what. One row, so PostgREST's 1000-row response cap cannot
+// truncate it, which it was doing to the old row-per-title versions. About
+// 85KB. Concurrent callers share one request; the next call refetches.
+let snapInFlight = null
+function librarySnapshot() {
+  if (snapInFlight) return snapInFlight
+  snapInFlight = supabase.rpc('library_snapshot')
+    .then(({ data, error }) => { if (error) throw error; return data || {} })
+    .finally(() => { snapInFlight = null })
+  return snapInFlight
 }
 
-// Library TMDB ids split into watched vs watchlisted (aggregated in the DB), so
-// a person page can flag which of their credits you've seen.
+// Library TMDB ids split into watched vs watchlisted, so a person page can flag
+// which of their credits you've seen.
 export async function getLibraryTmdbIds() {
-  const rows = await rpcPaged('library_tmdb_ids')
-  const watched = new Set(), watchlist = new Set()
-  for (const r of rows) { if (r.watched) watched.add(r.tmdb_id); if (r.watchlisted) watchlist.add(r.tmdb_id) }
-  return { watched, watchlist }
+  const s = await librarySnapshot()
+  return { watched: new Set(s.watched || []), watchlist: new Set(s.watchlisted || []) }
 }
 
 // tmdb_id -> Set(group_id) for everything watched, so a list can report whose
 // progress it is (yours alone, yours together, anyone's) instead of just
 // "somebody in the household saw this".
 export async function getLibraryGroupMap() {
+  const s = await librarySnapshot()
   const m = new Map()
-  for (const r of await rpcPaged('library_tmdb_groups')) {
-    if (r.tmdb_id == null || !r.group_id) continue
-    let s = m.get(r.tmdb_id)
-    if (!s) { s = new Set(); m.set(r.tmdb_id, s) }
-    s.add(r.group_id)
+  for (const [tmdbId, groupIds] of Object.entries(s.groups || {})) {
+    m.set(Number(tmdbId), new Set(groupIds || []))
   }
   return m
 }
@@ -1371,14 +1363,20 @@ export async function deleteSubscription(id) {
 export async function listCollections() {
   const { data, error } = await supabase
     .from('collections')
-    .select('id, name, description, emoji, ranked, owner_id, created_at, collection_items(titles(tmdb_id))')
+    .select('id, name, description, emoji, ranked, owner_id, created_at, collection_items(position, titles(tmdb_id, poster_path))')
     .order('created_at', { ascending: false })
   if (error) throw error
   // Carry the TMDB ids so the index can show how far through each list you are
   // without a second round trip per card.
   return (data || []).map((c) => {
-    const ids = (c.collection_items || []).map((i) => i.titles?.tmdb_id).filter((x) => x != null)
-    return { ...c, item_count: (c.collection_items || []).length, tmdb_ids: ids }
+    const items = [...(c.collection_items || [])].sort((a, b) => (a.position || 0) - (b.position || 0))
+    return {
+      ...c,
+      item_count: items.length,
+      tmdb_ids: items.map((i) => i.titles?.tmdb_id).filter((x) => x != null),
+      // First few posters, for the fan on the card.
+      posters: items.map((i) => i.titles?.poster_path).filter(Boolean).slice(0, 4),
+    }
   })
 }
 

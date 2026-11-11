@@ -4,6 +4,7 @@ import { listCollections, createCollection, getLibraryTmdbIds } from '../lib/db'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/Toast'
 import { RowsSkeleton, Empty, Modal } from '../components/ui'
+import { IMG } from '../lib/tmdb'
 
 const EMOJIS = ['🎬', '🍿', '👽', '😱', '😭', '❤️', '🔥', '🏆', '🎄', '🕵️', '🚀', '🎃', '👑', '🌍']
 
@@ -22,7 +23,7 @@ export default function Collections() {
     try { setLists(await listCollections()) } finally { setLoading(false) }
   }
   useEffect(() => { load() }, [])
-  useEffect(() => { getLibraryTmdbIds().then((l) => setWatched(l.watched)).catch(() => {}) }, [])
+  useEffect(() => { getLibraryTmdbIds().then((l) => setWatched(l.watched)).catch((e) => console.error('library ids', e)) }, [])
 
   return (
     <div className="page">
@@ -35,27 +36,39 @@ export default function Collections() {
       {loading ? <RowsSkeleton count={4} /> : lists.length === 0 ? (
         <Empty icon="📚">No lists yet. Create one, then add titles from any movie or show page.</Empty>
       ) : (
-        <div className="grid-cards">
+        <div className="list-grid">
           {lists.map((c) => {
             const total = c.item_count
             const seen = (c.tmdb_ids || []).filter((id) => watched.has(id)).length
             const pct = total ? Math.round((seen / total) * 100) : 0
             const done = total > 0 && seen === total
+            const fan = (c.posters || []).slice(0, 4)
             return (
-              <button key={c.id} className="card collection-card" onClick={() => navigate(`/lists/${c.id}`)}>
-                <div className="collection-emoji">{c.emoji || '📚'}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <strong>{c.name}{done ? ' ✓' : ''}</strong>
-                  <div className="faint" style={{ marginTop: 2 }}>
-                    {total} title{total === 1 ? '' : 's'}{c.ranked ? ' · ranked' : ''}
-                    {total > 0 && ` · ${seen} watched${done ? '' : `, ${total - seen} to go`}`}
+              <button key={c.id} className="list-card" onClick={() => navigate(`/lists/${c.id}`)}>
+                <div className="list-fan">
+                  {fan.length > 0 ? fan.map((pp, i) => (
+                    <div className="pf" key={i}>
+                      <img src={IMG.poster(pp, 'w185')} alt="" loading="lazy" />
+                    </div>
+                  )) : <div className="pf" />}
+                </div>
+                <div className="list-body">
+                  <div className="list-name">
+                    <span className="em">{c.emoji || '📚'}</span>
+                    <span>{c.name}</span>
+                  </div>
+                  <div className="list-meta">
+                    {total} title{total === 1 ? '' : 's'}
+                    {total > 0 && (done
+                      ? <> · <span className="done">all watched ✓</span></>
+                      : <> · {seen} watched, {total - seen} to go</>)}
                   </div>
                   {total > 0 && (
-                    <div className="progress-track">
-                      <div className="progress-fill" style={{ width: `${pct}%`, background: done ? 'var(--green)' : 'var(--accent)' }} />
+                    <div className="lp-track" style={{ marginTop: 9, height: 6 }}>
+                      <div className={`lp-fill ${done ? 'done' : ''}`} style={{ width: `${pct}%` }} />
                     </div>
                   )}
-                  {c.description && <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>{c.description}</div>}
+                  {c.description && <div className="list-desc">{c.description}</div>}
                 </div>
               </button>
             )
