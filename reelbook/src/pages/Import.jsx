@@ -53,7 +53,7 @@ function detectTvType(headers) {
 const MODES = {
   imdb_ratings: {
     label: 'IMDb ratings', icon: '⭐', target: 'diary', needsPerson: true,
-    help: 'IMDb → Your Ratings → ⋯ → Export. Each rated title becomes a diary watch with the chosen person’s score and the date you rated it.',
+    help: 'IMDb → Your Ratings → ⋯ → Export. Each rated title becomes a diary watch with the chosen person’s score, dated when you rated it. Re-running is safe: titles already logged are skipped and only their score is updated.',
   },
   imdb_watchlist: {
     label: 'IMDb watchlist', icon: '🔖', target: 'watchlist', needsPerson: false,
@@ -157,6 +157,10 @@ export default function Import() {
   const [mode, setMode] = useState('imdb_ratings')
   const [groupId, setGroupId] = useState(groups[0]?.id || '')
   const [profileId, setProfileId] = useState(profiles[0]?.id || '')
+  // IMDb records when you RATED a title, not when you watched it. Rating old
+  // films as you come across them therefore stamps them with today's date and
+  // quietly inflates this year's diary. This logs them with no date instead.
+  const [ratedLater, setRatedLater] = useState(false)
   const [items, setItems] = useState([])
   const [filename, setFilename] = useState('')
   const [status, setStatus] = useState(null)
@@ -436,7 +440,7 @@ export default function Import() {
             else alreadyWatches++
             continue
           }
-          const wd = normDate(m.it.date)
+          const wd = ratedLater ? null : normDate(m.it.date)
           watchRows.push({ title_id: tid, group_id: groupId, watched_on: wd || null, date_precision: wd ? 'day' : null, created_by: user.id, visibility: 'private', is_rewatch: false, rewatch_count: 0, _score: profileId ? s : null })
         }
         setPlan({ batchKind: cfg.label, watchRows, ratingUpdates, counts: { newWatches: watchRows.length, alreadyWatches, ratingChanged: ratingUpdates.length, unmatched: unmatchedTitles.length }, unmatchedTitles })
@@ -703,6 +707,22 @@ export default function Import() {
             <select value={profileId} onChange={(e) => setProfileId(e.target.value)}>
               {profiles.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
+          </div>
+        )}
+        {mode === 'imdb_ratings' && (
+          <div className="field">
+            <label className="row" style={{ gap: 8, cursor: 'pointer', alignItems: 'flex-start' }}>
+              <input type="checkbox" style={{ width: 18, height: 18, marginTop: 2 }}
+                checked={ratedLater} onChange={(e) => setRatedLater(e.target.checked)} />
+              <span>
+                These are films I watched long ago and rated later
+                <div className="faint" style={{ fontSize: 12, marginTop: 3 }}>
+                  IMDb only records when you rated something. Tick this and the watches are
+                  logged with no date, so catching up on old films does not fill this year's
+                  diary with them. Ratings still import normally.
+                </div>
+              </span>
+            </label>
           </div>
         )}
         <div className="field">
