@@ -8,8 +8,6 @@ import { getPref, setPref, REGIONS, regionName, DEFAULT_REGION } from '../lib/pr
 import { ACCENTS, THEMES, setTheme, setAccent } from '../lib/theme'
 import { isPushSupported, getPushState, enablePush, disablePush, sendTestPush, pushBlockedReason } from '../lib/push'
 import { downloadJsonBackup, downloadDiaryCsv, downloadEpisodesCsv } from '../lib/backup'
-import { listFavorites, getMyShare, setShareEnabled } from '../lib/db'
-import { FavoritesEditor, FavoritesStrip } from '../components/Favorites'
 import { initials } from '../components/ui'
 
 const COLORS = ['#5b9aff', '#ff6b9d', '#e8a838', '#4ecb71', '#b46bff', '#ff8c42', '#42d4d4']
@@ -19,10 +17,6 @@ export default function Settings() {
   const { groups, profiles, reload } = useAppData()
   const toast = useToast()
   const others = (profiles || []).filter((p) => p.id !== user?.id)
-  const [othersFavs, setOthersFavs] = useState({})
-  useEffect(() => {
-    others.forEach((p) => { if (!(p.id in othersFavs)) listFavorites(p.id).then((f) => setOthersFavs((m) => ({ ...m, [p.id]: f }))).catch(() => {}) })
-  }, [profiles])
 
   const [name, setName] = useState(profile?.name || '')
   const [color, setColor] = useState(profile?.color || COLORS[0])
@@ -51,25 +45,6 @@ export default function Settings() {
       toast(r?.sent ? 'Test sent. Check your notifications' : 'No devices registered yet', r?.sent ? 'ok' : 'err')
     } catch (e) { toast(e.message || 'Could not send test', 'err') }
     finally { setPushBusy(false) }
-  }
-
-  const [share, setShare] = useState(null)   // { token, enabled } | null
-  const [shareBusy, setShareBusy] = useState(false)
-  useEffect(() => { if (user) getMyShare(user.id).then(setShare).catch(() => {}) }, [user])
-  const shareUrl = share?.token ? `${location.origin}/p/${share.token}` : ''
-
-  async function toggleShare() {
-    setShareBusy(true)
-    try {
-      const token = share?.token || (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '').slice(0, 16) : String(Math.random()).slice(2, 18))
-      const enabled = !share?.enabled
-      await setShareEnabled({ profileId: user.id, enabled, token })
-      setShare({ token, enabled })
-      toast(enabled ? 'Public profile is on' : 'Public profile turned off')
-    } catch (e) { toast(e.message || 'Could not update', 'err') } finally { setShareBusy(false) }
-  }
-  async function copyShare() {
-    try { await navigator.clipboard.writeText(shareUrl); toast('Link copied') } catch { toast('Could not copy', 'err') }
   }
 
   const [exporting, setExporting] = useState('')
@@ -147,37 +122,8 @@ export default function Settings() {
         </div>
       </div>
 
-      <div className="card" style={{ marginBottom: 18 }}>
-        <strong>Your favourites</strong>
-        <p className="faint" style={{ margin: '8px 0 14px' }}>Pick up to four all-time favourites to show on your profile.</p>
-        <FavoritesEditor profileId={user.id} />
-        {others.map((p) => (othersFavs[p.id]?.length > 0 && (
-          <div key={p.id} style={{ marginTop: 16 }}>
-            <div className="faint" style={{ marginBottom: 8, color: p.color, fontWeight: 700 }}>{p.name}’s favourites</div>
-            <FavoritesStrip favorites={othersFavs[p.id]} />
-          </div>
-        )))}
-      </div>
-
-      <div className="card" style={{ marginBottom: 18 }}>
-        <strong>Public profile</strong>
-        <p className="faint" style={{ margin: '8px 0 14px' }}>
-          Share a read-only page with your favourites, top-rated titles and rating stats.
-          Anyone with the link can view it; no private notes, diary or friends are shown.
-        </p>
-        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-          <button className={`btn ${share?.enabled ? '' : 'primary'}`} disabled={shareBusy} onClick={toggleShare}>
-            {share?.enabled ? 'Turn off sharing' : '🔗 Create share link'}
-          </button>
-          {share?.enabled && <a className="btn" href={shareUrl} target="_blank" rel="noreferrer">Preview</a>}
-        </div>
-        {share?.enabled && (
-          <div className="row" style={{ gap: 8, marginTop: 12 }}>
-            <input readOnly value={shareUrl} onFocus={(e) => e.target.select()} style={{ flex: 1 }} />
-            <button className="btn" onClick={copyShare}>Copy</button>
-          </div>
-        )}
-      </div>
+      {/* Favourites and Public profile retired: neither was ever used.
+          The data and components are untouched. See reelbook/ARCHIVED.md. */}
 
       <div className="card" style={{ marginBottom: 18 }}>
         <strong>Preferences</strong>

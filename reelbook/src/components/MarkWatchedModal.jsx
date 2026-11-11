@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Modal, TagInput, Combobox } from './ui'
+import { Modal, Combobox } from './ui'
 import { markWatched, markNextEpisodes } from '../lib/db'
 import { useAuth } from '../context/AuthContext'
 import { getPref } from '../lib/prefs'
@@ -19,12 +19,13 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
   const [watchedOn, setWatchedOn] = useState(today)
   const [monthVal, setMonthVal] = useState(today.slice(0, 7))
   const [yearVal, setYearVal] = useState(today.slice(0, 4))
-  const [note, setNote] = useState('')
-  const [tags, setTags] = useState([])
   const [isRewatch, setIsRewatch] = useState(!!item.rewatchSuggested)
   const [episodes, setEpisodes] = useState(0)
   const [ratings, setRatings] = useState({}) // {profileId: score}
-  const [visibility, setVisibility] = useState('private')
+  // Fixed now that the picker is gone. Every watch you have is private anyway.
+  const visibility = 'private'
+  const note = ''
+  const tags = []
   // Default to whatever you picked last, rather than making you re-pick it on
   // every single log.
   const lastCtx = lastWatchContext()
@@ -162,30 +163,13 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
       {/* Personal star ratings retired: IMDb and TMDB scores are enough.
           Stored scores are untouched and still feed For You and Insights. */}
 
-      <div className="field">
-        <label>Review / notes (optional)</label>
-        <textarea rows="4" value={note} onChange={(e) => setNote(e.target.value)} placeholder="What did you think?" />
-      </div>
-
-      <div className="field">
-        <label>Tags (optional)</label>
-        <TagInput value={tags} onChange={setTags} />
-      </div>
+      {/* Notes, tags and visibility retired: see reelbook/ARCHIVED.md. */}
 
       <div className="field">
         <label className="row" style={{ gap: 8, cursor: 'pointer' }}>
           <input type="checkbox" style={{ width: 18, height: 18 }} checked={isRewatch} onChange={(e) => setIsRewatch(e.target.checked)} />
           <span>This is a rewatch</span>
         </label>
-      </div>
-
-      <div className="field">
-        <label>Visibility</label>
-        <select value={visibility} onChange={(e) => setVisibility(e.target.value)}>
-          <option value="private">Private (just your household)</option>
-          <option value="friends">Friends (visible to your friends)</option>
-          <option value="public">Public (any ReelBook user)</option>
-        </select>
       </div>
 
       <button className="btn primary block" disabled={saving || !groupId} onClick={save}>
