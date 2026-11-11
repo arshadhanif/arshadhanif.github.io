@@ -4,7 +4,7 @@ import { getFullDetail, getSeason, getRecommendations, getEpisodeExternalIds, IM
 import {
   ensureTitleFromFull, getWatchesForTitle, getTitleListMembership, setTitleList,
   listEpisodeWatches, markEpisode, unmarkEpisode, markSeason, markEpisodesBulk, unmarkAllEpisodes, setEpisodeRating, setEpisodeWatchedDate,
-  setEpisodeContext, setEpisodesContext,
+  setEpisodeContext, setEpisodesContext, isOngoing, setOngoing,
   getTitleServices, setTitleServices, getStreamingAvailability, getEpisodeWatchSpan,
   getImdbRating, getImdbSeasonRatings, getSeasonRatings, setSeasonRating,
   getTitleTrivia, getTitleQuotes, getSimilarByTaste,
@@ -655,6 +655,26 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
   }, [titleId, trackGroupId])
 
   const trackGroup = groups.find((g) => g.id === trackGroupId)
+
+  // "Ongoing": a show you dip in and out of and never intend to finish. It
+  // carries no backlog and sends no notifications.
+  const [ongoing, setOngoingState] = useState(false)
+  const [ongoingBusy, setOngoingBusy] = useState(false)
+  useEffect(() => { isOngoing(titleId).then(setOngoingState).catch(() => {}) }, [titleId])
+  async function toggleOngoing() {
+    const next = !ongoing
+    setOngoingBusy(true)
+    setOngoingState(next)
+    try {
+      await setOngoing(titleId, next, userId)
+      toast(next
+        ? 'Marked as ongoing. No backlog or notifications for this one.'
+        : 'No longer ongoing. It counts towards your backlog again.')
+    } catch (e) {
+      setOngoingState(!next)
+      toast(e.message || 'Could not change that', 'err')
+    } finally { setOngoingBusy(false) }
+  }
   // Watched episodes in this group with no platform on them. Surfaced so a run
   // of unlabelled ticks is visible instead of silently accumulating.
   const unlabelled = [...watched].filter((k) => !epCtx[k]?.service && !epCtx[k]?.where).length
@@ -869,6 +889,11 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
           <div className="row" style={{ gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
             <button className="btn sm primary" disabled={bulkBusy} onClick={markEntireSeries}>✓ Mark entire series watched</button>
             <button className="btn sm" disabled={bulkBusy} onClick={clearSeries}>Clear all</button>
+            <button className={`btn sm ${ongoing ? 'primary' : ''}`} disabled={ongoingBusy}
+              title="Shows you dip in and out of: no backlog counted, no notifications"
+              onClick={toggleOngoing}>
+              {ongoing ? '🔁 Ongoing' : '🔁 Mark as ongoing'}
+            </button>
           </div>
         </>
       )}

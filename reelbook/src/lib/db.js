@@ -1081,6 +1081,46 @@ export async function saveNotifBaselines(map) {
   if (error) throw error
 }
 
+// ---------- Ongoing shows ----------
+// Shows you dip in and out of and never intend to finish (wrestling, Pokémon,
+// chat shows). They carry no backlog and send no notifications.
+export async function listOngoingShows() {
+  const { data, error } = await supabase.rpc('ongoing_shows_list')
+  if (error) throw error
+  return (data || []).map((r) => ({
+    title: {
+      id: r.title_id, tmdb_id: r.tmdb_id, media_type: 'tv',
+      title: r.title, poster_path: r.poster_path, year: r.year, total_episodes: r.total_episodes,
+    },
+    watched: r.watched || 0,
+    last: r.last_watched,
+  }))
+}
+
+export async function isOngoing(titleId) {
+  if (!titleId) return false
+  const { data, error } = await supabase.rpc('is_ongoing', { p_title: titleId })
+  if (error) return false
+  return !!data
+}
+
+export async function setOngoing(titleId, on, userId) {
+  if (!titleId) return
+  if (!on) {
+    const { error } = await supabase.from('ongoing_shows').delete().eq('title_id', titleId)
+    if (error) throw error
+    return
+  }
+  // The marker is per household, so find the caller's one first.
+  const { data: hm } = await supabase
+    .from('household_members').select('household_id').eq('profile_id', userId).limit(1).maybeSingle()
+  if (!hm?.household_id) throw new Error('No household yet')
+  const { error } = await supabase.from('ongoing_shows')
+    .upsert({ title_id: titleId, household_id: hm.household_id, created_by: userId },
+            { onConflict: 'title_id,household_id' })
+  if (error) throw error
+}
+
 // Bulk upsert several titles' notification state in one request. "Mark all read"
 // used to fire one request per show, which was fine while the page only looked
 // at 60 shows and is not now that it looks at all of them.
