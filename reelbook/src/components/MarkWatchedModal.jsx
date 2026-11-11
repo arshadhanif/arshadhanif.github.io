@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Modal, StarRating, TagInput, Combobox } from './ui'
+import { Modal, TagInput, Combobox } from './ui'
 import { markWatched, markNextEpisodes } from '../lib/db'
 import { useAuth } from '../context/AuthContext'
 import { getPref } from '../lib/prefs'
@@ -159,20 +159,8 @@ export default function MarkWatchedModal({ item, groups, profiles, onClose, onSa
         </div>
       </div>
 
-      <div className="field">
-        <label>Ratings (out of 10)</label>
-        {profiles.map((p) => (
-          <div key={p.id} style={{ marginBottom: 8 }}>
-            <div className="faint" style={{ marginBottom: 2, color: p.color, fontWeight: 700 }}>{p.name}</div>
-            <StarRating
-              value={ratings[p.id] || 0}
-              color={p.color}
-              onChange={(score) => setRatings((r) => ({ ...r, [p.id]: score }))}
-            />
-          </div>
-        ))}
-        {profiles.length === 0 && <div className="faint">No profiles yet.</div>}
-      </div>
+      {/* Personal star ratings retired: IMDb and TMDB scores are enough.
+          Stored scores are untouched and still feed For You and Insights. */}
 
       <div className="field">
         <label>Review / notes (optional)</label>
