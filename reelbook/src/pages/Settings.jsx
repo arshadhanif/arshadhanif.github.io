@@ -214,9 +214,12 @@ export default function Settings() {
                 Safari tab. In Safari:
               </div>
               <ol className="faint" style={{ margin: '8px 0 0 18px', padding: 0, lineHeight: 1.7 }}>
-                <li>Tap the Share button (the square with an arrow).</li>
-                <li>Choose “Add to Home Screen”, then Add.</li>
-                <li>Close Safari and open ReelBook from the Home Screen icon.</li>
+                <li>
+                  Tap the square-with-an-arrow icon, bottom middle of the screen (top right if your
+                  address bar is at the top). It is called Share, but nothing is shared with anyone.
+                </li>
+                <li>Scroll past Messages and Mail to “Add to Home Screen”, then tap Add.</li>
+                <li>Close Safari and open ReelBook from its new Home Screen icon.</li>
                 <li>Come back to Settings here and turn notifications on.</li>
               </ol>
             </div>
