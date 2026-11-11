@@ -25,14 +25,13 @@ const TABS = [
   { to: '/insights', label: 'Insights', Icon: BarChart3 },
 ]
 
+// Taste match and Friends retired: never used. See reelbook/ARCHIVED.md.
 const MENU = [
   ['/coming', 'Coming soon', CalendarDays],
   ['/wrapped', 'Year in review', Gift],
   ['/achievements', 'Achievements', Award],
-  ['/match', 'Taste match', HeartHandshake],
   ['/subscriptions', 'Subscriptions', CreditCard],
   ['/browse', 'Advanced browse', SlidersHorizontal],
-  ['/friends', 'Friends', Users],
   ['/settings', 'Settings', Settings],
   ['/groups', 'Groups & profile', UserRound],
   ['/import', 'Import & export', Upload],

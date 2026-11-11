@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { listDiary, listEpisodeDiary, deleteWatch, setRating, updateWatch } from '../lib/db'
 import { useAppData } from '../context/AppData'
-import { Poster, Spinner, Empty, GroupChips, Modal, TitleLink, TagInput } from '../components/ui'
+import { Poster, Spinner, Empty, GroupChips, Modal, TitleLink } from '../components/ui'
 import { formatWatched, fmtDate } from '../lib/dates'
 
 export default function Diary() {
@@ -15,9 +15,8 @@ export default function Diary() {
   const [typeF, setTypeF] = useState('all')     // all | movie | tv | episodes
   const [q, setQ] = useState('')
   const [genreF, setGenreF] = useState('all')
-  const [tagF, setTagF] = useState('all')
+  const tagF = 'all'
 
-  const allTags = [...new Set(entries.flatMap((e) => e.tags || []))].sort()
 
   const allGenres = [...new Set(entries.flatMap((e) => (e.titles?.genre || '').split(',').map((g) => g.trim()).filter(Boolean)))].sort()
 
@@ -99,12 +98,6 @@ export default function Diary() {
               {allGenres.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
           )}
-          {typeF !== 'episodes' && allTags.length > 0 && (
-            <select value={tagF} onChange={(e) => setTagF(e.target.value)} style={{ width: 'auto' }}>
-              <option value="all">All tags</option>
-              {allTags.map((t) => <option key={t} value={t}>#{t}</option>)}
-            </select>
-          )}
         </div>
       )}
 
@@ -174,8 +167,9 @@ export default function Diary() {
                   {e.note && <p className="muted" style={{ margin: '8px 0 0', fontSize: 14 }}>“{e.note}”</p>}
                   {(e.tags || []).length > 0 && (
                     <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                      {/* Not clickable any more: tag filtering went with the tag editor. */}
                       {e.tags.map((tg) => (
-                        <button key={tg} className="chip" onClick={() => { setTypeF('all'); setTagF(tg) }}>#{tg}</button>
+                        <span key={tg} className="chip">#{tg}</span>
                       ))}
                     </div>
                   )}
@@ -264,14 +258,8 @@ function EditWatch({ entry, profiles, onClose, onChanged }) {
           </datalist>
         </div>
       </div>
-      <div className="field">
-        <label>Review / notes</label>
-        <textarea rows="4" value={note} onChange={(e) => setNote(e.target.value)} />
-      </div>
-      <div className="field">
-        <label>Tags</label>
-        <TagInput value={tags} onChange={setTags} />
-      </div>
+      {/* Notes and tags retired: see reelbook/ARCHIVED.md. Existing ones still
+          show on the entry and are still saved back unchanged. */}
       <div className="field">
         <label className="row" style={{ gap: 8, cursor: 'pointer' }}>
           <input type="checkbox" style={{ width: 18, height: 18 }} checked={isRewatch} onChange={(e) => setIsRewatch(e.target.checked)} />

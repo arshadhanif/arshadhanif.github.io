@@ -29,12 +29,10 @@ const Import = lazy(() => import('./pages/Import'))
 const Groups = lazy(() => import('./pages/Groups'))
 const About = lazy(() => import('./pages/About'))
 const Insights = lazy(() => import('./pages/Insights'))
-const TasteMatch = lazy(() => import('./pages/TasteMatch'))
 const TitleDetail = lazy(() => import('./pages/TitleDetail'))
 const ForYou = lazy(() => import('./pages/ForYou'))
 const Settings = lazy(() => import('./pages/Settings'))
 const Landing = lazy(() => import('./pages/Landing'))
-const Friends = lazy(() => import('./pages/Friends'))
 const Notifications = lazy(() => import('./pages/Notifications'))
 const Browse = lazy(() => import('./pages/Browse'))
 const ComingSoon = lazy(() => import('./pages/ComingSoon'))
@@ -42,7 +40,6 @@ const Wrapped = lazy(() => import('./pages/Wrapped'))
 const Achievements = lazy(() => import('./pages/Achievements'))
 const Person = lazy(() => import('./pages/Person'))
 const Subscriptions = lazy(() => import('./pages/Subscriptions'))
-const PublicProfile = lazy(() => import('./pages/PublicProfile'))
 
 // Register the service worker so ReelBook is installable and updates cleanly on
 // phones. Scoped to BASE_URL, so on the GitHub Pages preview it controls only
@@ -83,7 +80,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Routes>
               <Route path="/welcome" element={<Landing />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/p/:token" element={<PublicProfile />} />
               <Route element={<Protected />}>
                 <Route index element={<Discover />} />
                 <Route path="watchlist" element={<Watchlist />} />
@@ -96,13 +92,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 <Route path="groups" element={<Groups />} />
                 <Route path="insights" element={<Insights />} />
                 <Route path="foryou" element={<ForYou />} />
-                <Route path="friends" element={<Friends />} />
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="coming" element={<ComingSoon />} />
                 <Route path="wrapped" element={<Wrapped />} />
                 <Route path="achievements" element={<Achievements />} />
                 <Route path="subscriptions" element={<Subscriptions />} />
-                <Route path="match" element={<TasteMatch />} />
                 <Route path="browse" element={<Browse />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="about" element={<About />} />
