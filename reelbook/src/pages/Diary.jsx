@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { listDiary, listEpisodeDiary, deleteWatch, setRating, updateWatch } from '../lib/db'
 import { useAppData } from '../context/AppData'
-import { Poster, Spinner, Empty, GroupChips, DualScore, Modal, StarRating, TitleLink, TagInput } from '../components/ui'
+import { Poster, Spinner, Empty, GroupChips, Modal, TitleLink, TagInput } from '../components/ui'
 import { formatWatched, fmtDate } from '../lib/dates'
-import RateNudge from '../components/RateNudge'
 
 export default function Diary() {
   const { groups, profiles } = useAppData()
@@ -79,7 +78,6 @@ export default function Diary() {
   return (
     <div className="page">
       <h1>Diary</h1>
-      <RateNudge />
       <GroupChips groups={groups} value={groupId} onChange={setGroupId} />
 
       {(entries.length > 0 || epEntries.length > 0) && (
@@ -173,7 +171,6 @@ export default function Diary() {
                     {e.service && <> · 📺 {e.service}</>}
                     {e.where_watched && <> · {e.where_watched}</>}
                   </div>
-                  <DualScore profiles={profiles} ratings={e.ratings} />
                   {e.note && <p className="muted" style={{ margin: '8px 0 0', fontSize: 14 }}>“{e.note}”</p>}
                   {(e.tags || []).length > 0 && (
                     <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
@@ -251,16 +248,6 @@ function EditWatch({ entry, profiles, onClose, onChanged }) {
           <input type="number" min="0" value={episodes} onChange={(e) => setEpisodes(e.target.value)} />
         </div>
       )}
-      <div className="field">
-        <label>Ratings (out of 10)</label>
-        {profiles.map((p) => (
-          <div key={p.id} style={{ marginBottom: 8 }}>
-            <div className="faint" style={{ color: p.color, fontWeight: 700 }}>{p.name}</div>
-            <StarRating value={ratings[p.id] || 0} color={p.color}
-              onChange={(s) => setRatings((r) => ({ ...r, [p.id]: s }))} />
-          </div>
-        ))}
-      </div>
       <div className="row" style={{ gap: 12, alignItems: 'flex-start' }}>
         <div className="field" style={{ flex: 1 }}>
           <label>Where?</label>

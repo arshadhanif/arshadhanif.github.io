@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { listDiary, listWatchlist } from '../lib/db'
 import { useAppData } from '../context/AppData'
-import { Poster, Spinner, Empty, GroupChips, DualScore, TitleLink } from '../components/ui'
+import { Poster, Spinner, Empty, GroupChips, TitleLink } from '../components/ui'
 
 export default function Lists() {
   const { groups, profiles } = useAppData()
@@ -84,7 +84,7 @@ export default function Lists() {
               <div className="grid">
                 {diaryView.map((e) => (
                   <PosterTile key={e.id} t={e.titles} group={e.groups}
-                    footer={<DualScore profiles={profiles} ratings={e.ratings} />} />
+                    />
                 ))}
               </div>
             )}
@@ -103,7 +103,6 @@ export default function Lists() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <strong>{entry.titles?.title}</strong>
-                    <div style={{ marginTop: 6 }}><DualScore profiles={profiles} ratings={entry.ratings} /></div>
                   </div>
                   <span className="score" style={{ borderColor: 'var(--pink)', color: 'var(--pink)' }}>Δ {spread}</span>
                 </div>

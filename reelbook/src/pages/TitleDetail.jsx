@@ -12,7 +12,7 @@ import {
 import { useAppData } from '../context/AppData'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/Toast'
-import { Poster, Spinner, DualScore, Modal, TitleLink, StarRating, ScrollRow } from '../components/ui'
+import { Poster, Spinner, Modal, TitleLink, ScrollRow } from '../components/ui'
 import MarkWatchedModal from '../components/MarkWatchedModal'
 import AddToCollectionModal from '../components/AddToCollectionModal'
 import { getPref, DEFAULT_REGION } from '../lib/prefs'
@@ -272,7 +272,6 @@ export default function TitleDetail() {
                       </div>
                     )}
                   </div>
-                  <DualScore profiles={profiles} ratings={w.ratings} />
                 </div>
               ))}
             </div>
@@ -898,30 +897,7 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
         </>
       )}
 
-      <EpisodeRatingGraph epRatings={epRatings} />
 
-      {(() => {
-        const bars = seasons.map((s) => {
-          const r = seasonRatings[s.season_number]
-          if (!r) return null
-          const vals = Object.values(r)
-          return { n: s.season_number, avg: vals.reduce((a, b) => a + b, 0) / vals.length }
-        }).filter(Boolean)
-        if (bars.length < 2) return null
-        return (
-          <div className="card" style={{ marginBottom: 8 }}>
-            <div className="faint" style={{ marginBottom: 8 }}>Your season scores</div>
-            <div className="cols">
-              {bars.map((b) => (
-                <button className="col" key={b.n} title={`Season ${b.n}: ${b.avg.toFixed(1)}/10`} onClick={() => { manualSeason.current = true; setOpenSeason(b.n) }}>
-                  <div className="fill" style={{ height: `${b.avg * 10}%`, background: b.avg >= 8 ? 'var(--green)' : b.avg >= 6 ? 'var(--accent)' : 'var(--pink)' }} />
-                  <span className="cl">S{b.n}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )
-      })()}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {seasons.map((s) => {
@@ -937,7 +913,6 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
               <button className="season-head" onClick={() => { manualSeason.current = true; setOpenSeason(isOpen ? null : s.season_number) }}>
                 <span><strong>{s.name || `Season ${s.season_number}`}</strong> <span className="faint">· {s.episode_count} eps</span></span>
                 <span className="row" style={{ gap: 10 }}>
-                  {(() => { const arr = Object.entries(seasonRatings[s.season_number] || {}).map(([pid, score]) => ({ profile_id: pid, score })); return arr.length ? <DualScore profiles={profiles} ratings={arr} /> : null })()}
                   <span className="faint">{watchedInSeason > 0 ? `${watchedInSeason}/${s.episode_count} watched` : ''} {isOpen ? '▾' : '▸'}</span>
                 </span>
               </button>
@@ -947,18 +922,6 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
                     <div className="faint" style={{ padding: 12 }}>Loading episodes…</div>
                   ) : (
                     <>
-                      <div className="season-rate" style={{ padding: '0 12px 10px' }}>
-                        <div className="faint" style={{ marginBottom: 6 }}>Rate this season</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          {profiles.map((p) => (
-                            <div className="row" key={p.id} style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                              <span style={{ color: p.color, fontWeight: 700, fontSize: 13, minWidth: 70 }}>{p.name}</span>
-                              <StarRating value={seasonRatings[s.season_number]?.[p.id] || null} color={p.color}
-                                onChange={(v) => rateSeason(s.season_number, p.id, v)} />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
                       <button className="btn sm" style={{ margin: '0 12px 10px' }} disabled={!trackGroupId}
                         onClick={() => markWholeSeason(s.season_number, raw)}>✓ Mark whole season</button>
                       {eps.map((e) => {
@@ -979,7 +942,6 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
                                 <strong>{e.episode_number}. {e.name}</strong>
                                 {imdbRt ? <span className="imdb-rating sm">IMDb {imdbRt}</span>
                                   : e.vote_average ? <span className="tmdb-rating sm">TMDB {e.vote_average.toFixed(1)}</span> : null}
-                                {rt ? <span className="ep2-rt">★ {rt}</span> : null}
                                 {epRewatch[key] > 0 ? <span className="rewatch-badge">↻ ×{epRewatch[key] + 1}</span> : null}
                               </div>
                               <div className="faint ep2-meta">
@@ -1027,8 +989,6 @@ function Episodes({ tmdbId, titleId, seasons, groups, profiles, userId, imdbId }
                                       </select>
                                     </dd></div>
                                   </dl>
-                                  <div className="faint" style={{ margin: '4px 0' }}>Your rating</div>
-                                  <StarRating value={rt || 0} color="var(--accent)" onChange={(sc) => rate(s.season_number, e.episode_number, sc)} />
                                   <div className="row" style={{ gap: 14, marginTop: 8, flexWrap: 'wrap' }}>
                                     {epImdb[key] && (
                                       <a className="ep2-link imdb" href={`https://www.imdb.com/title/${epImdb[key]}/`}
