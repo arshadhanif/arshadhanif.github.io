@@ -1375,7 +1375,7 @@ export async function listCollections() {
       item_count: items.length,
       tmdb_ids: items.map((i) => i.titles?.tmdb_id).filter((x) => x != null),
       // First few posters, for the fan on the card.
-      posters: items.map((i) => i.titles?.poster_path).filter(Boolean).slice(0, 4),
+      posters: items.map((i) => i.titles?.poster_path).filter(Boolean).slice(0, 5),
     }
   })
 }

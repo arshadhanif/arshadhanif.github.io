@@ -17,6 +17,7 @@ export default function Collections() {
   const [creating, setCreating] = useState(false)
   // Watched ids, so every card can say how far through the list you are.
   const [watched, setWatched] = useState(new Set())
+  const [q, setQ] = useState('')
 
   async function load() {
     setLoading(true)
@@ -24,6 +25,11 @@ export default function Collections() {
   }
   useEffect(() => { load() }, [])
   useEffect(() => { getLibraryTmdbIds().then((l) => setWatched(l.watched)).catch((e) => console.error('library ids', e)) }, [])
+
+  const needle = q.trim().toLowerCase()
+  const shown = needle
+    ? lists.filter((c) => `${c.name} ${c.description || ''}`.toLowerCase().includes(needle))
+    : lists
 
   return (
     <div className="page">
@@ -33,16 +39,24 @@ export default function Collections() {
       </div>
       <p className="sub">Curate your own collections, like “Best heist movies” or “Comfort rewatches”.</p>
 
+      {lists.length > 6 && (
+        <input value={q} onChange={(e) => setQ(e.target.value)}
+          placeholder={`Search ${lists.length} lists…`}
+          style={{ width: '100%', maxWidth: 380, marginBottom: 16 }} />
+      )}
+
       {loading ? <RowsSkeleton count={4} /> : lists.length === 0 ? (
         <Empty icon="📚">No lists yet. Create one, then add titles from any movie or show page.</Empty>
+      ) : shown.length === 0 ? (
+        <Empty icon="🔍">No list matches “{q.trim()}”.</Empty>
       ) : (
         <div className="list-grid">
-          {lists.map((c) => {
+          {shown.map((c) => {
             const total = c.item_count
             const seen = (c.tmdb_ids || []).filter((id) => watched.has(id)).length
             const pct = total ? Math.round((seen / total) * 100) : 0
             const done = total > 0 && seen === total
-            const fan = (c.posters || []).slice(0, 4)
+            const fan = (c.posters || []).slice(0, 5)
             return (
               <button key={c.id} className="list-card" onClick={() => navigate(`/lists/${c.id}`)}>
                 <div className="list-fan">
