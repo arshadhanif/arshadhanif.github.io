@@ -25,6 +25,7 @@ export default function Settings() {
   const [accent, setAccentState] = useState(getPref('accent', 'gold'))
   const [region, setRegion] = useState(getPref('region', DEFAULT_REGION))
   const [defaultGroup, setDefaultGroup] = useState(getPref('defaultGroupId', '') || '')
+  const [where, setWhere] = useState(() => defaultWhere())
   const [push, setPush] = useState('off')   // unsupported | denied | on | off
   const [pushBusy, setPushBusy] = useState(false)
 
@@ -139,6 +140,17 @@ export default function Settings() {
             <option value="">None (pick each time)</option>
             {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
+        </div>
+        <div className="field">
+          <label>Where you usually watch</label>
+          <select value={where} onChange={(e) => { setWhere(e.target.value); setPref('defaultWhere', e.target.value); toast('Default updated') }}>
+            <option value="">None (pick each time)</option>
+            {WHERE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+          <p className="faint" style={{ margin: '7px 0 0', fontSize: 12.5 }}>
+            Prefilled whenever you log a watch or tick off episodes. The streaming
+            service is remembered from last time instead, since that changes per show.
+          </p>
         </div>
       </div>
 

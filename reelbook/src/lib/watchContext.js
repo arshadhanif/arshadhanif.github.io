@@ -9,11 +9,22 @@ export const SERVICE_OPTIONS = ['Netflix', 'Prime Video', 'Disney+', 'Disney+ Ho
 // mean choosing Netflix 20 times. Stored per device, like the other prefs.
 import { getPref, setPref } from './prefs'
 
-export function lastWatchContext() {
-  return { whereWatched: getPref('lastWhere', '') || '', service: getPref('lastService', '') || '' }
+// Where you watch most of the time, set in Settings. A default rather than a
+// memory on purpose: picking Laptop once should not silently reroute
+// everything logged afterwards. TV is the fallback, which is where Arshad has
+// watched almost everything since May 2026.
+export const DEFAULT_WHERE = 'TV'
+export function defaultWhere() {
+  const v = getPref('defaultWhere', DEFAULT_WHERE)
+  return v === '' ? '' : (WHERE_OPTIONS.includes(v) ? v : DEFAULT_WHERE)
 }
 
-export function rememberWatchContext({ whereWatched, service }) {
-  if (whereWatched) setPref('lastWhere', whereWatched)
+// The service does stay a memory: it changes per show, and ticking 20 episodes
+// should not mean choosing Netflix 20 times.
+export function lastWatchContext() {
+  return { whereWatched: defaultWhere(), service: getPref('lastService', '') || '' }
+}
+
+export function rememberWatchContext({ service }) {
   if (service) setPref('lastService', service)
 }
