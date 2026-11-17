@@ -1,7 +1,7 @@
 name: Deploy site to GitHub Pages
 
 # Publishes a single GitHub Pages artifact containing:
-#   - the portfolio (repository root: index.html, Assets, reelbook, reelbook-app)
+#   - the portfolio (repository root: index.html, Assets)
 #     served at  https://arshadhanif.github.io/
 #   - the ERP Finance Pro Next.js site (built from ./erp-finance-pro with
 #     basePath /erp-finance-pro) served at  https://arshadhanif.github.io/erp-finance-pro/
@@ -50,7 +50,7 @@ jobs:
         run: |
           mkdir -p _site
           # Portfolio + co-hosted static apps at the root (served as-is).
-          for path in index.html Assets reelbook reelbook-app vercel.json .nojekyll README.md; do
+          for path in index.html Assets vercel.json .nojekyll README.md; do
             if [ -e "$path" ]; then
               cp -r "$path" _site/
             fi
