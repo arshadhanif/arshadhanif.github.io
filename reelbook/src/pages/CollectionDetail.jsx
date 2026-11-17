@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getCollection, updateCollection, deleteCollection, removeFromCollection, reorderCollection, getLibraryTmdbIds, getLibraryGroupMap } from '../lib/db'
+import { getCollection, updateCollection, deleteCollection, removeFromCollection, reorderCollection, getLibraryTmdbIds, getLibraryGroupMap, libKey } from '../lib/db'
 import { useToast } from '../context/Toast'
 import { useAppData } from '../context/AppData'
 import { Spinner, Empty, Poster, TitleLink, Modal } from '../components/ui'
@@ -97,9 +97,9 @@ export default function CollectionDetail() {
   // one specific group. The type filter applies to both, so switching to Movies
   // asks "have we finished the films" rather than the whole franchise.
   const seenBy = (t, g) => {
-    const id = t?.tmdb_id
-    if (id == null) return false
-    return g === 'any' ? lib.watched.has(id) : !!byGroup.get(id)?.has(g)
+    if (t?.tmdb_id == null) return false
+    const k = libKey(t.media_type, t.tmdb_id)
+    return g === 'any' ? lib.watched.has(k) : !!byGroup.get(k)?.has(g)
   }
   const tally = (g) => inType.filter((it) => seenBy(it.titles, g)).length
   const seen = tally(who)

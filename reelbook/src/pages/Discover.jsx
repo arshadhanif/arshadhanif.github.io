@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { searchAll, getTrending, getPopular, getTopRated, getTvStatus, getAnime, listWatchProviders, discoverByProviders, IMG } from '../lib/tmdb'
-import { listInProgressShows, setTitleTotalEpisodes, listSubscriptions, dropShow, listDroppedShows, restoreShow, setShowHome, getLibraryTmdbIds, listOngoingShows,
+import { listInProgressShows, setTitleTotalEpisodes, listSubscriptions, dropShow, listDroppedShows, restoreShow, setShowHome, getLibraryTmdbIds, listOngoingShows, libKey,
 } from '../lib/db'
 import { regionFromSubs, matchProviderIds } from '../lib/providers'
 import { fmtDate } from '../lib/dates'
@@ -242,9 +242,9 @@ export default function Discover() {
                 <TitleLink className="tile" key={`${r.media_type}-${r.tmdb_id}`} tmdbId={r.tmdb_id} media={r.media_type}>
                   <div style={{ position: 'relative' }}>
                     <Poster title={r.title} mediaType={r.media_type} posterPath={r.poster_path} />
-                    {lib.watched.has(r.tmdb_id)
+                    {lib.watched.has(libKey(r.media_type, r.tmdb_id))
                       ? <span className="ep-badge" style={{ background: 'var(--green)', color: '#0b0d12' }} title="You've logged this as watched">✓</span>
-                      : lib.watchlist.has(r.tmdb_id)
+                      : lib.watchlist.has(libKey(r.media_type, r.tmdb_id))
                         ? <span className="ep-badge" title="On your watchlist">🔖</span>
                         : null}
                   </div>
@@ -305,7 +305,7 @@ function Rail({ title, items, hide }) {
   // These rails exist to suggest something new, so anything already in the
   // diary is noise. Filtered here rather than at fetch time so flipping the
   // toggle is instant and costs no extra TMDB calls.
-  if (hide) items = (items || []).filter((r) => !hide.has(r.tmdb_id))
+  if (hide) items = (items || []).filter((r) => !hide.has(libKey(r.media_type, r.tmdb_id)))
   if (!items || items.length === 0) return null
   return (
     <div style={{ marginBottom: 26 }}>

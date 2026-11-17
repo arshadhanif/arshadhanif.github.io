@@ -1170,21 +1170,26 @@ function librarySnapshot() {
   return snapInFlight
 }
 
-// Library TMDB ids split into watched vs watchlisted, so a person page can flag
-// which of their credits you've seen.
+// How the library is keyed. A TMDB id is only unique WITHIN a media type:
+// movie 1891 is The Empire Strikes Back, tv 1891 is Rome. Keying on the bare
+// id made watching one tick the other. Always build lookups with this.
+export const libKey = (mediaType, tmdbId) => `${mediaType === 'tv' ? 'tv' : 'movie'}:${tmdbId}`
+
+// Watched and watchlisted, so a person page can flag which of their credits
+// you have seen. Both Sets hold libKey() values, NOT bare TMDB ids.
 export async function getLibraryTmdbIds() {
   const s = await librarySnapshot()
   return { watched: new Set(s.watched || []), watchlist: new Set(s.watchlisted || []) }
 }
 
-// tmdb_id -> Set(group_id) for everything watched, so a list can report whose
+// libKey -> Set(group_id) for everything watched, so a list can report whose
 // progress it is (yours alone, yours together, anyone's) instead of just
 // "somebody in the household saw this".
 export async function getLibraryGroupMap() {
   const s = await librarySnapshot()
   const m = new Map()
-  for (const [tmdbId, groupIds] of Object.entries(s.groups || {})) {
-    m.set(Number(tmdbId), new Set(groupIds || []))
+  for (const [key, groupIds] of Object.entries(s.groups || {})) {
+    m.set(key, new Set(groupIds || []))
   }
   return m
 }
@@ -1363,7 +1368,7 @@ export async function deleteSubscription(id) {
 export async function listCollections() {
   const { data, error } = await supabase
     .from('collections')
-    .select('id, name, description, emoji, ranked, owner_id, created_at, collection_items(position, titles(tmdb_id, poster_path))')
+    .select('id, name, description, emoji, ranked, owner_id, created_at, collection_items(position, titles(tmdb_id, media_type, poster_path))')
     .order('created_at', { ascending: false })
   if (error) throw error
   // Carry the TMDB ids so the index can show how far through each list you are
@@ -1373,7 +1378,9 @@ export async function listCollections() {
     return {
       ...c,
       item_count: items.length,
-      tmdb_ids: items.map((i) => i.titles?.tmdb_id).filter((x) => x != null),
+      // libKey values, so a movie and a show that share a TMDB id stay apart.
+      lib_keys: items.filter((i) => i.titles?.tmdb_id != null)
+        .map((i) => libKey(i.titles.media_type, i.titles.tmdb_id)),
       // First few posters, for the fan on the card.
       posters: items.map((i) => i.titles?.poster_path).filter(Boolean).slice(0, 5),
     }

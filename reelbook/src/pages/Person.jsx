@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getPerson, IMG } from '../lib/tmdb'
-import { getLibraryTmdbIds } from '../lib/db'
+import { getLibraryTmdbIds, libKey } from '../lib/db'
 import { Spinner, Empty, Poster, TitleLink, ScrollRow } from '../components/ui'
 import { fmtDate } from '../lib/dates'
 
@@ -31,7 +31,7 @@ export default function Person() {
     if (!person) return []
     const byId = new Map()
     for (const c of [...person.cast, ...person.crew]) {
-      if (!lib.watched.has(c.tmdb_id)) continue
+      if (!lib.watched.has(libKey(c.media_type, c.tmdb_id))) continue
       const k = `${c.media_type}-${c.tmdb_id}`
       if (!byId.has(k)) byId.set(k, { ...c, labels: new Set() })
       const e = byId.get(k)
@@ -158,9 +158,9 @@ export default function Person() {
             <TitleLink className="tile" key={`${c.media_type}-${c.tmdb_id}`} tmdbId={c.tmdb_id} media={c.media_type}>
               <div style={{ position: 'relative' }}>
                 <Poster title={c.title} mediaType={c.media_type} posterPath={c.poster_path} />
-                {lib.watched.has(c.tmdb_id)
+                {lib.watched.has(libKey(c.media_type, c.tmdb_id))
                   ? <span className="ep-badge" style={{ background: 'var(--green)', color: '#0b0d12' }} title="You've watched this">✓</span>
-                  : lib.watchlist.has(c.tmdb_id)
+                  : lib.watchlist.has(libKey(c.media_type, c.tmdb_id))
                     ? <span className="ep-badge" title="On your watchlist">🔖</span>
                     : null}
               </div>

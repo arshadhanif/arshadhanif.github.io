@@ -53,7 +53,7 @@ export default function Collections() {
         <div className="list-grid">
           {shown.map((c) => {
             const total = c.item_count
-            const seen = (c.tmdb_ids || []).filter((id) => watched.has(id)).length
+            const seen = (c.lib_keys || []).filter((k) => watched.has(k)).length
             const pct = total ? Math.round((seen / total) * 100) : 0
             const done = total > 0 && seen === total
             const fan = (c.posters || []).slice(0, 5)
